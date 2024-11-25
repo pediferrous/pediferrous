@@ -1,7 +1,5 @@
 use std::{fs::File, io::Write};
 
-mod types;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct ObjRef {
     offs: usize,
