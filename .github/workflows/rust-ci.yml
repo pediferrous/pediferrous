@@ -1,0 +1,50 @@
+name: Rust CI Workflow
+
+on:
+  push:
+    branches: [ main, feature ]
+  pull_request:
+    branches: [ main, feature ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run cargo fmt
+      run: cargo fmt -- --check
+
+  lint:
+    name: Run Linter (clippy)
+    runs-on: ubuntu-latest
+    needs: format
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run linter
+      run: cargo clippy -- -D warnings
+  
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: cargo test --verbose
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the workspace
+      run: cargo build --verbose
