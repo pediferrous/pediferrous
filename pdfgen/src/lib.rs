@@ -10,7 +10,6 @@ pub struct Document {}
 
 impl Document {
     pub fn new() -> Self {
-        let x = 42;
         Self {}
     }
 
