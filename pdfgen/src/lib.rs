@@ -3,7 +3,9 @@
 //! `pdfgen` is a low-level library that offers fine-grained control over PDF syntax and
 //! PDF file generation.
 
-use std::io::{self, Write};
+use std::io::{self, Error, Write};
+
+use types::dictionary::{Key, WriteDictValue};
 
 mod types;
 
@@ -37,8 +39,9 @@ impl Document {
     }
 }
 
-pub trait WriteExt {
+trait WriteExt {
     fn write_newline(&mut self) -> Result<usize, std::io::Error>;
+    fn write_dict_entry(&mut self, key: Key, value: &impl WriteDictValue) -> Result<usize, Error>;
 }
 
 impl<T> WriteExt for T
@@ -47,5 +50,18 @@ where
 {
     fn write_newline(&mut self) -> Result<usize, std::io::Error> {
         self.write(b"\n")
+    }
+
+    fn write_dict_entry(
+        &mut self,
+        key: Key,
+        value: &impl WriteDictValue,
+    ) -> Result<usize, std::io::Error> {
+        let mut written = self.write(b"/")?;
+        written += key.write(self)?;
+        written += self.write(b" ")?;
+        written += value.write(self)?;
+
+        Ok(written)
     }
 }
