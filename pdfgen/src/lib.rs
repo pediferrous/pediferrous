@@ -5,6 +5,8 @@
 
 use std::io::{self, Write};
 
+mod types;
+
 /// This represents one cohesive PDF document that can contain multiple pages of content.
 #[derive(Default)]
 pub struct Document;

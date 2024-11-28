@@ -1,1 +1,1 @@
-pub mod hierarchy;
+pub mod dictionary;
