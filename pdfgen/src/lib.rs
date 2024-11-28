@@ -34,3 +34,16 @@ impl Document {
         Ok(())
     }
 }
+
+pub trait WriteExt {
+    fn write_newline(&mut self) -> Result<usize, std::io::Error>;
+}
+
+impl<T> WriteExt for T
+where
+    T: Write,
+{
+    fn write_newline(&mut self) -> Result<usize, std::io::Error> {
+        self.write(b"\n")
+    }
+}
