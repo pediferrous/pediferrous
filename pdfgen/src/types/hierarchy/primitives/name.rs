@@ -57,7 +57,7 @@ impl Name {
     pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let mut written = writer.write(b"/")?;
         written += writer.write(self.0)?;
-        let mut written = writer.write(b" ")?;
+        written += writer.write(b" ")?;
         Ok(written)
     }
 }
@@ -78,6 +78,6 @@ mod tests {
 
         let mut out_buf = Vec::new();
         PDF_KEY.write(&mut out_buf).unwrap();
-        assert_eq!(&out_buf, b"/PdfKey");
+        assert_eq!(&out_buf, b"/PdfKey ");
     }
 }
