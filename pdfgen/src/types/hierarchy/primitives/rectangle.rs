@@ -43,6 +43,15 @@ impl Rectangle {
     }
 }
 
+impl From<(u32, u32, u32, u32)> for Rectangle {
+    fn from((ll_x, ll_y, tr_x, tr_y): (u32, u32, u32, u32)) -> Self {
+        Rectangle {
+            low_left: (ll_x, ll_y).into(),
+            top_right: (tr_x, tr_y).into(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Rectangle;
