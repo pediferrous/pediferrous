@@ -25,10 +25,10 @@ impl Name {
     ///
     /// # Example
     ///
-    /// ```rust
-    /// const PDF_KEY: Key = Key::new(b"PdfKey");
+    /// ```ignore
+    /// const PDF_KEY: Name = Name::new(b"PdfKey");
     ///
-    /// let out_buf = Vec::new();
+    /// let mut out_buf = Vec::new();
     /// PDF_KEY.write(&mut out_buf).unwrap();
     /// assert_eq!(&out_buf, b"/PdfKey");
     /// ```
@@ -61,5 +61,19 @@ impl Name {
 impl WriteDictValue for Name {
     fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         self.write(writer)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Name;
+
+    #[test]
+    pub fn new_name() {
+        const PDF_KEY: Name = Name::new(b"PdfKey");
+
+        let mut out_buf = Vec::new();
+        PDF_KEY.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/PdfKey");
     }
 }
