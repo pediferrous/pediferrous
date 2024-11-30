@@ -21,8 +21,6 @@ use super::WriteDictValue;
 pub(crate) struct Name(&'static [u8]);
 
 impl Name {
-    const TYPE: Name = Name::new(b"Type");
-
     /// Create a new [`Name`] from the given byte slice. The byte slice must contain at least two
     /// bytes and must not contain '/'.
     ///
