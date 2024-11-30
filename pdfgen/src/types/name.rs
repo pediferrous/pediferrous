@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+// TODO: remove the allow lint once we start using this helper struct.
+
 use std::io::{Error, Write};
 
 use super::WriteDictValue;
