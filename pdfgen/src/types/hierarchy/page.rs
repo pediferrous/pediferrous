@@ -23,9 +23,7 @@ impl Page {
             media_box: media_box.into(),
         }
     }
-}
 
-impl Page {
     pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
