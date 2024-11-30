@@ -4,7 +4,6 @@ pub mod hierarchy;
 pub use hierarchy::page;
 
 pub trait WriteDictValue {
-    #[allow(dead_code)]
     fn write(&self, writer: &mut impl Write) -> Result<usize, Error>;
 }
 
