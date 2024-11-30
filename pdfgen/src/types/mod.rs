@@ -1,6 +1,7 @@
 use std::io::{Error, Write};
 
 pub mod hierarchy;
+pub use hierarchy::page;
 
 pub trait WriteDictValue {
     #[allow(dead_code)]

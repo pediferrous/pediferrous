@@ -21,6 +21,8 @@ use crate::types::WriteDictValue;
 pub(crate) struct Name(&'static [u8]);
 
 impl Name {
+    pub(crate) const TYPE: Name = Name::new(b"Type");
+
     /// Create a new [`Name`] from the given byte slice. The byte slice must contain at least two
     /// bytes and must not contain '/'.
     ///
@@ -33,7 +35,7 @@ impl Name {
     /// PDF_KEY.write(&mut out_buf).unwrap();
     /// assert_eq!(&out_buf, b"/PdfKey");
     /// ```
-    const fn new<const N: usize>(inner: &'static [u8; N]) -> Self {
+    pub(crate) const fn new<const N: usize>(inner: &'static [u8; N]) -> Self {
         if N == 0 {
             panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
         }
@@ -55,6 +57,7 @@ impl Name {
     pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let mut written = writer.write(b"/")?;
         written += writer.write(self.0)?;
+        let mut written = writer.write(b" ")?;
         Ok(written)
     }
 }
