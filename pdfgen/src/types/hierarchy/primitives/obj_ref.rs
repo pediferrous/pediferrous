@@ -26,6 +26,8 @@ impl ObjRef {
     pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(self.id.to_string().as_bytes()),
+            // NOTE: generation is always 0 because we are genereting new PDFs and don't support
+            //       updating existing PDFs
             writer.write(b" 0 R"),
         };
 
