@@ -1,6 +1,6 @@
 use std::io::{Error, Write};
 
-pub mod name;
+pub mod hierarchy;
 
 pub trait WriteDictValue {
     #[allow(dead_code)]

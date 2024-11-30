@@ -3,7 +3,7 @@
 
 use std::io::{Error, Write};
 
-use super::WriteDictValue;
+use crate::types::WriteDictValue;
 
 /// [`Name`] object is an atomic symbol uniquely defined by a sequence of any characters (8-bit
 /// values) except null (character code 0) that follow these rules:
