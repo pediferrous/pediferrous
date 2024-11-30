@@ -4,9 +4,18 @@ use crate::types;
 
 use super::primitives::{name::Name, obj_ref::ObjRef, rectangle::Rectangle};
 
+/// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
+/// attributes of a single page of the document.
 pub struct Page {
+    /// The page tree node that is the immediate parent of this page object.
     parent: ObjRef,
+
+    /// A dictionary containing any resources required by the page contents. If the page requires
+    /// no resources, the value of this entry shall be an empty dictionary.
     resources: String,
+
+    /// A [`Rectangle`], expressed in default user space units, that shall define the boundaries of
+    /// the physical medium on which the page shall be displayed or printed.
     media_box: Rectangle,
 }
 
@@ -16,6 +25,7 @@ impl Page {
     const RESOURCES: Name = Name::new(b"Resources");
     const MEDIA_BOX: Name = Name::new(b"MediaBox");
 
+    /// Create a new blank page that belongs to the given parent and media box.
     pub fn new(parent: impl Into<ObjRef>, media_box: impl Into<Rectangle>) -> Self {
         Self {
             parent: parent.into(),
@@ -24,6 +34,7 @@ impl Page {
         }
     }
 
+    /// Encode the PDF Page into the given implementor of [`Write`].
     pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
