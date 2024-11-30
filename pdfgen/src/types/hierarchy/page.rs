@@ -2,10 +2,10 @@ use std::io::{Error, Write};
 
 use crate::types;
 
-use super::primitives::{name::Name, rectangle::Rectangle};
+use super::primitives::{name::Name, obj_ref::ObjRef, rectangle::Rectangle};
 
 pub struct Page {
-    parent: String,
+    parent: ObjRef,
     resources: String,
     media_box: Rectangle,
 }
@@ -16,7 +16,7 @@ impl Page {
     const RESOURCES: Name = Name::new(b"Resources");
     const MEDIA_BOX: Name = Name::new(b"MediaBox");
 
-    pub fn new(parent: impl Into<String>, media_box: impl Into<Rectangle>) -> Self {
+    pub fn new(parent: impl Into<ObjRef>, media_box: impl Into<Rectangle>) -> Self {
         Self {
             parent: parent.into(),
             resources: String::from("<< >>"),
@@ -31,7 +31,7 @@ impl Page {
             Self::TYPE.write(writer),
 
             Self::PARENT.write(writer),
-            writer.write(self.parent.as_bytes()),
+            self.parent.write(writer),
             writer.write(b" "),
 
             Self::RESOURCES.write(writer),
@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn basic_page() {
-        let page = Page::new("0 0 R", (0, 0, 100, 100));
+        let page = Page::new(0, (0, 0, 100, 100));
 
         let mut writer = Vec::new();
         page.write(&mut writer).unwrap();
