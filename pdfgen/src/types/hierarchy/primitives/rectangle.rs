@@ -1,8 +1,12 @@
 use std::io::{Error, Write};
 
+/// Represents a point (pair of x and y coordinates) in default user space units.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
+    /// X coordinate in user space unit.
     x: u32,
+
+    /// y coordinate in user space unit.
     y: u32,
 }
 
@@ -19,13 +23,20 @@ where
     }
 }
 
+/// Rectangles are used to describe locations on a page and bounding boxes for a variety of
+/// objects. A rectangle shall be written as an array of four numbers giving the coordinates of a
+/// pair of diagonally opposite corners.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Rectangle {
+    /// Lower left corner of the `Rectangle`.
     low_left: Position,
+
+    /// Upper right corner of the `Rectangle`.
     top_right: Position,
 }
 
 impl Rectangle {
+    /// Create a new [`Rectangle`] with given [`Position`]s as its corners.
     pub fn new(low_left: impl Into<Position>, top_right: impl Into<Position>) -> Self {
         Self {
             low_left: low_left.into(),
@@ -33,6 +44,7 @@ impl Rectangle {
         }
     }
 
+    /// Encode and write this [`Rectangle`] into the provided implementor of [`Write`].
     pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let output = format!(
             "[{} {} {} {}]",
