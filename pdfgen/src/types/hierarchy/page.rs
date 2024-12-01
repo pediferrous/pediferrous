@@ -73,7 +73,7 @@ mod tests {
 
         insta::assert_snapshot!(
             output,
-            @"<< /Type /Page /Parent 0 0 R /Resources << >> /MediaBox [0 0 100 100] >>"
+            @"<< /Type /Page /Parent 0 0 R /Resources <<  >> /MediaBox [0 0 100 100] >>"
         );
     }
 }
