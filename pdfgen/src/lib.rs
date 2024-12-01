@@ -32,6 +32,8 @@ pub struct PdfWriter<W: Write> {
     inner: W,
     /// Current byte offset from the top of document, representing the current position of the `cursor`.
     current_offset: usize,
+    /// Comment
+    cross_reference_table: CrossReferenceTable,
 }
 
 impl<W: Write> PdfWriter<W> {
@@ -40,12 +42,19 @@ impl<W: Write> PdfWriter<W> {
     const PDF_HEADER: &[u8] = b"%PDF-2.0";
     /// The last line of the file shall contain only the end-of-file marker, %%EOF
     const EOF_MARKER: &[u8] = b"%%EOF";
+    /// Comment
+    const NL_MARKER: &[u8] = b"\n";
+    /// Comment
+    const START_OBJ_MARKER: &[u8] = b"obj";
+    /// Comment
+    const END_OBJ_MARKER: &[u8] = b"endobj";
 
     /// Creates a new `PdfWriter` instance.
     pub fn new(inner: W) -> Self {
         PdfWriter {
             inner,
             current_offset: 0,
+            cross_reference_table: CrossReferenceTable::default(),
         }
     }
 
@@ -55,6 +64,7 @@ impl<W: Write> PdfWriter<W> {
         // Delegate the actual writing to the inner writer incrementing the current_offset to
         // reflect current `cursor` position.
         self.current_offset += self.inner.write(Self::PDF_HEADER)?;
+        self.current_offset += self.inner.write(Self::NL_MARKER)?;
 
         Ok(())
     }
@@ -63,13 +73,20 @@ impl<W: Write> PdfWriter<W> {
     /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
     /// and cursor update.
     pub fn write_object(&mut self, obj: &impl Object) -> Result<(), io::Error> {
-        // Update CRT
-        // write x x obj
+        // Save the objects byte offset in the CrossReferenceTable.
+        self.cross_reference_table.add_object(self.current_offset);
+
+        // X Y obj\n
+        // self.current_offset += self.inner.write(Self::NL_MARKER)?;
+        self.current_offset += self.inner.write(Self::NL_MARKER)?;
 
         // Delegate the actual writing to the inner writer.
-        let written = obj.write(&mut self.inner)?;
+        self.current_offset += obj.write(&mut self.inner)?;
+        self.current_offset += self.inner.write(Self::NL_MARKER)?;
 
-        // write endobj
+        // endobj\n
+        self.current_offset += self.inner.write(Self::END_OBJ_MARKER)?;
+        self.current_offset += self.inner.write(Self::NL_MARKER)?;
 
         Ok(())
     }
