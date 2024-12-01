@@ -91,6 +91,13 @@ impl<W: Write> PdfWriter<W> {
         Ok(())
     }
 
+    /// Comment
+    pub fn write_crt(&mut self) -> Result<(), io::Error> {
+        self.current_offset += self.cross_reference_table.write(&mut self.inner)?;
+
+        Ok(())
+    }
+
     /// Write the PDF documents EOF marker.
     pub fn write_eof(&mut self) -> Result<(), io::Error> {
         // Delegate the actual writing to the inner writer.
@@ -109,11 +116,27 @@ pub struct CrossReferenceTable {
 
 impl CrossReferenceTable {
     /// Marker representing the start of CRT section (4 characters “xref”).
-    const XREF_MARKER: &[u8] = b"xref";
+    const XREF_MARKER: &[u8] = b"xref\n";
+
+    /// Comment
+    const SP_LF: &str = " \n";
 
     /// Adds a new object offset to the table.
     fn add_object(&mut self, byte_offset: usize) {
         self.offsets.push(byte_offset);
+    }
+
+    /// Comment
+    fn write(&self, writer: &mut impl Write) -> Result<usize, std::io::Error> {
+        let written = types::write_chain! {
+            writer.write(Self::XREF_MARKER),
+            writer.write(format!("0 {}\n", self.offsets.len()).as_bytes()),
+            self.offsets.iter()
+                .map(|offset| writer.write(format!("{offset:010} 00000 n{}", Self::SP_LF).as_bytes()))
+                .sum::<Result<usize, _>>(),
+        };
+
+        Ok(written)
     }
 }
 
@@ -126,6 +149,8 @@ impl Document {
     pub fn write(&self, writer: &mut impl Write) -> Result<(), io::Error> {
         let mut pdf_writer = PdfWriter::new(writer);
         pdf_writer.write_header()?;
+        // Write object(s) here!
+        pdf_writer.write_crt()?;
         pdf_writer.write_eof()?;
 
         Ok(())
