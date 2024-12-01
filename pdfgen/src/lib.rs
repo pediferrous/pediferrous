@@ -7,9 +7,21 @@ use std::io::{self, Write};
 
 pub mod types;
 
-/// Comment
+/// The `Object` trait serves as a blueprint for all types that need to
+/// provide a custom implementation for serializing or outputting their
+/// structured data in a consistent manner.
 pub trait Object {
-    /// Comment
+    /// Writes the structured data of the object to the provided writer.
+    ///
+    /// # Arguments
+    ///
+    /// * `writer` - A mutable reference to a type that implements the [`Write`](std::io::Write) trait.
+    ///   This is where the object's structured data will be written to.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the number of bytes written if successful, or an [`io::Error`](std::io::Error)
+    /// if the operation fails.
     fn write(&self, writer: &mut impl Write) -> Result<usize, io::Error>;
 }
 
@@ -37,24 +49,32 @@ impl<W: Write> PdfWriter<W> {
         }
     }
 
-    /// Comment
+    /// Write the PDF documents header marker updating the `cursor`s byte offset with the number of
+    /// bytes written
     pub fn write_header(&mut self) -> Result<(), io::Error> {
         // Delegate the actual writing to the inner writer incrementing the current_offset to
-        // reflect current 'cursor' position.
+        // reflect current `cursor` position.
         self.current_offset += self.inner.write(Self::PDF_HEADER)?;
 
         Ok(())
     }
 
-    /// Comment
+    /// Writes the object start marker(`X X obj`), following with the structured data of the object
+    /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
+    /// and cursor update.
     pub fn write_object(&mut self, obj: &impl Object) -> Result<(), io::Error> {
+        // Update CRT
+        // write x x obj
+
         // Delegate the actual writing to the inner writer.
         let written = obj.write(&mut self.inner)?;
+
+        // write endobj
 
         Ok(())
     }
 
-    /// Write the PDF documents EOF.
+    /// Write the PDF documents EOF marker.
     pub fn write_eof(&mut self) -> Result<(), io::Error> {
         // Delegate the actual writing to the inner writer.
         self.inner.write_all(Self::EOF_MARKER)
