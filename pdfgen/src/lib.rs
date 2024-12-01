@@ -156,3 +156,113 @@ impl Document {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{types::hierarchy::primitives::obj_ref::ObjRef, PdfWriter};
+
+    use super::Object;
+
+    struct Dummy;
+    impl Object for Dummy {
+        fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+            writer.write(b"FirstLine\nSecondLine")
+        }
+    }
+
+    #[test]
+    fn write_header() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+
+        pdf_writer.write_header().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @"%PDF-2.0"
+        );
+    }
+
+    #[test]
+    fn write_eof() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+
+        pdf_writer.write_eof().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @"%%EOF"
+        );
+    }
+
+    #[test]
+    fn write_object() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+
+        pdf_writer.write_object(&Dummy, ObjRef::from(17)).unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @r"
+        17 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        "
+        );
+    }
+
+    #[test]
+    fn write_crt() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+
+        pdf_writer.write_header().unwrap();
+        pdf_writer.write_object(&Dummy, ObjRef::from(1)).unwrap();
+        pdf_writer.write_object(&Dummy, ObjRef::from(2)).unwrap();
+        pdf_writer.write_object(&Dummy, ObjRef::from(3)).unwrap();
+        pdf_writer.write_object(&Dummy, ObjRef::from(4)).unwrap();
+        pdf_writer.write_crt().unwrap();
+        pdf_writer.write_eof().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @r"
+        %PDF-2.0
+        1 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        2 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        3 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        4 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        xref
+        0 4
+        0000000009 00000 n 
+        0000000045 00000 n 
+        0000000081 00000 n 
+        0000000117 00000 n 
+        %%EOF
+        "
+        );
+    }
+}
