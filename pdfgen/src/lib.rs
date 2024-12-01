@@ -7,7 +7,7 @@ use std::io::{self, Write};
 
 pub mod types;
 
-/// The `Object` trait serves as a blueprint for all types that need to
+/// The [`Object`] trait serves as a blueprint for all types that need to
 /// provide a custom implementation for serializing or outputting their
 /// structured data in a consistent manner.
 pub trait Object {
@@ -25,10 +25,10 @@ pub trait Object {
     fn write(&self, writer: &mut impl Write) -> Result<usize, io::Error>;
 }
 
-/// A wrapper around any type that implements `Write`, adding pdf specific functionality to keep a
+/// A wrapper around any type that implements [`Write`], adding pdf specific functionality to keep a
 /// clear and consistent CrossReferenceTable state
 pub struct PdfWriter<W: Write> {
-    /// Inner member, representing a type that implements `Write`.
+    /// Inner member, representing a type that implements [`Write`].
     inner: W,
     /// Current byte offset from the top of document, representing the current position of the `cursor`.
     current_offset: usize,
@@ -49,7 +49,7 @@ impl<W: Write> PdfWriter<W> {
     /// Comment
     const END_OBJ_MARKER: &[u8] = b"endobj";
 
-    /// Creates a new `PdfWriter` instance.
+    /// Creates a new [`PdfWriter`] instance.
     pub fn new(inner: W) -> Self {
         PdfWriter {
             inner,
@@ -103,7 +103,7 @@ impl<W: Write> PdfWriter<W> {
 #[derive(Default)]
 pub struct CrossReferenceTable {
     /// Storing solely byte offsets, since we are considering the generation
-    /// number to be '00000' and in use flag to be 'n' at all times.
+    /// number to be `00000` and in use flag to be `n` at all times.
     offsets: Vec<usize>,
 }
 
