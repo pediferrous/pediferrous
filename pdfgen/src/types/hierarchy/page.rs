@@ -2,7 +2,7 @@ use std::io::{Error, Write};
 
 use crate::types;
 
-use super::primitives::{name::Name, obj_ref::ObjRef, rectangle::Rectangle};
+use super::primitives::{name::Name, obj_ref::ObjRef, rectangle::Rectangle, resources::Resources};
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
 /// attributes of a single page of the document.
@@ -12,7 +12,7 @@ pub struct Page {
 
     /// A dictionary containing any resources required by the page contents. If the page requires
     /// no resources, the value of this entry shall be an empty dictionary.
-    resources: String,
+    resources: Resources,
 
     /// A [`Rectangle`], expressed in default user space units, that shall define the boundaries of
     /// the physical medium on which the page shall be displayed or printed.
@@ -29,7 +29,7 @@ impl Page {
     pub fn new(parent: impl Into<ObjRef>, media_box: impl Into<Rectangle>) -> Self {
         Self {
             parent: parent.into(),
-            resources: String::from("<< >>"),
+            resources: Resources::default(),
             media_box: media_box.into(),
         }
     }
@@ -46,7 +46,7 @@ impl Page {
             writer.write(b" "),
 
             Self::RESOURCES.write(writer),
-            writer.write(self.resources.as_bytes()),
+            self.resources.write(writer),
             writer.write(b" "),
 
             Self::MEDIA_BOX.write(writer),
