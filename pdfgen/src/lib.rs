@@ -42,11 +42,9 @@ impl<W: Write> PdfWriter<W> {
     const PDF_HEADER: &[u8] = b"%PDF-2.0";
     /// The last line of the file shall contain only the end-of-file marker, %%EOF
     const EOF_MARKER: &[u8] = b"%%EOF";
-    /// Comment
+    /// New line constant
     const NL_MARKER: &[u8] = b"\n";
-    /// Comment
-    const START_OBJ_MARKER: &[u8] = b"obj";
-    /// Comment
+    /// Marker indicating end of an object section
     const END_OBJ_MARKER: &[u8] = b"endobj";
 
     /// Creates a new [`PdfWriter`] instance.
