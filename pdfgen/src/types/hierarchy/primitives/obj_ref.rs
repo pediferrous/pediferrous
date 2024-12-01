@@ -22,13 +22,29 @@ impl From<u64> for ObjRef {
 }
 
 impl ObjRef {
+    /// Marker indicating start of an object section
+    const START_OBJ_MARKER: &[u8] = b"obj";
+
     /// Write the encoded PDF object reference into the provided implementor of [`Write`].
-    pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    pub fn write_ref(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(self.id.to_string().as_bytes()),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs
             writer.write(b" 0 R"),
+        };
+
+        Ok(written)
+    }
+
+    /// Write the encoded PDF object id into the provided implementor of [`Write`].
+    pub fn write_def(&self, writer: &mut impl Write) -> Result<usize, Error> {
+        let written = types::write_chain! {
+            writer.write(self.id.to_string().as_bytes()),
+            // NOTE: generation is always 0 because we are genereting new PDFs and don't support
+            //       updating existing PDFs
+            writer.write(b" 0 "),
+            writer.write(Self::START_OBJ_MARKER),
         };
 
         Ok(written)

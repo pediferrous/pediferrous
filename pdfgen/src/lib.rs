@@ -5,6 +5,8 @@
 
 use std::io::{self, Write};
 
+use types::hierarchy::primitives::obj_ref::ObjRef;
+
 pub mod types;
 
 /// The [`Object`] trait serves as a blueprint for all types that need to
@@ -70,12 +72,12 @@ impl<W: Write> PdfWriter<W> {
     /// Writes the object start marker(`X X obj`), following with the structured data of the object
     /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
     /// and cursor update.
-    pub fn write_object(&mut self, obj: &impl Object) -> Result<(), io::Error> {
+    pub fn write_object(&mut self, obj: &impl Object, obj_ref: ObjRef) -> Result<(), io::Error> {
         // Save the objects byte offset in the CrossReferenceTable.
         self.cross_reference_table.add_object(self.current_offset);
 
         // X Y obj\n
-        // self.current_offset += self.inner.write(Self::NL_MARKER)?;
+        self.current_offset += obj_ref.write_def(&mut self.inner)?;
         self.current_offset += self.inner.write(Self::NL_MARKER)?;
 
         // Delegate the actual writing to the inner writer.
