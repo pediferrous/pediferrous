@@ -10,5 +10,6 @@
 //!
 //! Reference: ISO 32000-2:2020 (PDF 2.0); page 114
 
+pub mod cross_reference_table;
 pub mod page;
 pub mod primitives;

@@ -1,6 +1,7 @@
 use std::io::{Error, Write};
 
 pub mod hierarchy;
+pub mod pdf_writer;
 pub use hierarchy::page;
 
 pub trait WriteDictValue {

@@ -1,8 +1,10 @@
 use std::io::{Error, Write};
 
-use crate::{types, Object};
+use crate::types;
 
-use super::primitives::{name::Name, obj_ref::ObjRef, rectangle::Rectangle, resources::Resources};
+use super::primitives::{
+    name::Name, obj_ref::ObjRef, object::Object, rectangle::Rectangle, resources::Resources,
+};
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
 /// attributes of a single page of the document.
@@ -63,7 +65,7 @@ impl Object for Page {
 #[cfg(test)]
 mod tests {
     use super::Page;
-    use crate::Object;
+    use crate::types::hierarchy::primitives::object::Object;
 
     #[test]
     fn basic_page() {
