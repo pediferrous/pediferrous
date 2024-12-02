@@ -2,7 +2,9 @@ use std::io::{Error, Write};
 
 use crate::types;
 
-use super::primitives::{name::Name, obj_ref::ObjRef, rectangle::Rectangle, resources::Resources};
+use super::primitives::{
+    name::Name, obj_ref::ObjRef, object::Object, rectangle::Rectangle, resources::Resources,
+};
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
 /// attributes of a single page of the document.
@@ -33,16 +35,18 @@ impl Page {
             media_box: media_box.into(),
         }
     }
+}
 
+impl Object for Page {
     /// Encode the PDF Page into the given implementor of [`Write`].
-    pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
             Self::TYPE.write(writer),
 
             Self::PARENT.write(writer),
-            self.parent.write(writer),
+            self.parent.write_ref(writer),
             writer.write(b" "),
 
             Self::RESOURCES.write(writer),
@@ -61,6 +65,7 @@ impl Page {
 #[cfg(test)]
 mod tests {
     use super::Page;
+    use crate::types::hierarchy::primitives::object::Object;
 
     #[test]
     fn basic_page() {

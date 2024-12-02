@@ -3,5 +3,6 @@
 
 pub mod name;
 pub mod obj_ref;
+pub mod object;
 pub mod rectangle;
 pub mod resources;
