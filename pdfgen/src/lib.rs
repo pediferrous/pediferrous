@@ -34,7 +34,8 @@ pub struct PdfWriter<W: Write> {
     inner: W,
     /// Current byte offset from the top of document, representing the current position of the `cursor`.
     current_offset: usize,
-    /// Comment
+    /// CrossReferenceTable member, representing the current state of the cross_reference_table
+    /// for the document
     cross_reference_table: CrossReferenceTable,
 }
 
@@ -91,7 +92,8 @@ impl<W: Write> PdfWriter<W> {
         Ok(())
     }
 
-    /// Comment
+    /// Writes the cross reference table contents, updating the current_offset with the bytes
+    /// written.
     pub fn write_crt(&mut self) -> Result<(), io::Error> {
         self.current_offset += self.cross_reference_table.write(&mut self.inner)?;
 
@@ -118,7 +120,7 @@ impl CrossReferenceTable {
     /// Marker representing the start of CRT section (4 characters “xref”).
     const XREF_MARKER: &[u8] = b"xref\n";
 
-    /// Comment
+    /// Representing the PDF SPLF newline used for crt entries.
     const SP_LF: &str = " \n";
 
     /// Adds a new object offset to the table.
@@ -126,7 +128,8 @@ impl CrossReferenceTable {
         self.offsets.push(byte_offset);
     }
 
-    /// Comment
+    /// Writes the contents of the `offsets`, representing them in the format required by the PDF
+    /// syntax, `10 byte offset generation(00000), n`.
     fn write(&self, writer: &mut impl Write) -> Result<usize, std::io::Error> {
         let written = types::write_chain! {
             writer.write(Self::XREF_MARKER),
