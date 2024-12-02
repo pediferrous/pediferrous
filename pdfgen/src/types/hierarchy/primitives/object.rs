@@ -7,15 +7,5 @@ use std::io::{self, Write};
 /// structured data in a consistent manner.
 pub trait Object {
     /// Writes the structured data of the object to the provided writer.
-    ///
-    /// # Arguments
-    ///
-    /// * `writer` - A mutable reference to a type that implements the [`Write`](std::io::Write) trait.
-    ///   This is where the object's structured data will be written to.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` containing the number of bytes written if successful, or an [`io::Error`](std::io::Error)
-    /// if the operation fails.
     fn write(&self, writer: &mut impl Write) -> Result<usize, io::Error>;
 }
