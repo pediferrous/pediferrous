@@ -15,6 +15,9 @@ pub trait WriteDictValue {
 pub mod constants {
     /// New line constant
     pub const NL_MARKER: &[u8] = b"\n";
+
+    /// Single Space
+    pub const SP: &[u8] = b" ";
 }
 
 /// Helper macro for counting the number of written bytes in multiple consecutive writes, where
