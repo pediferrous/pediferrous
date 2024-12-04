@@ -1,8 +1,11 @@
 //! Implementation of the [`PdfWriter`] wrapper.
 
-use super::hierarchy::{
-    cross_reference_table::CrossReferenceTable,
-    primitives::{obj_ref::ObjRef, object::Object},
+use super::{
+    constants,
+    hierarchy::{
+        cross_reference_table::CrossReferenceTable,
+        primitives::{obj_ref::ObjRef, object::Object},
+    },
 };
 use std::io::{self, Write};
 
@@ -24,8 +27,6 @@ impl<W: Write> PdfWriter<W> {
     const PDF_HEADER: &[u8] = b"%PDF-2.0";
     /// The last line of the file shall contain only the end-of-file marker, %%EOF
     const EOF_MARKER: &[u8] = b"%%EOF";
-    /// New line constant
-    const NL_MARKER: &[u8] = b"\n";
     /// Marker indicating end of an object section
     const END_OBJ_MARKER: &[u8] = b"endobj";
 
@@ -44,7 +45,7 @@ impl<W: Write> PdfWriter<W> {
         // Delegate the actual writing to the inner writer incrementing the current_offset to
         // reflect current `cursor` position.
         self.current_offset += self.inner.write(Self::PDF_HEADER)?;
-        self.current_offset += self.inner.write(Self::NL_MARKER)?;
+        self.current_offset += self.inner.write(constants::NL_MARKER)?;
 
         Ok(())
     }
@@ -58,15 +59,15 @@ impl<W: Write> PdfWriter<W> {
 
         // X Y obj\n
         self.current_offset += obj_ref.write_def(&mut self.inner)?;
-        self.current_offset += self.inner.write(Self::NL_MARKER)?;
+        self.current_offset += self.inner.write(constants::NL_MARKER)?;
 
         // Delegate the actual writing to the inner writer.
         self.current_offset += obj.write(&mut self.inner)?;
-        self.current_offset += self.inner.write(Self::NL_MARKER)?;
+        self.current_offset += self.inner.write(constants::NL_MARKER)?;
 
         // endobj\n
         self.current_offset += self.inner.write(Self::END_OBJ_MARKER)?;
-        self.current_offset += self.inner.write(Self::NL_MARKER)?;
+        self.current_offset += self.inner.write(constants::NL_MARKER)?;
 
         Ok(())
     }

@@ -8,6 +8,18 @@ pub trait WriteDictValue {
     fn write(&self, writer: &mut impl Write) -> Result<usize, Error>;
 }
 
+/// Common constants used when writing encoded PDF into a [`Write`] or [`PdfWriter`].
+///
+/// [`Write`]: std::io::Write
+/// [`PdfWriter`]: super::pdf_writer::PdfWriter
+pub mod constants {
+    /// New line constant
+    pub const NL_MARKER: &[u8] = b"\n";
+
+    /// Single Space
+    pub const SP: &[u8] = b" ";
+}
+
 /// Helper macro for counting the number of written bytes in multiple consecutive writes, where
 /// each write returns a `Result<usize, std::io::Error>`
 ///

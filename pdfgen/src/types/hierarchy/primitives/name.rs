@@ -57,6 +57,20 @@ impl Name {
         written += writer.write(b" ")?;
         Ok(written)
     }
+
+    /// The number of bytes that this `Name` occupies when written into the PDF document. This does
+    /// not include the whitespace written after the `Name`.
+    ///
+    /// # Example:
+    ///
+    /// ```ignore
+    /// let name = Name::new(b"Name");
+    /// // '/Name' has length of 5 bytes.
+    /// assert_eq!(name.len(), 5); //
+    /// ```
+    pub(crate) const fn len(&self) -> usize {
+        self.0.len() + 1
+    }
 }
 
 impl WriteDictValue for Name {
