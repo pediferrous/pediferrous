@@ -18,7 +18,6 @@ impl WriteArray for Vec<ObjRef> {
 
         for (idx, obj_ref) in self.iter().enumerate() {
             if idx > 0 {
-                written += writer.write(constants::SP)?;
                 written += writer.write(constants::NL_MARKER)?;
                 written += writer.write(indent.as_bytes())?;
             }
