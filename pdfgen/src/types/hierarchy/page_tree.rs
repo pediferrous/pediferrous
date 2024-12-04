@@ -60,10 +60,10 @@ impl Object for PageTree {
             };
         }
 
-        let indent = b"       ".len();
+        let indent_level = Self::KIDS.len() + constants::SP.len();
         written += types::write_chain! {
             Self::KIDS.write(writer),
-            self.kids.write_array(writer, Some(indent)),
+            self.kids.write_array(writer, Some(indent_level)),
             writer.write(constants::NL_MARKER),
 
             Self::COUNT.write(writer),
@@ -112,8 +112,8 @@ mod tests {
 
         insta::assert_snapshot!(output, @r#"
         << /Type /Pages 
-        /Kids [0 0 R 
-               1 0 R 
+        /Kids [0 0 R
+               1 0 R
                2 0 R]
         /Count 0 >>
         "#);

@@ -13,8 +13,10 @@ pub trait WriteArray {
 
 impl WriteArray for Vec<ObjRef> {
     fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error> {
-        let mut written = writer.write(b"[")?;
-        let indent = " ".repeat(indent.unwrap_or(0));
+        let opening = b"[";
+
+        let mut written = writer.write(opening)?;
+        let indent = " ".repeat(indent.unwrap_or(0) + opening.len());
 
         for (idx, obj_ref) in self.iter().enumerate() {
             if idx > 0 {
