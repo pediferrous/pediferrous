@@ -3,8 +3,8 @@
 use super::{
     constants,
     hierarchy::{
-    cross_reference_table::CrossReferenceTable,
-    primitives::{obj_ref::ObjRef, object::Object},
+        cross_reference_table::CrossReferenceTable,
+        primitives::{obj_ref::ObjRef, object::Object},
     },
 };
 use std::io::{self, Write};
