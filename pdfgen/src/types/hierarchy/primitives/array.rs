@@ -4,7 +4,10 @@ use crate::types::constants;
 
 use super::obj_ref::ObjRef;
 
+/// Extension trait for implementations of arrays. This trait should be implemented for array-like
+/// data structures that can be used to represent PDF's array primitive type.
 pub trait WriteArray {
+    /// Encode `self` as PDF array and write it to the given implementor of [`Write`] trait.
     fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error>;
 }
 
