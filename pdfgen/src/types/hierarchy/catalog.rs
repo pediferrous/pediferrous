@@ -7,6 +7,14 @@ use super::{
     primitives::{name::Name, obj_id::ObjId, object::Object},
 };
 
+/// The root of a document’s object hierarchy, located by means of the `Root` entry in the trailer
+/// of the PDF file.
+///
+/// The catalog dictionary contains references to other objects defining the document’s contents,
+/// outline, article threads, named destinations, and other attributes. In addition, it contains
+/// information about how the document shall be displayed on the screen, such as whether its
+/// outline and thumbnail page images shall be displayed automatically and whether some location
+/// other than the first page shall be shown when the document is opened.
 pub struct Catalog {
     /// The object reference allocated to this `Catalog`.
     obj_ref: ObjId,
@@ -19,6 +27,7 @@ impl Catalog {
     const CATALOG: Name = Name::new(b"Catalog");
     const PAGES: Name = Name::new(b"Pages");
 
+    /// Create a new `Catalog` with the given [`ObjId`] and [`PageTree`].
     pub(crate) fn new(obj_ref: ObjId, root_page_tree: PageTree) -> Self {
         Self {
             obj_ref,
@@ -26,10 +35,12 @@ impl Catalog {
         }
     }
 
+    /// Returns the [`ObjId`] allocated to this `Catalog`.
     pub(crate) fn obj_ref(&self) -> ObjId {
         self.obj_ref.clone()
     }
 
+    /// Returns a reference to the root [`PageTree`] that this `Catalog` holds.
     pub(crate) fn page_tree(&self) -> &PageTree {
         &self.root_page_tree
     }

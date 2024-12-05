@@ -13,7 +13,14 @@ pub mod types;
 
 /// This represents one cohesive PDF document that can contain multiple pages of content.
 pub struct Document {
+    /// The [`Catalog`] PDF object that is the root of the document's object hierarchy.
     catalog: Catalog,
+
+    /// [`IdManager`] is tasked with creation of new [`ObjId`]s. This is the single source of truth
+    /// regarding [`ObjId`]s, ensuring that every [`ObjId`] is unique.
+    ///
+    /// [`ObjId`]: types::hierarchy::primitives::obj_id::ObjId
+    #[allow(dead_code)]
     id_manager: IdManager,
 }
 
