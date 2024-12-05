@@ -3,14 +3,14 @@ use std::io::{Error, Write};
 use crate::types;
 
 use super::primitives::{
-    name::Name, obj_ref::ObjRef, object::Object, rectangle::Rectangle, resources::Resources,
+    name::Name, obj_id::ObjId, object::Object, rectangle::Rectangle, resources::Resources,
 };
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
 /// attributes of a single page of the document.
 pub struct Page {
     /// The page tree node that is the immediate parent of this page object.
-    parent: ObjRef,
+    parent: ObjId,
 
     /// A dictionary containing any resources required by the page contents. If the page requires
     /// no resources, the value of this entry shall be an empty dictionary.
@@ -28,9 +28,9 @@ impl Page {
     const MEDIA_BOX: Name = Name::new(b"MediaBox");
 
     /// Create a new blank page that belongs to the given parent and media box.
-    pub fn new(parent: impl Into<ObjRef>, media_box: impl Into<Rectangle>) -> Self {
+    pub fn new(parent: ObjId, media_box: impl Into<Rectangle>) -> Self {
         Self {
-            parent: parent.into(),
+            parent,
             resources: Resources::default(),
             media_box: media_box.into(),
         }
@@ -65,11 +65,12 @@ impl Object for Page {
 #[cfg(test)]
 mod tests {
     use super::Page;
-    use crate::types::hierarchy::primitives::object::Object;
+    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
 
     #[test]
     fn basic_page() {
-        let page = Page::new(0, (0, 0, 100, 100));
+        let mut id_manager = IdManager::default();
+        let page = Page::new(id_manager.create_id(), (0, 0, 100, 100));
 
         let mut writer = Vec::new();
         page.write(&mut writer).unwrap();

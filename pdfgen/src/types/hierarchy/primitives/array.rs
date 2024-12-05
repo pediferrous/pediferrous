@@ -2,7 +2,7 @@ use std::io::{Error, Write};
 
 use crate::types::constants;
 
-use super::obj_ref::ObjRef;
+use super::obj_id::ObjId;
 
 /// Extension trait for implementations of arrays. This trait should be implemented for array-like
 /// data structures that can be used to represent PDF's array primitive type.
@@ -11,7 +11,7 @@ pub trait WriteArray {
     fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error>;
 }
 
-impl WriteArray for Vec<ObjRef> {
+impl WriteArray for Vec<ObjId> {
     fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error> {
         let opening = b"[";
 
