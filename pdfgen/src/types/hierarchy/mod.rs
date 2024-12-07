@@ -14,3 +14,4 @@ pub mod cross_reference_table;
 pub mod page;
 pub mod page_tree;
 pub mod primitives;
+pub mod trailer;
