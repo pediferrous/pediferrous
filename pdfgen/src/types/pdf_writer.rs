@@ -5,6 +5,7 @@ use super::{
     hierarchy::{
         cross_reference_table::CrossReferenceTable,
         primitives::{obj_ref::ObjRef, object::Object},
+        trailer::WriteTrailer,
     },
 };
 use std::io::{self, Write};
@@ -78,6 +79,16 @@ impl<W: Write> PdfWriter<W> {
 
         Ok(())
     }
+
+    /// Comment
+    pub fn write_trailer(&mut self, root: ObjRef) -> Result<(), io::Error> {
+        self.cross_reference_table.write_trailer(
+            &mut self.inner,
+            self.current_offset,
+            self.cross_reference_table.len(),
+            root,
+            self.cross_reference_table.offsets_hash()?,
+        )?;
 
         Ok(())
     }

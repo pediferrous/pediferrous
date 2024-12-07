@@ -49,5 +49,14 @@ impl CrossReferenceTable {
         self.len() == 0
     }
 
+    /// Comment
+    pub fn offsets_hash(&self) -> Result<[u8; 16], std::io::Error> {
+        let bytes: Vec<u8> = self
+            .offsets
+            .iter()
+            .flat_map(|&offset| offset.to_ne_bytes())
+            .collect();
+
+        Ok(*md5::compute(&bytes))
     }
 }
