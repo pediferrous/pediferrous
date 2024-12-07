@@ -1,6 +1,6 @@
 use std::io::{Error, Write};
 
-use crate::types::constants;
+use crate::types::{self, constants};
 
 use super::obj_id::ObjId;
 
@@ -28,6 +28,29 @@ impl WriteArray for Vec<ObjId> {
         }
 
         written += writer.write(b"]")?;
+
+        Ok(written)
+    }
+}
+
+impl WriteArray for [u8; 16] {
+    fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error> {
+        let indent = " ".repeat(indent.unwrap_or(0));
+
+        let written = types::write_chain! {
+            writer.write(b"["),
+            writer.write(b"<"),
+            writer.write(hex::encode(self).as_bytes()),
+            writer.write(b">"),
+            writer.write(constants::NL_MARKER),
+            writer.write(indent.as_bytes()),
+            writer.write(b"<"),
+            writer.write(hex::encode(self).as_bytes()),
+            writer.write(b">"),
+            writer.write(constants::NL_MARKER),
+            writer.write(indent.as_bytes()),
+            writer.write(b"]"),
+        };
 
         Ok(written)
     }

@@ -108,11 +108,11 @@ mod tests {
 
         let output = String::from_utf8(writer).unwrap();
 
-        insta::assert_snapshot!(output, @r#"
+        insta::assert_snapshot!(output, @r"
         << /Type /Pages 
         /Kids []
         /Count 0 >>
-        "#);
+        ");
     }
 
     #[test]
@@ -129,12 +129,12 @@ mod tests {
 
         let output = String::from_utf8(writer).unwrap();
 
-        insta::assert_snapshot!(output, @r#"
+        insta::assert_snapshot!(output, @r"
         << /Type /Pages 
         /Kids [1 0 R
                2 0 R
                3 0 R]
         /Count 3 >>
-        "#);
+        ");
     }
 }
