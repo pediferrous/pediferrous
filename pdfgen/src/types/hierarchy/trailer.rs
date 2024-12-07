@@ -63,7 +63,7 @@ impl WriteTrailer for CrossReferenceTable {
             writer.write(constants::NL_MARKER),
             // dict end
             writer.write(indent),
-            writer.write(b" >>"),
+            writer.write(b">>"),
             writer.write(constants::NL_MARKER),
             // startxref
             writer.write(START_XREF_MARKER),

@@ -49,7 +49,7 @@ impl WriteArray for [u8; 16] {
             writer.write(b">"),
             writer.write(constants::NL_MARKER),
             writer.write(indent.as_bytes()),
-            writer.write(b"["),
+            writer.write(b"]"),
         };
 
         Ok(written)
