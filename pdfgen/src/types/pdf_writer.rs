@@ -41,7 +41,7 @@ impl<W: Write> PdfWriter<W> {
     }
 
     /// Write the PDF documents header marker updating the `cursor`s byte offset with the number of
-    /// bytes written
+    /// bytes written.
     pub fn write_header(&mut self) -> Result<(), io::Error> {
         // Delegate the actual writing to the inner writer incrementing the current_offset to
         // reflect current `cursor` position.
@@ -73,14 +73,14 @@ impl<W: Write> PdfWriter<W> {
         Ok(())
     }
 
-    /// Writes the cross reference table contents
+    /// Writes the cross reference table contents.
     pub fn write_crt(&mut self) -> Result<(), io::Error> {
         self.cross_reference_table.write(&mut self.inner)?;
 
         Ok(())
     }
 
-    /// Comment
+    /// Writes the trailer for the PdfWriter's CRT.
     pub fn write_trailer(&mut self, root: ObjRef) -> Result<(), io::Error> {
         self.cross_reference_table.write_trailer(
             &mut self.inner,

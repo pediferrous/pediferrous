@@ -38,18 +38,18 @@ impl CrossReferenceTable {
         Ok(())
     }
 
-    /// Comment
+    /// Returns length(size) of the `offsets` collection.
     pub fn len(&self) -> usize {
         self.offsets.len()
     }
 
-    /// Comment
+    /// Returns if the `offsets` collection is empty or not.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Comment
+    /// Computes the 16b MD5 hash of the `offsets` collection.
     pub fn offsets_hash(&self) -> Result<[u8; 16], std::io::Error> {
         let bytes: Vec<u8> = self
             .offsets

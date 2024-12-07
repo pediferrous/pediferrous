@@ -9,9 +9,10 @@ use super::{
     primitives::{array::WriteArray, name::Name, obj_ref::ObjRef},
 };
 
-/// Comment
+/// Extension trait for implementations of Trailer sections (currently only CRT).
 pub trait WriteTrailer {
-    /// Comment
+    /// Hash crt's data and write it to the given implementor of [`Write`] trait following the
+    /// PDF documentations trailer section structure.
     fn write_trailer(
         &self,
         writer: &mut impl Write,
