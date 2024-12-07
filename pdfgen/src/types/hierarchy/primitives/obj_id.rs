@@ -11,18 +11,12 @@ use crate::types;
 ///
 /// Example: `4 0 R`
 #[derive(Debug, Clone)]
-pub struct ObjRef {
+pub struct ObjId {
     /// Identifier of referenced object.
     id: u64,
 }
 
-impl From<u64> for ObjRef {
-    fn from(id: u64) -> Self {
-        Self { id }
-    }
-}
-
-impl ObjRef {
+impl ObjId {
     /// Marker indicating start of an object section
     const START_OBJ_MARKER: &[u8] = b"obj";
 
@@ -49,5 +43,18 @@ impl ObjRef {
         };
 
         Ok(written)
+    }
+}
+
+#[derive(Default)]
+pub struct IdManager {
+    curr: u64,
+}
+
+impl IdManager {
+    pub fn create_id(&mut self) -> ObjId {
+        let inner_id = self.curr;
+        self.curr += 1;
+        ObjId { id: inner_id }
     }
 }

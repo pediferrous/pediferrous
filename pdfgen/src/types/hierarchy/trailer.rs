@@ -6,7 +6,7 @@ use crate::types::{self, constants};
 
 use super::{
     cross_reference_table::CrossReferenceTable,
-    primitives::{array::WriteArray, name::Name, obj_ref::ObjRef},
+    primitives::{array::WriteArray, name::Name, obj_id::ObjId},
 };
 
 /// Extension trait for implementations of Trailer sections (currently only CRT).
@@ -18,7 +18,7 @@ pub trait WriteTrailer {
         writer: &mut impl Write,
         offset: usize,
         size: usize,
-        root: ObjRef,
+        root: ObjId,
         id: [u8; 16],
     ) -> Result<(), std::io::Error>;
 }
@@ -29,7 +29,7 @@ impl WriteTrailer for CrossReferenceTable {
         writer: &mut impl Write,
         offset: usize,
         size: usize,
-        root: ObjRef,
+        root: ObjId,
         id: [u8; 16],
     ) -> Result<(), std::io::Error> {
         const SIZE: Name = Name::new(b"Size");
