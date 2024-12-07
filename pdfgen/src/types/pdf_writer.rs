@@ -72,10 +72,12 @@ impl<W: Write> PdfWriter<W> {
         Ok(())
     }
 
-    /// Writes the cross reference table contents, updating the current_offset with the bytes
-    /// written.
+    /// Writes the cross reference table contents
     pub fn write_crt(&mut self) -> Result<(), io::Error> {
-        self.current_offset += self.cross_reference_table.write(&mut self.inner)?;
+        self.cross_reference_table.write(&mut self.inner)?;
+
+        Ok(())
+    }
 
         Ok(())
     }
