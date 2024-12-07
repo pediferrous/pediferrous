@@ -37,5 +37,17 @@ impl CrossReferenceTable {
 
         Ok(())
     }
+
+    /// Comment
+    pub fn len(&self) -> usize {
+        self.offsets.len()
+    }
+
+    /// Comment
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     }
 }
