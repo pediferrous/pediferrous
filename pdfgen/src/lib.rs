@@ -49,6 +49,7 @@ impl Document {
         pdf_writer.write_object(self.catalog.page_tree(), self.catalog.page_tree().obj_ref())?;
 
         pdf_writer.write_crt()?;
+        pdf_writer.write_trailer(self.catalog.obj_ref())?;
         pdf_writer.write_eof()?;
 
         Ok(())
