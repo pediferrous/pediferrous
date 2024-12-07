@@ -9,6 +9,7 @@ license = "Apache-2.0"
 
 [dependencies]
 md5 = "0.7.0"
+hex = "0.4.3"
 
 [dev-dependencies]
 insta = "1.41.1"
