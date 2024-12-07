@@ -1,11 +1,11 @@
 [package]
 name = "pdfgen"
 version = "0.1.0"
-edition = "2021"
-authors = ["Nadir Fejzic <nadirfejzo@gmail.com>", "Kasim Fejzic <kasimfejzo@gmail.com>"]
 description = "PDF rendering library."
-repository = "https://github.com/pediferrous/pediferrous"
-license = "Apache-2.0"
+edition.workspace = true 
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
 md5 = "0.7.0"
