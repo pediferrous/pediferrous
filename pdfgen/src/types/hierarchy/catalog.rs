@@ -44,6 +44,11 @@ impl Catalog {
     pub(crate) fn page_tree(&self) -> &PageTree {
         &self.root_page_tree
     }
+
+    /// Returns a mutable reference to the root [`PageTree`] that this `Catalog` holds.
+    pub(crate) fn page_tree_mut(&mut self) -> &mut PageTree {
+        &mut self.root_page_tree
+    }
 }
 
 impl Object for Catalog {
@@ -84,9 +89,9 @@ mod tests {
         catalog.write(&mut writer).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
-        insta::assert_snapshot!(output, @r#"
+        insta::assert_snapshot!(output, @r"
         << /Type /Catalog 
         /Pages 0 0 R >>
-        "#);
+        ");
     }
 }

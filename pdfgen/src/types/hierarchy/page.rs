@@ -9,6 +9,9 @@ use super::primitives::{
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
 /// attributes of a single page of the document.
 pub struct Page {
+    /// ID of this Page object.
+    id: ObjId,
+
     /// The page tree node that is the immediate parent of this page object.
     parent: ObjId,
 
@@ -28,12 +31,18 @@ impl Page {
     const MEDIA_BOX: Name = Name::new(b"MediaBox");
 
     /// Create a new blank page that belongs to the given parent and media box.
-    pub fn new(parent: ObjId, media_box: impl Into<Rectangle>) -> Self {
+    pub fn new(id: ObjId, parent: ObjId, media_box: impl Into<Rectangle>) -> Self {
         Self {
+            id,
             parent,
             resources: Resources::default(),
             media_box: media_box.into(),
         }
+    }
+
+    /// Returns the object reference of this Page object.
+    pub fn obj_ref(&self) -> ObjId {
+        self.id.clone()
     }
 }
 
@@ -70,7 +79,11 @@ mod tests {
     #[test]
     fn basic_page() {
         let mut id_manager = IdManager::default();
-        let page = Page::new(id_manager.create_id(), (0, 0, 100, 100));
+        let page = Page::new(
+            id_manager.create_id(),
+            id_manager.create_id(),
+            (0, 0, 100, 100),
+        );
 
         let mut writer = Vec::new();
         page.write(&mut writer).unwrap();
@@ -79,7 +92,7 @@ mod tests {
 
         insta::assert_snapshot!(
             output,
-            @"<< /Type /Page /Parent 0 0 R /Resources <<  >> /MediaBox [0 0 100 100] >>"
+            @"<< /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 100 100] >>"
         );
     }
 }
