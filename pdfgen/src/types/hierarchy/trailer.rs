@@ -7,12 +7,18 @@ use crate::types::{self, constants};
 use super::primitives::{name::Name, obj_ref::ObjRef};
 
 /// Comment
-pub struct Trailer {
+pub trait WriteTrailer {
     /// Comment
-    size: usize,
+    fn write(
+        &self,
+        writer: &mut impl Write,
+        offset: usize,
+        size: usize,
+        root: ObjRef,
+        id: [u8; 16],
+    ) -> Result<usize, std::io::Error>;
+}
 
-    /// The catalog dictionary for the PDF file, representing the root of the trailer
-    root: ObjRef,
 
     /// Comment
     id: u8,
