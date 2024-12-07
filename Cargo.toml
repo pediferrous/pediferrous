@@ -8,10 +8,10 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["Nadir Fejzić"]
+authors = ["Nadir Fejzic <nadirfejzo@gmail.com>", "Kasim Fejzic <kasimfejzo@gmail.com>"]
 description = "PDF Generation and rendering libraries written in Rust."
-repository = "https://github.com/nfejzic/pediferrous"
-homepage = "https://github.com/nfejzic/pediferrous"
+repository = "https://github.com/pediferrous/pediferrous"
+homepage = "https://github.com/pediferrous/pediferrous"
 readme = "README.md"
 license = "Apache-2.0"
 
