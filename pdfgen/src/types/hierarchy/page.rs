@@ -74,7 +74,9 @@ impl Object for Page {
 #[cfg(test)]
 mod tests {
     use super::Page;
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+    use crate::types::hierarchy::primitives::{
+        obj_id::IdManager, object::Object, rectangle::Rectangle,
+    };
 
     #[test]
     fn basic_page() {
@@ -82,7 +84,7 @@ mod tests {
         let page = Page::new(
             id_manager.create_id(),
             id_manager.create_id(),
-            (0, 0, 100, 100),
+            Rectangle::from_units(0.0, 0.0, 100.0, 100.0),
         );
 
         let mut writer = Vec::new();
