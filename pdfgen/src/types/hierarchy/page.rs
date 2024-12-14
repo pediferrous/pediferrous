@@ -21,7 +21,7 @@ pub struct Page {
 
     /// A [`Rectangle`], expressed in default user space units, that shall define the boundaries of
     /// the physical medium on which the page shall be displayed or printed.
-    media_box: Rectangle,
+    media_box: Option<Rectangle>,
 }
 
 impl Page {
@@ -31,18 +31,29 @@ impl Page {
     const MEDIA_BOX: Name = Name::new(b"MediaBox");
 
     /// Create a new blank page that belongs to the given parent and media box.
-    pub fn new(id: ObjId, parent: ObjId, media_box: impl Into<Rectangle>) -> Self {
+    pub fn new(id: ObjId, parent: ObjId) -> Self {
         Self {
             id,
             parent,
             resources: Resources::default(),
-            media_box: media_box.into(),
+            media_box: None,
         }
+    }
+
+    pub fn set_mediabox(&mut self, media_box: impl Into<Rectangle>) {
+        self.media_box = Some(media_box.into());
     }
 
     /// Returns the object reference of this Page object.
     pub fn obj_ref(&self) -> ObjId {
         self.id.clone()
+    }
+
+    fn write_mediabox(writer: &mut impl Write, rect: Rectangle) -> Result<usize, Error> {
+        Ok(types::write_chain! {
+            Self::MEDIA_BOX.write(writer),
+            rect.write(writer),
+        })
     }
 }
 
@@ -62,8 +73,7 @@ impl Object for Page {
             self.resources.write(writer),
             writer.write(b" "),
 
-            Self::MEDIA_BOX.write(writer),
-            self.media_box.write(writer),
+            self.media_box.map(|rect| Self::write_mediabox(writer, rect)).unwrap_or(Ok(0)),
             writer.write(b" >>"),
         };
 
@@ -81,11 +91,8 @@ mod tests {
     #[test]
     fn basic_page() {
         let mut id_manager = IdManager::default();
-        let page = Page::new(
-            id_manager.create_id(),
-            id_manager.create_id(),
-            Rectangle::from_units(0.0, 0.0, 100.0, 100.0),
-        );
+        let mut page = Page::new(id_manager.create_id(), id_manager.create_id());
+        page.set_mediabox(Rectangle::from_units(0.0, 0.0, 100.0, 100.0));
 
         let mut writer = Vec::new();
         page.write(&mut writer).unwrap();

@@ -3,13 +3,13 @@
 //! `pdfgen` is a low-level library that offers fine-grained control over PDF syntax and
 //! PDF file generation.
 
+mod doc_builder;
+
+pub use doc_builder::Builder;
+
 use std::io::{self, Write};
 use types::{
-    hierarchy::{
-        catalog::Catalog,
-        page_tree::PageTree,
-        primitives::{obj_id::IdManager, rectangle::Rectangle},
-    },
+    hierarchy::{catalog::Catalog, page_tree::PageTree, primitives::obj_id::IdManager},
     page::Page,
     pdf_writer::PdfWriter,
 };
@@ -49,16 +49,20 @@ impl Default for Document {
 }
 
 impl Document {
+    pub fn builder() -> Builder {
+        Builder {
+            id_manager: IdManager::default(),
+            page_size: None,
+        }
+    }
+
     /// Creates a new page inside the document.
-    pub fn create_page(&mut self, media_box: impl Into<Rectangle>) -> &mut Page {
+    pub fn create_page(&mut self) -> &mut Page {
         let id = self.id_manager.create_id();
         self.catalog.page_tree_mut().add_page(id.clone());
 
-        self.pages.push(Page::new(
-            id,
-            self.catalog.page_tree().obj_ref(),
-            media_box.into(),
-        ));
+        self.pages
+            .push(Page::new(id, self.catalog.page_tree().obj_ref()));
 
         self.pages.last_mut().unwrap()
     }
@@ -90,7 +94,7 @@ mod tests {
     #[test]
     fn simple_document() {
         let mut document = Document::default();
-        document.create_page(Rectangle::A4);
+        document.create_page().set_mediabox(Rectangle::A4);
 
         let mut writer = Vec::default();
         document.write(&mut writer).unwrap();
