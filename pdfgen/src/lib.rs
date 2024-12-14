@@ -53,6 +53,7 @@ impl Document {
     pub fn create_page(&mut self, media_box: impl Into<Rectangle>) -> &mut Page {
         let id = self.id_manager.create_id();
         self.catalog.page_tree_mut().add_page(id.clone());
+
         self.pages.push(Page::new(
             id,
             self.catalog.page_tree().obj_ref(),
@@ -84,12 +85,12 @@ impl Document {
 
 #[cfg(test)]
 mod tests {
-    use crate::Document;
+    use crate::{types::hierarchy::primitives::rectangle::Rectangle, Document};
 
     #[test]
     fn simple_document() {
         let mut document = Document::default();
-        document.create_page((0, 0, 100, 100));
+        document.create_page(Rectangle::A4);
 
         let mut writer = Vec::default();
         document.write(&mut writer).unwrap();
@@ -108,7 +109,7 @@ mod tests {
         /Count 1 >>
         endobj
         2 0 obj
-        << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 100 100] >>
+        << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 592.441 839.0551] >>
         endobj
         xref
         0 3
@@ -123,7 +124,7 @@ mod tests {
                   ]
                >>
         startxref
-        206
+        215
         %%EOF
         ");
     }
