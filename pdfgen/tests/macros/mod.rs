@@ -23,6 +23,8 @@ macro_rules! snap_test {
             .replace("::", "/");
 
         let path = format!("{crate_dir}/tests/snapshots/{module_path}");
+        std::fs::create_dir_all(&path).unwrap();
+
         let function_name = macros::function_name!().split("::").last().unwrap();
         let file_path = format!("{path}/{function_name}.pdf");
 
