@@ -43,7 +43,7 @@ pub struct PageTree {
 impl PageTree {
     const PARENT: Name = Name::new(b"Parent");
     const PAGES_TYPE: Name = Name::new(b"Pages");
-    const MEDIABOX: Name = Name::new(b"Mediabox");
+    const MEDIABOX: Name = Name::new(b"MediaBox");
     const KIDS: Name = Name::new(b"Kids");
     const COUNT: Name = Name::new(b"Count");
 
