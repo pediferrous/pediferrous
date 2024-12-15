@@ -21,13 +21,14 @@ impl Builder {
     }
 
     pub fn build(mut self) -> Document {
+        let catalog_id = self.id_manager.create_id();
         let mut root_page_tree = PageTree::new(self.id_manager.create_id(), None);
 
         if let Some(rect) = self.page_size {
             root_page_tree.set_page_size(rect);
         }
 
-        let catalog = Catalog::new(self.id_manager.create_id(), root_page_tree);
+        let catalog = Catalog::new(catalog_id, root_page_tree);
 
         Document {
             catalog,
