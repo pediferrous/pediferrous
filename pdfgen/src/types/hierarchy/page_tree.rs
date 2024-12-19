@@ -1,6 +1,6 @@
 use crate::types::{self, constants, hierarchy::primitives::name::Name};
 
-use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object};
+use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectangle::Rectangle};
 
 /// Page tree is a structure which defines the ordering of pages in the document. The tree contains
 /// nodes of two types:
@@ -33,11 +33,17 @@ pub struct PageTree {
     ///
     /// [`Page`]: super::page::Page
     count: usize,
+
+    /// Default Mediabox used for all [`Page`]s that are descendants of this `PageTree`.
+    ///
+    /// [`Page`]: super::page::Page
+    default_mediabox: Option<Rectangle>,
 }
 
 impl PageTree {
     const PARENT: Name = Name::new(b"Parent");
     const PAGES_TYPE: Name = Name::new(b"Pages");
+    const MEDIABOX: Name = Name::new(b"MediaBox");
     const KIDS: Name = Name::new(b"Kids");
     const COUNT: Name = Name::new(b"Count");
 
@@ -47,7 +53,18 @@ impl PageTree {
             parent: parent.map(|parent| parent.obj_ref()),
             kids: Vec::default(),
             count: 0,
+            default_mediabox: None,
         }
+    }
+
+    pub fn with_mediabox(
+        obj_id: ObjId,
+        parent: Option<&PageTree>,
+        mediabox: impl Into<Rectangle>,
+    ) -> Self {
+        let mut page_tree = Self::new(obj_id, parent);
+        page_tree.default_mediabox = Some(mediabox.into());
+        page_tree
     }
 
     pub fn add_page(&mut self, page: ObjId) {
@@ -57,6 +74,10 @@ impl PageTree {
 
     pub fn obj_ref(&self) -> ObjId {
         self.obj_id.clone()
+    }
+
+    pub(crate) fn set_page_size(&mut self, rect: Rectangle) {
+        self.default_mediabox = Some(rect);
     }
 }
 
@@ -77,8 +98,17 @@ impl Object for PageTree {
             };
         }
 
+        if let Some(mediabox) = self.default_mediabox {
+            written += types::write_chain! {
+                Self::MEDIABOX.write(writer),
+                mediabox.write(writer),
+                writer.write(constants::NL_MARKER),
+            };
+        }
+
         let indent_level = Self::KIDS.len() + constants::SP.len();
         written += types::write_chain! {
+
             Self::KIDS.write(writer),
             self.kids.write_array(writer, Some(indent_level)),
             writer.write(constants::NL_MARKER),
