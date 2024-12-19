@@ -63,7 +63,7 @@ macro_rules! snap_test {
                 String::from_utf8_lossy(&buf).into_owned()
             };
 
-            if std::env::var("PDFGEN_UPDATE_SNAPS").is_ok() {
+            if update_snaps {
                 file.write_all(&writer).unwrap();
             } else {
                 std::fs::remove_file(file_path).unwrap();
