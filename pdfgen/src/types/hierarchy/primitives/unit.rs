@@ -2,7 +2,9 @@
 
 use std::fmt::Display;
 
-/// Unit used for various options in PDF where the default user space unit is required.
+/// Internal representation options for the [`Unit`] type. By default, the default user space unit
+/// is 1/72th of an inch. `Inner` allows us to use other measurement units for the value and to
+/// convert between them.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 enum Inner {
     /// Size that is equivalent to default user space unit converted into milimeters.
@@ -54,6 +56,8 @@ impl Display for Inner {
     }
 }
 
+/// `Unit` represents a value that is used for various options in PDF where the default user space
+/// unit is required.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Unit {
     inner: Inner,
