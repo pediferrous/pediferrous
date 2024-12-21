@@ -8,6 +8,7 @@ use crate::types::{
 /// A stream object, like a string object, is a sequence of bytes that may be of unlimited length.
 /// Streams should be used to represent objects with potentially large amounts of data, such as
 /// images and page descriptions.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Stream {
     /// Object ID of this `Stream`.
     id: ObjId,
