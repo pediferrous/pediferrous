@@ -15,7 +15,7 @@ impl PdfString {
     pub fn from(id: ObjId, string: impl Into<String>) -> Self {
         // NOTE: For text strings encoded in UTF-8, the first three bytes shall be 239 followed by
         //       187, followed by 191.
-        let mut bytes = vec![239, 187, 191, b'('];
+        let mut bytes = vec![b'(', 239, 187, 191];
 
         bytes.extend(string.into().into_bytes());
         bytes.push(b')');
