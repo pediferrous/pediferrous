@@ -1,8 +1,3 @@
-use std::{
-    io::{Read, Write},
-    path::PathBuf,
-};
-
 use pdfgen::{types::hierarchy::primitives::rectangle::Rectangle, Document};
 
 mod macros;
