@@ -1,0 +1,2 @@
+[alias]
+bless = "test --config env.PDFGEN_UPDATE_SNAPS='1' -- --show-output"
