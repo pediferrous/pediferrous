@@ -1,3 +1,4 @@
+/// Gives the fully qualified name of the function.
 #[macro_export]
 macro_rules! function_name {
     () => {{
@@ -16,6 +17,10 @@ macro_rules! function_name {
     }};
 }
 
+/// Snapshot tests a given [`Document`], producing a PDF file with test (function) name as it's
+/// name, inside of a directory that corresponds to the module path.
+///
+/// [`Document`]: pdfgen::Document
 #[macro_export]
 macro_rules! snap_test {
     ($doc:ident) => {{
