@@ -76,3 +76,30 @@ impl Object for Stream {
         Ok(written)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+
+    use super::Stream;
+
+    #[test]
+    fn basic_stream() {
+        let bytes = String::from("This is the content of a stream.");
+
+        let mut id_manager = IdManager::default();
+        let stream = Stream::with_bytes(id_manager.create_id(), bytes);
+
+        let mut writer = Vec::default();
+        stream.write(&mut writer).unwrap();
+        let output = String::from_utf8_lossy(&writer);
+
+        insta::assert_snapshot!(output, @r"
+        0 0 obj
+        << /Length 32 >>
+        stream
+        This is the content of a stream.
+        endstream
+        ");
+    }
+}
