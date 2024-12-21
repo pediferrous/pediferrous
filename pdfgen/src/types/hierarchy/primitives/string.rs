@@ -31,3 +31,28 @@ impl Object for PdfString {
         self.stream.write(writer)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+
+    use super::PdfString;
+
+    #[test]
+    fn simple_string() {
+        let mut id_manager = IdManager::default();
+        let pdf_string = PdfString::from(id_manager.create_id(), "This is text.");
+
+        let mut writer = Vec::default();
+        pdf_string.write(&mut writer).unwrap();
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(output, @r"
+        0 0 obj
+        << /Length 18 >>
+        stream
+        (﻿This is text.)
+        endstream
+        ");
+    }
+}
