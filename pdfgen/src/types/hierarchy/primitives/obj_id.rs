@@ -10,7 +10,7 @@ use crate::types;
 /// object number, the generation number, and the keyword R (with whitespace separating each part).
 ///
 /// Example: `4 0 R`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ObjId {
     /// Identifier of referenced object.
     id: u64,
