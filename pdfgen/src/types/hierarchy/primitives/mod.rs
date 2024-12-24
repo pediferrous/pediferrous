@@ -2,6 +2,7 @@
 //! values for various entries in object dictionaries (such as Page Tree and Page).
 
 pub mod array;
+pub mod font;
 pub mod name;
 pub mod obj_id;
 pub mod object;
