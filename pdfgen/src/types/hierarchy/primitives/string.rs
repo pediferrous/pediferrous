@@ -1,3 +1,5 @@
+use std::io::{Error, Write};
+
 use crate::types::hierarchy::content::stream::Stream;
 
 use super::{obj_id::ObjId, object::Object};
@@ -27,7 +29,7 @@ impl PdfString {
 }
 
 impl Object for PdfString {
-    fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         self.stream.write(writer)
     }
 }
