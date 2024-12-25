@@ -57,6 +57,7 @@ impl<const N: usize> Object for Font<N> {
             // /BaseFont /xyz
             Self::BASE_FONT.write(writer),
             base_type_value.write(writer),
+            writer.write(constants::NL_MARKER),
 
             writer.write(b">>"),
         };
