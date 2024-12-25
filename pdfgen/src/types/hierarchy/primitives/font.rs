@@ -29,6 +29,11 @@ impl<const N: usize> Font<N> {
             base_type,
         }
     }
+
+    /// Returns the object reference of this Font object.
+    pub fn obj_ref(&self) -> ObjId {
+        self.id.clone()
+    }
 }
 
 impl<const N: usize> Object for Font<N> {
