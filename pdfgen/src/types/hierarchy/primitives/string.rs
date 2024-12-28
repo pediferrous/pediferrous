@@ -32,6 +32,10 @@ impl Object for PdfString {
     fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         self.stream.write(writer)
     }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.stream.id
+    }
 }
 
 #[cfg(test)]

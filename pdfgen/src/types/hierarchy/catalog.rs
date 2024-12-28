@@ -68,6 +68,10 @@ impl Object for Catalog {
 
         Ok(written)
     }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.obj_ref
+    }
 }
 
 #[cfg(test)]

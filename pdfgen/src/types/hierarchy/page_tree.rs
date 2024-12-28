@@ -120,6 +120,10 @@ impl Object for PageTree {
 
         Ok(written)
     }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.obj_id
+    }
 }
 
 #[cfg(test)]

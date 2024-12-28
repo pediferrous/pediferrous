@@ -79,6 +79,10 @@ impl Object for Page {
 
         Ok(written)
     }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.id
+    }
 }
 
 #[cfg(test)]
