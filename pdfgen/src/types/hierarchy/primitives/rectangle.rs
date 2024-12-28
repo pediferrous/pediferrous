@@ -6,10 +6,10 @@ use super::unit::Unit;
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Position {
     /// X coordinate in user space unit.
-    x: Unit,
+    pub(crate) x: Unit,
 
     /// y coordinate in user space unit.
-    y: Unit,
+    pub(crate) y: Unit,
 }
 
 impl Position {

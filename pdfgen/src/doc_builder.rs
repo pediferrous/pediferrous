@@ -40,6 +40,7 @@ impl Builder {
             catalog,
             id_manager: self.id_manager,
             pages: Vec::default(),
+            objs: Vec::default(),
         }
     }
 }

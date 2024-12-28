@@ -1,6 +1,6 @@
 use std::io::{Error, Write};
 
-use crate::types;
+use crate::types::{self};
 
 use super::primitives::{
     name::Name, obj_id::ObjId, object::Object, rectangle::Rectangle, resources::Resources,
@@ -54,6 +54,10 @@ impl Page {
             Self::MEDIA_BOX.write(writer),
             rect.write(writer),
         })
+    }
+
+    pub fn add_image(&mut self, img_ref: ObjId) {
+        self.resources.add_image(img_ref);
     }
 }
 

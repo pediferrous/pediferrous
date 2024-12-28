@@ -2,16 +2,25 @@
 
 use std::io::{Error, Write};
 
-use crate::types;
+use crate::types::{self};
+
+use super::{name::OwnedName, obj_id::ObjId};
 
 /// Represents a single entry in the [`Resources`] dictionary.
 #[derive(Debug, Clone)]
-pub(crate) enum ResourceEntry {}
+pub(crate) enum ResourceEntry {
+    Image { name: OwnedName, obj_ref: ObjId },
+}
 
 impl ResourceEntry {
     /// Encode and write this entry into the implementor of [`Write`].
     fn write(&self, _writer: &mut dyn Write) -> Result<usize, Error> {
-        Ok(0)
+        match self {
+            ResourceEntry::Image { name, obj_ref } => Ok(types::write_chain! {
+                name.write(_writer),
+                obj_ref.write_ref(_writer),
+            }),
+        }
     }
 }
 
@@ -24,12 +33,28 @@ impl ResourceEntry {
 /// within the content stream.
 #[derive(Default, Debug, Clone)]
 pub struct Resources {
+    counter: usize,
     entries: Vec<ResourceEntry>,
 }
 
 impl Resources {
+    fn create_name(&mut self, prefix: &str) -> OwnedName {
+        self.counter += 1;
+        OwnedName::from_bytes(format!("{prefix}{}", self.counter).into_bytes())
+    }
+
+    pub(crate) fn add_image(&mut self, obj_ref: ObjId) {
+        let name = self.create_name("Im");
+        let img = ResourceEntry::Image {
+            name,
+            obj_ref: obj_ref.clone(),
+        };
+
+        self.entries.push(img);
+    }
+
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
             self.entries.iter().map(|entry| entry.write(writer)).sum::<Result<usize, _>>(),
