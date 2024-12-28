@@ -109,6 +109,10 @@ impl Document {
         self.pages.last_mut().unwrap()
     }
 
+    pub fn current_page(&mut self) -> Option<&mut Page> {
+        self.pages.last_mut()
+    }
+
     /// Write the PDF contents into the provided writer.
     pub fn write(&self, writer: &mut impl Write) -> Result<(), Error> {
         let mut pdf_writer = PdfWriter::new(writer);
