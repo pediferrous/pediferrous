@@ -15,6 +15,7 @@ use crate::types::WriteDictValue;
 /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
+#[derive(Debug, Clone)]
 pub(crate) struct Name(&'static [u8]);
 
 impl Name {
@@ -90,5 +91,55 @@ mod tests {
         let mut out_buf = Vec::new();
         PDF_KEY.write(&mut out_buf).unwrap();
         assert_eq!(&out_buf, b"/PdfKey ");
+    }
+}
+
+/// Owned variant of the [`Name`] type with same invariants. See documentation of [`Name`] for more
+/// information.
+#[derive(Debug, Clone)]
+pub(crate) struct OwnedName(Vec<u8>);
+
+impl OwnedName {
+    pub(crate) fn from_bytes(bytes: impl Into<Vec<u8>>) -> Self {
+        let bytes: Vec<u8> = bytes.into();
+
+        if bytes.is_empty() {
+            panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
+        }
+
+        if bytes.contains(&b'/') {
+            panic!("Dictionary Key is not allowed to contain '/'.");
+        }
+
+        Self(bytes)
+    }
+
+    /// Encode and write this `Name` into the provided implementor of [`Write`].
+    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+        let mut written = writer.write(b"/")?;
+        written += writer.write(&self.0)?;
+        written += writer.write(b" ")?;
+        Ok(written)
+    }
+
+    /// The number of bytes that this `OwnedName` occupies when written into the PDF document. This
+    /// does not include the whitespace written after the `Name`.
+    ///
+    /// # Example:
+    ///
+    /// ```ignore
+    /// let name = OwnedName::from_bytes(b"Name");
+    /// // '/Name' has length of 5 bytes.
+    /// assert_eq!(name.len(), 5); //
+    /// ```
+    #[allow(dead_code)]
+    pub(crate) fn len(&self) -> usize {
+        self.0.len() + 1
+    }
+}
+
+impl WriteDictValue for OwnedName {
+    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+        self.write(writer)
     }
 }
