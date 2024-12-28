@@ -9,7 +9,7 @@ use super::obj_id::ObjId;
 /// structured data in a consistent manner.
 pub trait Object {
     /// Writes the structured data of the object to the provided writer.
-    fn write(&self, writer: &mut impl Write) -> Result<usize, io::Error>;
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, io::Error>;
 
     /// Returns the [`ObjId`] associated with this object.
     fn obj_ref(&self) -> &ObjId;

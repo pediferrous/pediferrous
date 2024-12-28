@@ -10,7 +10,7 @@ pub(crate) enum ResourceEntry {}
 
 impl ResourceEntry {
     /// Encode and write this entry into the implementor of [`Write`].
-    fn write(&self, _writer: &mut impl Write) -> Result<usize, Error> {
+    fn write(&self, _writer: &mut dyn Write) -> Result<usize, Error> {
         Ok(0)
     }
 }

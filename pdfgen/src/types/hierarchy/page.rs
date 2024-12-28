@@ -49,7 +49,7 @@ impl Page {
         self.id.clone()
     }
 
-    fn write_mediabox(writer: &mut impl Write, rect: Rectangle) -> Result<usize, Error> {
+    fn write_mediabox(writer: &mut dyn Write, rect: Rectangle) -> Result<usize, Error> {
         Ok(types::write_chain! {
             Self::MEDIA_BOX.write(writer),
             rect.write(writer),
@@ -59,7 +59,7 @@ impl Page {
 
 impl Object for Page {
     /// Encode the PDF Page into the given implementor of [`Write`].
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),

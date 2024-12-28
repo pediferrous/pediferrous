@@ -54,7 +54,7 @@ impl<W: Write> PdfWriter<W> {
     /// Writes the object start marker(`X X obj`), following with the structured data of the object
     /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
     /// and cursor update.
-    pub fn write_object(&mut self, obj: &impl Object, obj_ref: ObjId) -> Result<(), io::Error> {
+    pub fn write_object(&mut self, obj: &dyn Object, obj_ref: &ObjId) -> Result<(), io::Error> {
         // Save the objects byte offset in the CrossReferenceTable.
         self.cross_reference_table.add_object(self.current_offset);
 
@@ -102,14 +102,21 @@ impl<W: Write> PdfWriter<W> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{types::hierarchy::primitives::obj_id::IdManager, PdfWriter};
+    use crate::{
+        types::hierarchy::primitives::obj_id::{IdManager, ObjId},
+        PdfWriter,
+    };
 
     use super::Object;
 
-    struct Dummy;
+    struct Dummy(ObjId);
     impl Object for Dummy {
-        fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+        fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
             writer.write(b"FirstLine\nSecondLine")
+        }
+
+        fn obj_ref(&self) -> &crate::types::hierarchy::primitives::obj_id::ObjId {
+            &self.0
         }
     }
 
@@ -150,7 +157,7 @@ mod tests {
         let mut id_manager = IdManager::default();
 
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
 
         let output = String::from_utf8(writer).unwrap();
@@ -174,16 +181,16 @@ mod tests {
 
         pdf_writer.write_header().unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_eof().unwrap();
@@ -229,16 +236,16 @@ mod tests {
 
         pdf_writer.write_header().unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer
-            .write_object(&Dummy, id_manager.create_id())
+            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
             .unwrap();
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_trailer(id_manager.create_id()).unwrap();

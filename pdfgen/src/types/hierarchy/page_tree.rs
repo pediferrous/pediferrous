@@ -82,7 +82,7 @@ impl PageTree {
 }
 
 impl Object for PageTree {
-    fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         let mut written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),

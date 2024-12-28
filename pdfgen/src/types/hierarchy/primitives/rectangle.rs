@@ -78,7 +78,7 @@ impl Rectangle {
     }
 
     /// Encode and write this [`Rectangle`] into the provided implementor of [`Write`].
-    pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    pub fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let output = format!(
             "[{} {} {} {}]",
             self.low_left.x, self.low_left.y, self.top_right.x, self.top_right.y

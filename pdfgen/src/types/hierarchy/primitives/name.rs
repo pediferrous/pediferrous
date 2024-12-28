@@ -51,7 +51,7 @@ impl Name {
     }
 
     /// Encode and write this `Name` into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let mut written = writer.write(b"/")?;
         written += writer.write(self.0)?;
         written += writer.write(b" ")?;

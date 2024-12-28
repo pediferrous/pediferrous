@@ -52,7 +52,7 @@ impl Catalog {
 }
 
 impl Object for Catalog {
-    fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, Error> {
+    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
 

@@ -8,11 +8,11 @@ use super::obj_id::ObjId;
 /// data structures that can be used to represent PDF's array primitive type.
 pub trait WriteArray {
     /// Encode `self` as PDF array and write it to the given implementor of [`Write`] trait.
-    fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error>;
+    fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error>;
 }
 
 impl WriteArray for Vec<ObjId> {
-    fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error> {
+    fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error> {
         let opening = b"[";
 
         let mut written = writer.write(opening)?;
@@ -34,7 +34,7 @@ impl WriteArray for Vec<ObjId> {
 }
 
 impl WriteArray for [u8; 16] {
-    fn write_array(&self, writer: &mut impl Write, indent: Option<usize>) -> Result<usize, Error> {
+    fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error> {
         let indent = " ".repeat(indent.unwrap_or(0));
 
         let written = types::write_chain! {
