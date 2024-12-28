@@ -1,8 +1,8 @@
-use std::io::Write;
+use std::io::{Error, Write};
 
 use crate::types::{
     self, constants,
-    hierarchy::primitives::{name::Name, obj_id::ObjId, object::Object},
+    hierarchy::primitives::{name::Name, obj_id::ObjId},
 };
 
 /// A stream object, like a string object, is a sequence of bytes that may be of unlimited length.
@@ -11,7 +11,7 @@ use crate::types::{
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Stream {
     /// Object ID of this `Stream`.
-    id: ObjId,
+    pub(crate) id: ObjId,
 
     // NOTE: Stream dictionaries have more entries such as filter, decode parameters etc. For now,
     //       we only need the required dictionary entry 'Length', implicitly available in `Vec`
@@ -50,21 +50,36 @@ impl Stream {
             .write_all(bytes)
             .expect("Writing to Vec should never fail.");
     }
-}
 
-impl Object for Stream {
-    fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+    /// Write the stream object into the given implementor of [`Write`] trait, with dictionary
+    /// containing only the required `Length` field.
+    #[inline(always)]
+    pub fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+        self.write_with_dict(writer, |_| Ok(0))
+    }
+
+    /// Write the stream object into the given implementor of [`Write`] trait, with function that
+    /// writes dictionary fields additional to the `Length` field.
+    pub fn write_with_dict<F>(&self, writer: &mut dyn Write, write_dict: F) -> Result<usize, Error>
+    where
+        F: FnOnce(&mut dyn Write) -> Result<usize, Error>,
+    {
         let written = types::write_chain! {
             // obj def
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
 
-            // dictionary with length
+            // BEGIN_DICTIONARY:
             writer.write(b"<< "),
+            // write the additional dictionary fields
+            write_dict(writer),
+
+            // write the length
             Self::LENGTH.write(writer),
             writer.write(self.inner.len().to_string().as_bytes()),
             writer.write(b" >>"),
             writer.write(constants::NL_MARKER),
+            // END_DICTIONARY
 
             // stream
             writer.write(Self::START_STREAM),
@@ -80,7 +95,7 @@ impl Object for Stream {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+    use crate::types::hierarchy::primitives::obj_id::IdManager;
 
     use super::Stream;
 
