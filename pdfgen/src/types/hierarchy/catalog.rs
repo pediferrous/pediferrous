@@ -95,7 +95,7 @@ mod tests {
         let output = String::from_utf8(writer).unwrap();
         insta::assert_snapshot!(output, @r"
         << /Type /Catalog 
-        /Pages 0 0 R >>
+        /Pages 1 0 R >>
         ");
     }
 }

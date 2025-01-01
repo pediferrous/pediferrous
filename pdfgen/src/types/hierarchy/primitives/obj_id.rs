@@ -46,9 +46,14 @@ impl ObjId {
     }
 }
 
-#[derive(Default)]
 pub struct IdManager {
     curr: u64,
+}
+
+impl Default for IdManager {
+    fn default() -> Self {
+        Self { curr: 1 }
+    }
 }
 
 impl IdManager {

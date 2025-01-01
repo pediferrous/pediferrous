@@ -165,9 +165,9 @@ mod tests {
 
         insta::assert_snapshot!(output, @r"
         << /Type /Pages 
-        /Kids [1 0 R
-               2 0 R
-               3 0 R]
+        /Kids [2 0 R
+               3 0 R
+               4 0 R]
         /Count 3 >>
         ");
     }

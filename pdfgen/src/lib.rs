@@ -175,17 +175,20 @@ mod tests {
 
         insta::assert_snapshot!(output, @r"
         %PDF-2.0
-        0 0 obj
-        << /Type /Catalog 
-        /Pages 1 0 R >>
-        endobj
         1 0 obj
-        << /Type /Pages 
-        /Kids [2 0 R]
-        /Count 1 >>
+        << /Type /Catalog 
+        /Pages 2 0 R >>
         endobj
         2 0 obj
-        << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 592.441 839.0551] >>
+        << /Type /Pages 
+        /Kids [3 0 R]
+        /Count 1 >>
+        endobj
+        3 0 obj
+        << /Type /Page 
+        /Parent 2 0 R
+        /Resources <<  >>
+        /MediaBox [0 0 592.441 839.0551] >>
         endobj
         xref
         0 3
@@ -194,13 +197,13 @@ mod tests {
         0000000117 00000 n 
         trailer
                << /Size 3
-               /Root 0 0 R
+               /Root 1 0 R
                /ID [<9bb385e14fc1dd30ae230a7ea0ad2c94>
                   <9bb385e14fc1dd30ae230a7ea0ad2c94>
                   ]
                >>
         startxref
-        215
+        216
         %%EOF
         ");
     }

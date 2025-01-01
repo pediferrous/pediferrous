@@ -102,6 +102,8 @@ impl<W: Write> PdfWriter<W> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Error;
+
     use crate::{
         types::hierarchy::primitives::obj_id::{IdManager, ObjId},
         PdfWriter,
@@ -111,11 +113,11 @@ mod tests {
 
     struct Dummy(ObjId);
     impl Object for Dummy {
-        fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
             writer.write(b"FirstLine\nSecondLine")
         }
 
-        fn obj_ref(&self) -> &crate::types::hierarchy::primitives::obj_id::ObjId {
+        fn obj_ref(&self) -> &ObjId {
             &self.0
         }
     }
@@ -156,16 +158,15 @@ mod tests {
         let mut pdf_writer = PdfWriter::new(&mut writer);
         let mut id_manager = IdManager::default();
 
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 
         insta::assert_snapshot!(
             output,
             @r"
-        0 0 obj
+        1 0 obj
         FirstLine
         SecondLine
         endobj
@@ -180,18 +181,14 @@ mod tests {
         let mut id_manager = IdManager::default();
 
         pdf_writer.write_header().unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_eof().unwrap();
 
@@ -201,10 +198,6 @@ mod tests {
             output,
             @r"
         %PDF-2.0
-        0 0 obj
-        FirstLine
-        SecondLine
-        endobj
         1 0 obj
         FirstLine
         SecondLine
@@ -214,6 +207,10 @@ mod tests {
         SecondLine
         endobj
         3 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        4 0 obj
         FirstLine
         SecondLine
         endobj
@@ -235,18 +232,14 @@ mod tests {
         let mut id_manager = IdManager::default();
 
         pdf_writer.write_header().unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
-        pdf_writer
-            .write_object(&Dummy(id_manager.create_id()), &id_manager.create_id())
-            .unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_trailer(id_manager.create_id()).unwrap();
         pdf_writer.write_eof().unwrap();
@@ -257,10 +250,6 @@ mod tests {
             output,
             @r"
         %PDF-2.0
-        0 0 obj
-        FirstLine
-        SecondLine
-        endobj
         1 0 obj
         FirstLine
         SecondLine
@@ -273,6 +262,10 @@ mod tests {
         FirstLine
         SecondLine
         endobj
+        4 0 obj
+        FirstLine
+        SecondLine
+        endobj
         xref
         0 4
         0000000009 00000 n 
@@ -281,7 +274,7 @@ mod tests {
         0000000117 00000 n 
         trailer
                << /Size 4
-               /Root 4 0 R
+               /Root 5 0 R
                /ID [<ef11002f88c2f7ddd4db3d52963e3a91>
                   <ef11002f88c2f7ddd4db3d52963e3a91>
                   ]
