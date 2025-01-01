@@ -122,7 +122,6 @@ mod tests {
         let output = String::from_utf8_lossy(&writer);
 
         insta::assert_snapshot!(output, @r"
-        0 0 obj
         << /Length 32 >>
         stream
         This is the content of a stream.

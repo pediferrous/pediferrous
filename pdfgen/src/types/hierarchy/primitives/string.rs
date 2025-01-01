@@ -54,7 +54,6 @@ mod tests {
         let output = String::from_utf8(writer).unwrap();
 
         insta::assert_snapshot!(output, @r"
-        0 0 obj
         << /Length 18 >>
         stream
         (﻿This is text.)
