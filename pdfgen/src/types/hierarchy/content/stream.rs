@@ -64,11 +64,7 @@ impl Stream {
     where
         F: FnOnce(&mut dyn Write) -> Result<usize, Error>,
     {
-        let written = types::write_chain! {
-            // obj def
-            self.id.write_def(writer),
-            writer.write(constants::NL_MARKER),
-
+        let mut written = types::write_chain! {
             // BEGIN_DICTIONARY:
             writer.write(b"<< "),
             // write the additional dictionary fields
@@ -84,7 +80,12 @@ impl Stream {
             // stream
             writer.write(Self::START_STREAM),
             writer.write(constants::NL_MARKER),
-            writer.write(&self.inner),
+        };
+
+        writer.write_all(&self.inner)?;
+        written += self.inner.len();
+
+        written += types::write_chain! {
             writer.write(constants::NL_MARKER),
             writer.write(Self::END_STREAM),
         };
