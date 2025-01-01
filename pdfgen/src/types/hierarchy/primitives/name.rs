@@ -101,7 +101,7 @@ pub(crate) struct OwnedName(Vec<u8>);
 
 impl OwnedName {
     pub(crate) fn from_bytes(bytes: impl Into<Vec<u8>>) -> Self {
-        let bytes: Vec<u8> = bytes.into();
+        let mut bytes: Vec<u8> = bytes.into();
 
         if bytes.is_empty() {
             panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
@@ -111,15 +111,15 @@ impl OwnedName {
             panic!("Dictionary Key is not allowed to contain '/'.");
         }
 
+        bytes.insert(0, b'/');
+        bytes.push(b' ');
+
         Self(bytes)
     }
 
     /// Encode and write this `Name` into the provided implementor of [`Write`].
     pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let mut written = writer.write(b"/")?;
-        written += writer.write(&self.0)?;
-        written += writer.write(b" ")?;
-        Ok(written)
+        writer.write(&self.0)
     }
 
     /// The number of bytes that this `OwnedName` occupies when written into the PDF document. This
@@ -135,6 +135,10 @@ impl OwnedName {
     #[allow(dead_code)]
     pub(crate) fn len(&self) -> usize {
         self.0.len() + 1
+    }
+
+    pub(crate) fn as_bytes(&self) -> &[u8] {
+        &self.0
     }
 }
 
