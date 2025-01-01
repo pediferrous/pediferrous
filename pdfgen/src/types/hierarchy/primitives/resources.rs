@@ -4,21 +4,31 @@ use std::io::{Error, Write};
 
 use crate::types::{self};
 
-use super::{name::OwnedName, obj_id::ObjId};
+use super::{
+    name::{Name, OwnedName},
+    obj_id::ObjId,
+};
 
 /// Represents a single entry in the [`Resources`] dictionary.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub(crate) enum ResourceEntry {
     Image { name: OwnedName, obj_ref: ObjId },
 }
 
 impl ResourceEntry {
+    const X_OBJECT: Name = Name::new(b"XObject");
+
     /// Encode and write this entry into the implementor of [`Write`].
-    fn write(&self, _writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         match self {
             ResourceEntry::Image { name, obj_ref } => Ok(types::write_chain! {
-                name.write(_writer),
-                obj_ref.write_ref(_writer),
+                Self::X_OBJECT.write(writer),
+
+                writer.write(b"<< "),
+                name.write(writer),
+                obj_ref.write_ref(writer),
+                writer.write(b" >>"),
             }),
         }
     }
@@ -43,7 +53,7 @@ impl Resources {
         OwnedName::from_bytes(format!("{prefix}{}", self.counter).into_bytes())
     }
 
-    pub(crate) fn add_image(&mut self, obj_ref: ObjId) {
+    pub(crate) fn add_image(&mut self, obj_ref: ObjId) -> &OwnedName {
         let name = self.create_name("Im");
         let img = ResourceEntry::Image {
             name,
@@ -51,6 +61,10 @@ impl Resources {
         };
 
         self.entries.push(img);
+
+        let ResourceEntry::Image { name, .. } = self.entries.last().unwrap();
+
+        name
     }
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].

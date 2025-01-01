@@ -101,10 +101,14 @@ impl Document {
     /// Creates a new page inside the document.
     pub fn create_page(&mut self) -> &mut Page {
         let id = self.id_manager.create_id();
+        let contents_id = self.id_manager.create_id();
         self.catalog.page_tree_mut().add_page(id.clone());
 
-        self.pages
-            .push(Page::new(id, self.catalog.page_tree().obj_ref()));
+        self.pages.push(Page::new(
+            id,
+            contents_id,
+            self.catalog.page_tree().obj_ref(),
+        ));
 
         self.pages.last_mut().unwrap()
     }
@@ -124,12 +128,19 @@ impl Document {
             &self.catalog.page_tree().obj_ref(),
         )?;
 
+        let mut content_streams = Vec::new();
+
         for page in &self.pages {
             pdf_writer.write_object(page, &page.obj_ref())?;
+            content_streams.push(page.content_stream());
         }
 
         for obj in &self.objs {
             pdf_writer.write_object(obj.as_object(), obj.obj_ref())?;
+        }
+
+        for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
+            pdf_writer.write_object(cs, cs.obj_ref())?;
         }
 
         pdf_writer.write_crt()?;
