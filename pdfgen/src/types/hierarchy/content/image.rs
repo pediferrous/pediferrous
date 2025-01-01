@@ -1,6 +1,8 @@
 //! Image PDF object types and implementations.
 
-use std::io::{Error, Read, Write};
+use std::io::{BufReader, Cursor, Error, Read, Write};
+
+use image::ImageReader;
 
 use crate::types::{
     self, constants,
@@ -14,15 +16,20 @@ use super::stream::Stream;
 /// The colour space in which image samples shall be specified; it can be any type of colour space
 /// except Pattern.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[allow(dead_code)]
 enum ColorSpace {
     /// Device default RGB representation.
     DeviceRgb,
+
+    /// Device default single gray channel representation.
+    DeviceGray,
 }
 
 impl ColorSpace {
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         match self {
-            ColorSpace::DeviceRgb => Name::new(b"DeviceRgb").write(writer),
+            ColorSpace::DeviceRgb => Name::new(b"DeviceRGB").write(writer),
+            ColorSpace::DeviceGray => Name::new(b"DeviceGray").write(writer),
         }
     }
 }
@@ -30,10 +37,10 @@ impl ColorSpace {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 struct ImageDict {
     /// The width of the image, in samples.
-    width: usize,
+    width: u32,
 
     /// The height of the image, in samples.
-    height: usize,
+    height: u32,
 
     /// The colour space in which image samples shall be specified.
     color_space: ColorSpace,
@@ -46,9 +53,9 @@ struct ImageDict {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub(crate) struct ImageTransform {
-    position: Position,
-    scale: Position,
+pub struct ImageTransform {
+    pub position: Position,
+    pub scale: Position,
 }
 
 /// A sampled image (or just image for short) is a rectangular array of sample values, each
@@ -68,7 +75,6 @@ pub struct Image {
 }
 
 impl Image {
-    const TYPE: Name = Name::new(b"Type");
     const SUB_TYPE: Name = Name::new(b"Subtype");
     const IMG_SUB_TYPE: Name = Name::new(b"Image");
 
@@ -79,41 +85,38 @@ impl Image {
 
     /// Creates a new [`Image`] by reading the bytes from the `reader` with default width and
     /// height of 100 mm and position 0, 0 (lower left corner of a page).
-    pub fn from_reader(id: ObjId, mut reader: impl Read) -> Self {
-        let mut buf = Vec::new();
-        let read_bytes = reader.read_to_end(&mut buf).unwrap();
-
-        debug_assert!(read_bytes == buf.len());
-
-        Self {
-            samples: Stream::with_bytes(id, buf),
-            dict: ImageDict {
-                color_space: ColorSpace::DeviceRgb,
-                bits_per_comp: 16,
-                width: 460,
-                height: 460,
-            },
-            transform: ImageTransform {
-                position: Position::from_mm(0.0, 0.0),
-                scale: Position::from_mm(0.0, 0.0),
-            },
-        }
+    pub fn from_reader(id: ObjId, reader: impl Read) -> Self {
+        let mut bytes = Vec::new();
+        BufReader::new(reader).read_to_end(&mut bytes).unwrap();
+        Self::from_bytes(id, bytes)
     }
 
     /// Creates a new [`Image`] from the given bytes with default width and height of 100 mm and
     /// position 0, 0 (lower left corner of a page).
     pub fn from_bytes(id: ObjId, bytes: impl Into<Vec<u8>>) -> Self {
+        let bufreader = Cursor::new(bytes.into());
+
+        let decoded_image = ImageReader::new(bufreader)
+            .with_guessed_format()
+            .unwrap()
+            .decode()
+            .unwrap();
+
+        let img = decoded_image.to_rgb8();
+        let (width, height) = img.dimensions();
+        let pixels = img.into_raw();
+
         Self {
-            samples: Stream::with_bytes(id, bytes),
+            samples: Stream::with_bytes(id, pixels),
             dict: ImageDict {
-                width: 460,
-                height: 460,
+                width,
+                height,
                 color_space: ColorSpace::DeviceRgb,
-                bits_per_comp: 16,
+                bits_per_comp: 8,
             },
             transform: ImageTransform {
                 position: Position::from_mm(0.0, 0.0),
-                scale: Position::from_units(1.0, 1.0),
+                scale: Position::from_units(width as f32, height as f32),
             },
         }
     }
@@ -142,7 +145,7 @@ impl Image {
     /// Returns the width, height and position tuple of this [`Image`].
     // TODO: should this be exposed in public API?
     #[allow(dead_code)]
-    pub(crate) fn transform(&self) -> ImageTransform {
+    pub fn transform(&self) -> ImageTransform {
         self.transform
     }
 
@@ -159,8 +162,8 @@ impl Object for Image {
 
         self.samples.write_with_dict(writer, |writer| {
             Ok(types::write_chain! {
-                Self::TYPE.write(writer),
-                writer.write(b"XObject"),
+                Name::TYPE.write(writer),
+                Name::new(b"XObject").write(writer),
                 writer.write(constants::NL_MARKER),
 
                 Self::SUB_TYPE.write(writer),
@@ -209,8 +212,7 @@ mod tests {
         let mut id_mngr = IdManager::default();
 
         let mut img = Image::from_reader(id_mngr.create_id(), img_file);
-        img.set_width(Unit::from_mm(100.0));
-        img.set_height(Unit::from_mm(100.0));
+        img.set_dimensions(Unit::from_mm(100.0), Unit::from_mm(100.0));
         img.set_pos(Position::from_mm(10.0, 42.0));
 
         let mut writer = Vec::default();
