@@ -91,6 +91,16 @@ impl Stream {
 
         Ok(written)
     }
+
+    /// Returns `true` if no bytes were written to this [`Stream`].
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    /// Returns the number of bytes written to this [`Stream`].
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
 }
 
 #[cfg(test)]
