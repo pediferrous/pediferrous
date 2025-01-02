@@ -29,8 +29,12 @@ impl PdfString {
 }
 
 impl Object for PdfString {
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         self.stream.write(writer)
+    }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.stream.id
     }
 }
 
@@ -50,7 +54,6 @@ mod tests {
         let output = String::from_utf8(writer).unwrap();
 
         insta::assert_snapshot!(output, @r"
-        0 0 obj
         << /Length 18 >>
         stream
         (﻿This is text.)

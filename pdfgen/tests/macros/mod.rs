@@ -53,7 +53,7 @@ macro_rules! snap_test {
                 let cmp = ::pretty_assertions::StrComparison::new(&file_content, &doc_content);
                 ::std::eprintln!("Updating snapshot '{file_path}':\n{cmp}");
 
-                ::std::fs::write(&file_path, doc_content.as_bytes()).unwrap();
+                ::std::fs::write(&file_path, &writer).unwrap();
             } else {
                 ::pretty_assertions::assert_str_eq!(file_content, doc_content);
                 ::std::println!("To update snapshots, run tests again with 'cargo bless'")
