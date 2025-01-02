@@ -48,11 +48,23 @@ pub struct Resources {
 }
 
 impl Resources {
+    /// Creates a new [`OwnedName`] with a given prefix and internally maintained index.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut res = Resources::default();
+    /// let name = res.create_name("Im");
+    /// assert_eq!(name.as_bytes(), b"/Im1 ");
+    /// ```
     fn create_name(&mut self, prefix: &str) -> OwnedName {
         self.counter += 1;
         OwnedName::from_bytes(format!("{prefix}{}", self.counter).into_bytes())
     }
 
+    /// Adds a reference to an [`Image`] to this `Resources` dictionary.
+    ///
+    /// [`Image`]: crate::types::hierarchy::content::image::Image
     pub(crate) fn add_image(&mut self, obj_ref: ObjId) -> &OwnedName {
         let name = self.create_name("Im");
         let img = ResourceEntry::Image {
