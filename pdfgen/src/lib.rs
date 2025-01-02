@@ -70,6 +70,7 @@ pub struct Document {
     /// Collection of all pages in this PDF document.
     pages: Vec<Page>,
 
+    /// Collection of `objects` that are added to the [`Document`].
     objs: Vec<Box<dyn AnyObj>>,
 }
 
@@ -113,6 +114,7 @@ impl Document {
         self.pages.last_mut().unwrap()
     }
 
+    /// Returns a mutable reference to the current page in document.
     pub fn current_page(&mut self) -> Option<&mut Page> {
         self.pages.last_mut()
     }
@@ -150,6 +152,8 @@ impl Document {
         Ok(())
     }
 
+    /// Loads an [`Image`] from a file under the given `path` and returns a mutable reference to
+    /// the loaded [`Image`].
     pub fn load_image(&mut self, path: impl AsRef<Path>) -> Result<&mut Image, Error> {
         let file = std::fs::File::open(path)?;
         let id = self.id_manager.create_id();
