@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use pdfgen::{types::hierarchy::primitives::rectangle::Rectangle, Document};
+use pdfgen::{
+    types::hierarchy::primitives::{object::Object, rectangle::Rectangle},
+    Document,
+};
 
 mod macros;
 
