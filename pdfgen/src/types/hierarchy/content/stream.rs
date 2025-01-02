@@ -21,8 +21,6 @@ pub(crate) struct Stream {
     inner: Vec<u8>,
 }
 
-// TODO: remove this lint as soon as we start using the `Stream`.
-#[allow(dead_code)]
 impl Stream {
     const START_STREAM: &[u8] = b"stream";
     const END_STREAM: &[u8] = b"endstream";
@@ -96,11 +94,6 @@ impl Stream {
     /// Returns `true` if no bytes were written to this [`Stream`].
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
-    }
-
-    /// Returns the number of bytes written to this [`Stream`].
-    pub fn len(&self) -> usize {
-        self.inner.len()
     }
 }
 
