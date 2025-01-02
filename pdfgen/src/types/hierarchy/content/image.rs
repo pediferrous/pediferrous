@@ -26,6 +26,7 @@ enum ColorSpace {
 }
 
 impl ColorSpace {
+    /// Encode this `ColorSpace` into the given implementor of [`Write`].
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         match self {
             ColorSpace::DeviceRgb => Name::new(b"DeviceRGB").write(writer),
@@ -34,6 +35,7 @@ impl ColorSpace {
     }
 }
 
+/// Represents the information that should be encoded in the dictionary of an [`Image`] stream.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 struct ImageDict {
     /// The width of the image, in samples.
@@ -52,9 +54,17 @@ struct ImageDict {
     bits_per_comp: u8,
 }
 
+/// Represents transformations that should be applied to the encoded [`Image`] such as position and
+/// scaling.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct ImageTransform {
+    /// Represents the position of an [`Image`] on the [`Page`].
+    ///
+    /// [`Page`]: crate::types::hierarchy::page::Page
     pub position: Position,
+    /// Represents the scaling of an [`Image`] on the [`Page`].
+    ///
+    /// [`Page`]: crate::types::hierarchy::page::Page
     pub scale: Position,
 }
 
@@ -62,6 +72,8 @@ pub struct ImageTransform {
 /// representing a colour.
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Image {
+    /// Raw bytes of the image containing the samples. For an RGB image, each sample is represented
+    /// by three values, one for each color component - red, green and blue.
     // NOTE: The source format for an image shall be described by four parameters:
     //       • The width of the image in samples
     //       • The height of the image in samples
@@ -69,8 +81,14 @@ pub struct Image {
     //       • The number of bits per colour component
     samples: Stream,
 
+    /// Contains the dictionary for the image encoding the specific information of this image such
+    /// as width and height in number of samples.
     dict: ImageDict,
 
+    /// Transformations that should be applied to this image when encoding it into a
+    /// [`ContentStream`].
+    ///
+    /// [`ContentStream`]: super::ContentStream
     transform: ImageTransform,
 }
 
@@ -148,10 +166,6 @@ impl Image {
     pub fn transform(&self) -> ImageTransform {
         self.transform
     }
-
-    pub fn obj_ref(&self) -> &ObjId {
-        &self.samples.id
-    }
 }
 
 impl Object for Image {
@@ -190,7 +204,7 @@ impl Object for Image {
     }
 
     fn obj_ref(&self) -> &ObjId {
-        self.obj_ref()
+        &self.samples.id
     }
 }
 
