@@ -100,6 +100,7 @@ mod tests {
 pub(crate) struct OwnedName(Vec<u8>);
 
 impl OwnedName {
+    /// Creates a new `OwnedName` from the given bytes.
     pub(crate) fn from_bytes(bytes: impl Into<Vec<u8>>) -> Self {
         let mut bytes: Vec<u8> = bytes.into();
 
@@ -137,6 +138,7 @@ impl OwnedName {
         self.0.len() + 1
     }
 
+    /// Returns a byte slice of this `OwnedName`.
     pub(crate) fn as_bytes(&self) -> &[u8] {
         &self.0
     }
