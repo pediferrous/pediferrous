@@ -32,9 +32,9 @@ impl WriteTrailer for CrossReferenceTable {
         root: ObjId,
         id: [u8; 16],
     ) -> Result<(), std::io::Error> {
-        const SIZE: Name = Name::new(b"Size");
-        const ROOT: Name = Name::new(b"Root");
-        const ID: Name = Name::new(b"ID");
+        const SIZE: Name<'static> = Name::from_static(b"Size");
+        const ROOT: Name<'static> = Name::from_static(b"Root");
+        const ID: Name<'static> = Name::from_static(b"ID");
 
         /// Marker representing the start of the `trailer` section.
         const TRAILER_MARKER: &[u8] = b"trailer\n";

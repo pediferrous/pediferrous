@@ -24,8 +24,8 @@ pub struct Catalog {
 }
 
 impl Catalog {
-    const CATALOG: Name = Name::new(b"Catalog");
-    const PAGES: Name = Name::new(b"Pages");
+    const CATALOG: Name<'static> = Name::from_static(b"Catalog");
+    const PAGES: Name<'static> = Name::from_static(b"Pages");
 
     /// Create a new `Catalog` with the given [`ObjId`] and [`PageTree`].
     pub(crate) fn new(obj_ref: ObjId, root_page_tree: PageTree) -> Self {

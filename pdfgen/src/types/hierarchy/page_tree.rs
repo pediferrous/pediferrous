@@ -41,11 +41,11 @@ pub struct PageTree {
 }
 
 impl PageTree {
-    const PARENT: Name = Name::new(b"Parent");
-    const PAGES_TYPE: Name = Name::new(b"Pages");
-    const MEDIABOX: Name = Name::new(b"MediaBox");
-    const KIDS: Name = Name::new(b"Kids");
-    const COUNT: Name = Name::new(b"Count");
+    const PARENT: Name<'static> = Name::from_static(b"Parent");
+    const PAGES_TYPE: Name<'static> = Name::from_static(b"Pages");
+    const MEDIABOX: Name<'static> = Name::from_static(b"MediaBox");
+    const KIDS: Name<'static> = Name::from_static(b"Kids");
+    const COUNT: Name<'static> = Name::from_static(b"Count");
 
     pub fn new(obj_id: ObjId, parent: Option<&PageTree>) -> Self {
         Self {

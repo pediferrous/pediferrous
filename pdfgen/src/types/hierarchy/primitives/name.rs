@@ -15,39 +15,42 @@ use crate::types::WriteDictValue;
 /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
-pub(crate) struct Name(&'static [u8]);
+pub(crate) struct Name<'a>(&'a [u8]);
 
-impl Name {
-    pub(crate) const TYPE: Name = Name::new(b"Type");
+impl<'a> Name<'a> {
+    /// Convenience constant for commonly used names with static data.
+    pub(crate) const TYPE: Name<'static> = Name::from_static(b"Type");
 
-    /// Create a new [`Name`] from the given byte slice. The byte slice must contain at least two
-    /// bytes and must not contain '/'.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// const PDF_KEY: Name = Name::new(b"PdfKey");
-    ///
-    /// let mut out_buf = Vec::new();
-    /// PDF_KEY.write(&mut out_buf).unwrap();
-    /// assert_eq!(&out_buf, b"/PdfKey");
-    /// ```
-    pub(crate) const fn new<const N: usize>(inner: &'static [u8; N]) -> Self {
-        if N == 0 {
+    /// Create a new [`Name`] from a byte slice with a lifetime.
+    /// This is the main constructor for dynamic data.
+    pub(crate) fn new(inner: &'a [u8]) -> Self {
+        if inner.is_empty() {
+            panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
+        }
+
+        if inner.contains(&b'/') {
+            panic!("Dictionary Key is not allowed to contain '/'.");
+        }
+
+        Self(inner)
+    }
+
+    /// Create a new [`Name`] from a static byte slice.
+    /// This allows seamless creation of `Name` for static data without specifying lifetimes.
+    pub(crate) const fn from_static(inner: &'static [u8]) -> Name<'static> {
+        if inner.is_empty() {
             panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
         }
 
         let mut i = 0;
-
-        while i < N {
+        while i < inner.len() {
             if inner[i] == b'/' {
                 panic!("Dictionary Key is not allowed to contain '/'.");
             }
-
             i += 1;
         }
 
-        Self(inner)
+        Name(inner)
     }
 
     /// Encode and write this `Name` into the provided implementor of [`Write`].
@@ -63,17 +66,17 @@ impl Name {
     ///
     /// # Example:
     ///
-    /// ```ignore
+    /// ```
     /// let name = Name::new(b"Name");
     /// // '/Name' has length of 5 bytes.
     /// assert_eq!(name.len(), 5); //
     /// ```
-    pub(crate) const fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.0.len() + 1
     }
 }
 
-impl WriteDictValue for Name {
+impl<'a> WriteDictValue for Name<'a> {
     fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         self.write(writer)
     }
@@ -84,11 +87,20 @@ mod tests {
     use super::Name;
 
     #[test]
-    pub fn new_name() {
-        const PDF_KEY: Name = Name::new(b"PdfKey");
+    pub fn new_name_static() {
+        const PDF_KEY: Name = Name::from_static(b"PdfKey");
 
         let mut out_buf = Vec::new();
         PDF_KEY.write(&mut out_buf).unwrap();
         assert_eq!(&out_buf, b"/PdfKey ");
+    }
+
+    #[test]
+    pub fn new_name_dynamic() {
+        let pdf_key = Name::new(b"DynamicKey");
+
+        let mut out_buf = Vec::new();
+        pdf_key.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/DynamicKey ");
     }
 }
