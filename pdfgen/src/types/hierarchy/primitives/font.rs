@@ -5,24 +5,24 @@ use crate::types::{self, constants};
 use super::{name::Name, obj_id::ObjId, object::Object};
 
 /// Comment
-pub struct Font<const N: usize> {
+pub struct Font {
     /// Comment
     id: ObjId,
 
     /// Comment
-    subtype: &'static [u8; N],
+    subtype: Vec<u8>,
 
     /// Comment
-    base_type: &'static [u8; N],
+    base_type: Vec<u8>,
 }
 
-impl<const N: usize> Font<N> {
-    const FONT: Name = Name::new(b"Font");
-    const SUBTYPE: Name = Name::new(b"Subtype");
-    const BASE_FONT: Name = Name::new(b"BaseFont");
+impl Font {
+    const FONT: Name<'static> = Name::from_static(b"Font");
+    const SUBTYPE: Name<'static> = Name::from_static(b"Subtype");
+    const BASE_FONT: Name<'static> = Name::from_static(b"BaseFont");
 
     /// Comment
-    pub fn new(id: ObjId, subtype: &'static [u8; N], base_type: &'static [u8; N]) -> Self {
+    pub fn new(id: ObjId, subtype: Vec<u8>, base_type: Vec<u8>) -> Self {
         Font {
             id,
             subtype,
@@ -36,10 +36,10 @@ impl<const N: usize> Font<N> {
     }
 }
 
-impl<const N: usize> Object for Font<N> {
+impl Object for Font {
     fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
-        let subtype_value: Name = Name::new(self.subtype);
-        let base_type_value: Name = Name::new(self.base_type);
+        let subtype_value: Name = Name::new(&self.subtype);
+        let base_type_value: Name = Name::new(&self.base_type);
 
         let bytes_written = types::write_chain! {
             writer.write(b"<< "),
