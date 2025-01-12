@@ -92,14 +92,14 @@ impl Document {
         pdf_writer.write_object(&self.catalog, self.catalog.obj_ref())?;
         pdf_writer.write_object(self.catalog.page_tree(), self.catalog.page_tree().obj_ref())?;
 
-        // Write fonts
-        for font in &self.fonts {
-            pdf_writer.write_object(font, font.obj_ref())?;
-        }
-
         // Write pages
         for page in &self.pages {
             pdf_writer.write_object(page, page.obj_ref())?;
+        }
+
+        // Write fonts
+        for font in &self.fonts {
+            pdf_writer.write_object(font, font.obj_ref())?;
         }
 
         pdf_writer.write_crt()?;
@@ -136,26 +136,26 @@ mod tests {
         /Kids [2 0 R]
         /Count 1 >>
         endobj
+        2 0 obj
+        << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 592.441 839.0551] >>
+        endobj
         3 0 obj
         << /Type /Font 
         /Subtype /Type1 
         /BaseFont /Helvetica 
         >>
         endobj
-        2 0 obj
-        << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 592.441 839.0551] >>
-        endobj
         xref
         0 4
         0000000009 00000 n 
         0000000059 00000 n 
         0000000117 00000 n 
-        0000000190 00000 n 
+        0000000215 00000 n 
         trailer
                << /Size 4
                /Root 0 0 R
-               /ID [<1133ff381b6ca52763797e7ca4e22424>
-                  <1133ff381b6ca52763797e7ca4e22424>
+               /ID [<d7336a410f3f6b8c3f65b8105453493d>
+                  <d7336a410f3f6b8c3f65b8105453493d>
                   ]
                >>
         startxref
