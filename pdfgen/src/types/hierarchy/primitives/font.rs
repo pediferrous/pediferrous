@@ -1,18 +1,22 @@
-//! Comment
+//! Implementation of PDF Font object.
 
 use crate::types::{self, constants};
 
 use super::{name::Name, obj_id::ObjId, object::Object};
 
-/// Comment
+/// Represents a font object in a PDF document.
+/// This struct represents a font object in a PDF document, encapsulating the info required to
+/// define and reference a font, including its unique ID, subtype, and base font type.
+/// Fonts are essential for rendering text in PDFs and specify the appearance and
+/// characteristics of text elements.
 pub struct Font {
-    /// Comment
+    /// ID of this Font object.
     id: ObjId,
 
-    /// Comment
+    /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
     subtype: Vec<u8>,
 
-    /// Comment
+    /// Represents the base font type, identifying the general font family or format.
     base_type: Vec<u8>,
 }
 
@@ -21,7 +25,7 @@ impl Font {
     const SUBTYPE: Name<'static> = Name::from_static(b"Subtype");
     const BASE_FONT: Name<'static> = Name::from_static(b"BaseFont");
 
-    /// Comment
+    /// Create a new Font object with the provided id, subtype and base_type.
     pub fn new(id: ObjId, subtype: Vec<u8>, base_type: Vec<u8>) -> Self {
         Font {
             id,

@@ -35,7 +35,7 @@ pub struct Document {
     /// Collection of all pages in this PDF document.
     pages: Vec<Page>,
 
-    /// Comment.
+    /// Collection of all fonts in this PDF document.
     fonts: Vec<Font>,
 }
 
@@ -75,7 +75,7 @@ impl Document {
         self.pages.last_mut().unwrap()
     }
 
-    /// Comment
+    /// Creates a new font inside the document.
     pub fn create_font(&mut self, subtype: Vec<u8>, base_type: Vec<u8>) -> &mut Font {
         let id = self.id_manager.create_id();
 
