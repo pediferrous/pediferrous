@@ -118,6 +118,7 @@ mod tests {
     fn simple_document() {
         let mut document = Document::default();
         document.create_page().set_mediabox(Rectangle::A4);
+        document.create_font("Type1".into(), "Helvetica".into());
 
         let mut writer = Vec::default();
         document.write(&mut writer).unwrap();
@@ -135,23 +136,30 @@ mod tests {
         /Kids [2 0 R]
         /Count 1 >>
         endobj
+        3 0 obj
+        << /Type /Font 
+        /Subtype /Type1 
+        /BaseFont /Helvetica 
+        >>
+        endobj
         2 0 obj
         << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 592.441 839.0551] >>
         endobj
         xref
-        0 3
+        0 4
         0000000009 00000 n 
         0000000059 00000 n 
         0000000117 00000 n 
+        0000000190 00000 n 
         trailer
-               << /Size 3
+               << /Size 4
                /Root 0 0 R
-               /ID [<9bb385e14fc1dd30ae230a7ea0ad2c94>
-                  <9bb385e14fc1dd30ae230a7ea0ad2c94>
+               /ID [<1133ff381b6ca52763797e7ca4e22424>
+                  <1133ff381b6ca52763797e7ca4e22424>
                   ]
                >>
         startxref
-        215
+        288
         %%EOF
         ");
     }
