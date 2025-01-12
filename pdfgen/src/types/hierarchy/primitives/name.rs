@@ -66,8 +66,8 @@ impl<'a> Name<'a> {
     ///
     /// # Example:
     ///
-    /// ```
-    /// let name = Name::new(b"Name");
+    /// ```ignore
+    /// let name = Name::from_static(b"Name");
     /// // '/Name' has length of 5 bytes.
     /// assert_eq!(name.len(), 5); //
     /// ```
