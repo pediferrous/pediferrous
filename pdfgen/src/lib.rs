@@ -9,7 +9,11 @@ pub use doc_builder::Builder;
 
 use std::io::{self, Write};
 use types::{
-    hierarchy::{catalog::Catalog, page_tree::PageTree, primitives::obj_id::IdManager},
+    hierarchy::{
+        catalog::Catalog,
+        page_tree::PageTree,
+        primitives::{font::Font, obj_id::IdManager},
+    },
     page::Page,
     pdf_writer::PdfWriter,
 };
@@ -30,6 +34,9 @@ pub struct Document {
 
     /// Collection of all pages in this PDF document.
     pages: Vec<Page>,
+
+    /// Comment.
+    fonts: Vec<Font>,
 }
 
 impl Default for Document {
@@ -44,6 +51,7 @@ impl Default for Document {
             catalog,
             id_manager,
             pages: Vec::new(),
+            fonts: Vec::new(),
         }
     }
 }
@@ -67,6 +75,15 @@ impl Document {
         self.pages.last_mut().unwrap()
     }
 
+    /// Comment
+    pub fn create_font(&mut self, subtype: Vec<u8>, base_type: Vec<u8>) -> &mut Font {
+        let id = self.id_manager.create_id();
+
+        self.fonts.push(Font::new(id, subtype, base_type));
+
+        self.fonts.last_mut().unwrap()
+    }
+
     /// Write the PDF contents into the provided writer.
     pub fn write(&self, writer: &mut impl Write) -> Result<(), io::Error> {
         let mut pdf_writer = PdfWriter::new(writer);
@@ -75,6 +92,12 @@ impl Document {
         pdf_writer.write_object(&self.catalog, self.catalog.obj_ref())?;
         pdf_writer.write_object(self.catalog.page_tree(), self.catalog.page_tree().obj_ref())?;
 
+        // Write fonts
+        for font in &self.fonts {
+            pdf_writer.write_object(font, font.obj_ref())?;
+        }
+
+        // Write pages
         for page in &self.pages {
             pdf_writer.write_object(page, page.obj_ref())?;
         }
