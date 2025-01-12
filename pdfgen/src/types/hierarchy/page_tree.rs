@@ -82,7 +82,7 @@ impl PageTree {
 }
 
 impl Object for PageTree {
-    fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         let mut written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
@@ -119,6 +119,10 @@ impl Object for PageTree {
         };
 
         Ok(written)
+    }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.obj_id
     }
 }
 
@@ -161,9 +165,9 @@ mod tests {
 
         insta::assert_snapshot!(output, @r"
         << /Type /Pages 
-        /Kids [1 0 R
-               2 0 R
-               3 0 R]
+        /Kids [2 0 R
+               3 0 R
+               4 0 R]
         /Count 3 >>
         ");
     }
