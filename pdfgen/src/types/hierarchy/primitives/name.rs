@@ -76,7 +76,7 @@ impl<'a> Name<'a> {
     }
 }
 
-impl<'a> WriteDictValue for Name<'a> {
+impl WriteDictValue for Name<'_> {
     fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
         self.write(writer)
     }
