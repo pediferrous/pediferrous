@@ -25,10 +25,10 @@ pub struct Page {
 }
 
 impl Page {
-    const TYPE: Name<'static> = Name::from_static(b"Page");
-    const PARENT: Name<'static> = Name::from_static(b"Parent");
-    const RESOURCES: Name<'static> = Name::from_static(b"Resources");
-    const MEDIA_BOX: Name<'static> = Name::from_static(b"MediaBox");
+    const TYPE: Name<&'static [u8]> = Name::from_static(b"Page");
+    const PARENT: Name<&'static [u8]> = Name::from_static(b"Parent");
+    const RESOURCES: Name<&'static [u8]> = Name::from_static(b"Resources");
+    const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
 
     /// Create a new blank page that belongs to the given parent and media box.
     pub fn new(id: ObjId, parent: ObjId) -> Self {

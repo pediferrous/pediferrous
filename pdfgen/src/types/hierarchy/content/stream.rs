@@ -25,7 +25,7 @@ pub(crate) struct Stream {
 impl Stream {
     const START_STREAM: &[u8] = b"stream";
     const END_STREAM: &[u8] = b"endstream";
-    const LENGTH: Name<'static> = Name::from_static(b"Length");
+    const LENGTH: Name<&'static [u8]> = Name::from_static(b"Length");
 
     /// Creates a new empty `Stream`, containing no bytes and with length 0.
     pub fn new(id: ObjId) -> Self {

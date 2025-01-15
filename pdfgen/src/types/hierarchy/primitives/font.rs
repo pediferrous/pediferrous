@@ -21,9 +21,9 @@ pub struct Font {
 }
 
 impl Font {
-    const FONT: Name<'static> = Name::from_static(b"Font");
-    const SUBTYPE: Name<'static> = Name::from_static(b"Subtype");
-    const BASE_FONT: Name<'static> = Name::from_static(b"BaseFont");
+    const FONT: Name<&'static [u8]> = Name::from_static(b"Font");
+    const SUBTYPE: Name<&'static [u8]> = Name::from_static(b"Subtype");
+    const BASE_FONT: Name<&'static [u8]> = Name::from_static(b"BaseFont");
 
     /// Create a new Font object with the provided id, subtype and base_type.
     pub fn new(id: ObjId, subtype: Vec<u8>, base_type: Vec<u8>) -> Self {
@@ -42,8 +42,8 @@ impl Font {
 
 impl Object for Font {
     fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
-        let subtype_value: Name = Name::new(&self.subtype);
-        let base_type_value: Name = Name::new(&self.base_type);
+        let subtype_value = Name::new(&self.subtype);
+        let base_type_value = Name::new(&self.base_type);
 
         let bytes_written = types::write_chain! {
             writer.write(b"<< "),

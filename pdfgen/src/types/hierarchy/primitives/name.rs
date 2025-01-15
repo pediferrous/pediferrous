@@ -1,6 +1,6 @@
-use std::io::{Error, Write};
+//! Implementation of PDF name.
 
-use crate::types::WriteDictValue;
+use std::io::{Error, Write};
 
 /// [`Name`] object is an atomic symbol uniquely defined by a sequence of any characters (8-bit
 /// values) except null (character code 0) that follow these rules:
@@ -15,29 +15,46 @@ use crate::types::WriteDictValue;
 /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
-pub(crate) struct Name<'a>(&'a [u8]);
+pub(crate) struct Name<T: AsRef<[u8]>> {
+    inner: T,
+}
 
-impl<'a> Name<'a> {
-    /// Convenience constant for commonly used names with static data.
-    pub(crate) const TYPE: Name<'static> = Name::from_static(b"Type");
-
-    /// Create a new [`Name`] from a byte slice with a lifetime.
-    /// This is the main constructor for dynamic data.
-    pub(crate) fn new(inner: &'a [u8]) -> Self {
-        if inner.is_empty() {
+impl<T: AsRef<[u8]>> Name<T> {
+    /// Creates a new [`Name`] from a value implementing `AsRef<[u8]>`.
+    pub fn new(inner: T) -> Self {
+        let inner_ref = inner.as_ref();
+        if inner_ref.is_empty() {
             panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
         }
 
-        if inner.contains(&b'/') {
+        if inner_ref.contains(&b'/') {
             panic!("Dictionary Key is not allowed to contain '/'.");
         }
 
-        Self(inner)
+        Self { inner }
     }
+
+    /// Encode and write this `Name` into the provided implementor of [`Write`].
+    pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+        let mut written = writer.write(b"/")?;
+        written += writer.write(self.inner.as_ref())?;
+        written += writer.write(b" ")?;
+        Ok(written)
+    }
+
+    /// The number of bytes that this `Name` occupies when written into the PDF document. This does
+    /// not include the whitespace written after the `Name`.
+    pub(crate) fn len(&self) -> usize {
+        self.inner.as_ref().len() + 1
+    }
+}
+
+impl Name<&'static [u8]> {
+    pub(crate) const TYPE: Name<&'static [u8]> = Name::from_static(b"Type");
 
     /// Create a new [`Name`] from a static byte slice.
     /// This allows seamless creation of `Name` for static data without specifying lifetimes.
-    pub(crate) const fn from_static(inner: &'static [u8]) -> Name<'static> {
+    pub const fn from_static(inner: &'static [u8]) -> Self {
         if inner.is_empty() {
             panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
         }
@@ -50,35 +67,7 @@ impl<'a> Name<'a> {
             i += 1;
         }
 
-        Name(inner)
-    }
-
-    /// Encode and write this `Name` into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
-        let mut written = writer.write(b"/")?;
-        written += writer.write(self.0)?;
-        written += writer.write(b" ")?;
-        Ok(written)
-    }
-
-    /// The number of bytes that this `Name` occupies when written into the PDF document. This does
-    /// not include the whitespace written after the `Name`.
-    ///
-    /// # Example:
-    ///
-    /// ```ignore
-    /// let name = Name::from_static(b"Name");
-    /// // '/Name' has length of 5 bytes.
-    /// assert_eq!(name.len(), 5); //
-    /// ```
-    pub(crate) fn len(&self) -> usize {
-        self.0.len() + 1
-    }
-}
-
-impl WriteDictValue for Name<'_> {
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
-        self.write(writer)
+        Self { inner }
     }
 }
 
@@ -88,19 +77,33 @@ mod tests {
 
     #[test]
     pub fn new_name_static() {
-        const PDF_KEY: Name = Name::from_static(b"PdfKey");
+        let static_key = Name::from_static(b"StaticKey");
+        const STATIC_KEY: Name<&'static [u8]> = Name::from_static(b"StaticKey");
 
         let mut out_buf = Vec::new();
-        PDF_KEY.write(&mut out_buf).unwrap();
-        assert_eq!(&out_buf, b"/PdfKey ");
+        static_key.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/StaticKey ");
+        out_buf.clear();
+
+        STATIC_KEY.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/StaticKey ");
     }
 
     #[test]
     pub fn new_name_dynamic() {
-        let pdf_key = Name::new(b"DynamicKey");
+        let dynamic_key = Name::new(Vec::from("DynamicKey"));
 
         let mut out_buf = Vec::new();
-        pdf_key.write(&mut out_buf).unwrap();
+        dynamic_key.write(&mut out_buf).unwrap();
         assert_eq!(&out_buf, b"/DynamicKey ");
+    }
+
+    #[test]
+    pub fn new_name_slice() {
+        let slice_key = Name::new(b"SliceKey".as_ref());
+
+        let mut out_buf = Vec::new();
+        slice_key.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/SliceKey ");
     }
 }

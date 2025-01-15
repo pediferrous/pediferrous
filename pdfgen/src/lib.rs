@@ -92,12 +92,10 @@ impl Document {
         pdf_writer.write_object(&self.catalog, self.catalog.obj_ref())?;
         pdf_writer.write_object(self.catalog.page_tree(), self.catalog.page_tree().obj_ref())?;
 
-        // Write pages
         for page in &self.pages {
             pdf_writer.write_object(page, page.obj_ref())?;
         }
 
-        // Write fonts
         for font in &self.fonts {
             pdf_writer.write_object(font, font.obj_ref())?;
         }
