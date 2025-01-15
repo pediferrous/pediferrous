@@ -14,10 +14,10 @@ pub struct Font {
     id: ObjId,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
-    subtype: Vec<u8>,
+    subtype: Name<Vec<u8>>,
 
     /// Represents the base font type, identifying the general font family or format.
-    base_type: Vec<u8>,
+    base_font: Name<Vec<u8>>,
 }
 
 impl Font {
@@ -25,12 +25,19 @@ impl Font {
     const SUBTYPE: Name<&'static [u8]> = Name::from_static(b"Subtype");
     const BASE_FONT: Name<&'static [u8]> = Name::from_static(b"BaseFont");
 
-    /// Create a new Font object with the provided id, subtype and base_type.
-    pub fn new(id: ObjId, subtype: Vec<u8>, base_type: Vec<u8>) -> Self {
+    /// Create a new Font object with the provided id, subtype and base_font.
+    pub fn new<S, B>(id: ObjId, subtype: S, base_font: B) -> Self
+    where
+        S: Into<Vec<u8>>,
+        B: Into<Vec<u8>>,
+    {
+        let subtype = Name::new(subtype.into());
+        let base_font = Name::new(base_font.into());
+
         Font {
             id,
             subtype,
-            base_type,
+            base_font,
         }
     }
 
@@ -42,9 +49,6 @@ impl Font {
 
 impl Object for Font {
     fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
-        let subtype_value = Name::new(&self.subtype);
-        let base_type_value = Name::new(&self.base_type);
-
         let bytes_written = types::write_chain! {
             writer.write(b"<< "),
 
@@ -55,12 +59,12 @@ impl Object for Font {
 
             // /Subtype /xyz
             Self::SUBTYPE.write(writer),
-            subtype_value.write(writer),
+            self.subtype.write(writer),
             writer.write(constants::NL_MARKER),
 
             // /BaseFont /xyz
             Self::BASE_FONT.write(writer),
-            base_type_value.write(writer),
+            self.base_font.write(writer),
             writer.write(constants::NL_MARKER),
 
             writer.write(b">>"),
