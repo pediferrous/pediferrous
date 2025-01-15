@@ -15,6 +15,7 @@ use std::io::{Error, Write};
 /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
+#[derive(Debug, Clone)]
 pub(crate) struct Name<T: AsRef<[u8]>> {
     inner: T,
 }
@@ -35,7 +36,7 @@ impl<T: AsRef<[u8]>> Name<T> {
     }
 
     /// Encode and write this `Name` into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    pub fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let mut written = writer.write(b"/")?;
         written += writer.write(self.inner.as_ref())?;
         written += writer.write(b" ")?;
@@ -44,8 +45,23 @@ impl<T: AsRef<[u8]>> Name<T> {
 
     /// The number of bytes that this `Name` occupies when written into the PDF document. This does
     /// not include the whitespace written after the `Name`.
-    pub(crate) fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.inner.as_ref().len() + 1
+    }
+
+    /// Returns the referenced version to this `Name`.
+    pub fn as_ref(&self) -> Name<&[u8]> {
+        Name {
+            inner: self.inner.as_ref(),
+        }
+    }
+
+    /// Returns the inner byte slice
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut vec = Vec::with_capacity(self.inner.as_ref().len() + 2);
+        let _ = self.write(&mut vec);
+
+        vec
     }
 }
 

@@ -7,18 +7,53 @@ mod doc_builder;
 
 pub use doc_builder::Builder;
 
-use std::io::{self, Write};
+use std::{
+    any::Any,
+    io::{Error, Write},
+    path::Path,
+};
 use types::{
     hierarchy::{
         catalog::Catalog,
+        content::image::Image,
         page_tree::PageTree,
-        primitives::{font::Font, obj_id::IdManager},
+        primitives::{font::Font, obj_id::IdManager, object::Object},
     },
     page::Page,
     pdf_writer::PdfWriter,
 };
 
 pub mod types;
+
+pub trait AnyObj: Any + Object {
+    fn as_object(&self) -> &dyn Object;
+    fn as_object_mut(&mut self) -> &mut dyn Object;
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+
+impl<T> AnyObj for T
+where
+    T: Any + Object,
+{
+    fn as_object(&self) -> &dyn Object {
+        self
+    }
+
+    fn as_object_mut(&mut self) -> &mut dyn Object {
+        self
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+}
+
+impl dyn AnyObj {}
 
 /// This represents one cohesive PDF document that can contain multiple pages of content.
 pub struct Document {
@@ -34,6 +69,9 @@ pub struct Document {
 
     /// Collection of all pages in this PDF document.
     pages: Vec<Page>,
+
+    /// Collection of `objects` that are added to the [`Document`].
+    objs: Vec<Box<dyn AnyObj>>,
 
     /// Collection of all fonts in this PDF document.
     fonts: Vec<Font>,
@@ -51,6 +89,7 @@ impl Default for Document {
             catalog,
             id_manager,
             pages: Vec::new(),
+            objs: Vec::new(),
             fonts: Vec::new(),
         }
     }
@@ -67,10 +106,14 @@ impl Document {
     /// Creates a new page inside the document.
     pub fn create_page(&mut self) -> &mut Page {
         let id = self.id_manager.create_id();
+        let contents_id = self.id_manager.create_id();
         self.catalog.page_tree_mut().add_page(id.clone());
 
-        self.pages
-            .push(Page::new(id, self.catalog.page_tree().obj_ref()));
+        self.pages.push(Page::new(
+            id,
+            contents_id,
+            self.catalog.page_tree().obj_ref(),
+        ));
 
         self.pages.last_mut().unwrap()
     }
@@ -84,16 +127,35 @@ impl Document {
         self.fonts.last_mut().unwrap()
     }
 
+    /// Returns a mutable reference to the current page in document.
+    pub fn current_page(&mut self) -> Option<&mut Page> {
+        self.pages.last_mut()
+    }
+
     /// Write the PDF contents into the provided writer.
-    pub fn write(&self, writer: &mut impl Write) -> Result<(), io::Error> {
+    pub fn write(&self, writer: &mut impl Write) -> Result<(), Error> {
         let mut pdf_writer = PdfWriter::new(writer);
         pdf_writer.write_header()?;
 
-        pdf_writer.write_object(&self.catalog, self.catalog.obj_ref())?;
-        pdf_writer.write_object(self.catalog.page_tree(), self.catalog.page_tree().obj_ref())?;
+        pdf_writer.write_object(&self.catalog, &self.catalog.obj_ref())?;
+        pdf_writer.write_object(
+            self.catalog.page_tree(),
+            &self.catalog.page_tree().obj_ref(),
+        )?;
+
+        let mut content_streams = Vec::new();
 
         for page in &self.pages {
-            pdf_writer.write_object(page, page.obj_ref())?;
+            pdf_writer.write_object(page, &page.obj_ref())?;
+            content_streams.push(page.content_stream());
+        }
+
+        for obj in &self.objs {
+            pdf_writer.write_object(obj.as_object(), obj.obj_ref())?;
+        }
+
+        for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
+            pdf_writer.write_object(cs, cs.obj_ref())?;
         }
 
         for font in &self.fonts {
@@ -105,6 +167,27 @@ impl Document {
         pdf_writer.write_eof()?;
 
         Ok(())
+    }
+
+    /// Loads an [`Image`] from a file under the given `path` and returns a mutable reference to
+    /// the loaded [`Image`].
+    pub fn load_image(&mut self, path: impl AsRef<Path>) -> Result<&mut Image, Error> {
+        let file = std::fs::File::open(path)?;
+        let id = self.id_manager.create_id();
+
+        let img = Image::from_reader(id, file);
+
+        self.objs.push(Box::new(img));
+
+        let image_mut = self
+            .objs
+            .last_mut()
+            .unwrap()
+            .as_any_mut()
+            .downcast_mut()
+            .expect("Last inserted object must be an image.");
+
+        Ok(image_mut)
     }
 }
 
@@ -125,19 +208,22 @@ mod tests {
 
         insta::assert_snapshot!(output, @r"
         %PDF-2.0
-        0 0 obj
-        << /Type /Catalog 
-        /Pages 1 0 R >>
-        endobj
         1 0 obj
-        << /Type /Pages 
-        /Kids [2 0 R]
-        /Count 1 >>
+        << /Type /Catalog 
+        /Pages 2 0 R >>
         endobj
         2 0 obj
-        << /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 592.441 839.0551] >>
+        << /Type /Pages 
+        /Kids [3 0 R]
+        /Count 1 >>
         endobj
         3 0 obj
+        << /Type /Page 
+        /Parent 2 0 R
+        /Resources <<  >>
+        /MediaBox [0 0 592.441 839.0551] >>
+        endobj
+        5 0 obj
         << /Type /Font 
         /Subtype /Type1 
         /BaseFont /Helvetica 
@@ -148,16 +234,16 @@ mod tests {
         0000000009 00000 n 
         0000000059 00000 n 
         0000000117 00000 n 
-        0000000215 00000 n 
+        0000000216 00000 n 
         trailer
                << /Size 4
-               /Root 0 0 R
-               /ID [<d7336a410f3f6b8c3f65b8105453493d>
-                  <d7336a410f3f6b8c3f65b8105453493d>
+               /Root 1 0 R
+               /ID [<eef66076f3a5b37832652f242213ef85>
+                  <eef66076f3a5b37832652f242213ef85>
                   ]
                >>
         startxref
-        288
+        289
         %%EOF
         ");
     }

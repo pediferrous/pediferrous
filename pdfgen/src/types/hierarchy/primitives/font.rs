@@ -40,15 +40,10 @@ impl Font {
             base_font,
         }
     }
-
-    /// Returns the object reference of this Font object.
-    pub fn obj_ref(&self) -> ObjId {
-        self.id.clone()
-    }
 }
 
 impl Object for Font {
-    fn write(&self, writer: &mut impl std::io::Write) -> Result<usize, std::io::Error> {
+    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         let bytes_written = types::write_chain! {
             writer.write(b"<< "),
 
@@ -71,5 +66,9 @@ impl Object for Font {
         };
 
         Ok(bytes_written)
+    }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.id
     }
 }

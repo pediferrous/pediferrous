@@ -6,10 +6,10 @@ use super::unit::Unit;
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Position {
     /// X coordinate in user space unit.
-    x: Unit,
+    pub(crate) x: Unit,
 
     /// y coordinate in user space unit.
-    y: Unit,
+    pub(crate) y: Unit,
 }
 
 impl Position {
@@ -78,7 +78,7 @@ impl Rectangle {
     }
 
     /// Encode and write this [`Rectangle`] into the provided implementor of [`Write`].
-    pub fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    pub fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let output = format!(
             "[{} {} {} {}]",
             self.low_left.x, self.low_left.y, self.top_right.x, self.top_right.y

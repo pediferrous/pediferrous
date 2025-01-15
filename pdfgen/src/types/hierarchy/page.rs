@@ -1,9 +1,15 @@
-use std::io::{Error, Write};
+use std::{
+    io::{Error, Write},
+    ops::Not,
+};
 
-use crate::types;
+use crate::types::{self, constants};
 
-use super::primitives::{
-    name::Name, obj_id::ObjId, object::Object, rectangle::Rectangle, resources::Resources,
+use super::{
+    content::{image::ImageTransform, ContentStream, Operation},
+    primitives::{
+        name::Name, obj_id::ObjId, object::Object, rectangle::Rectangle, resources::Resources,
+    },
 };
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
@@ -22,6 +28,9 @@ pub struct Page {
     /// A [`Rectangle`], expressed in default user space units, that shall define the boundaries of
     /// the physical medium on which the page shall be displayed or printed.
     media_box: Option<Rectangle>,
+
+    /// Content stream holds the encoded bytes with various contents added to the page.
+    contents: ContentStream,
 }
 
 impl Page {
@@ -29,14 +38,16 @@ impl Page {
     const PARENT: Name<&'static [u8]> = Name::from_static(b"Parent");
     const RESOURCES: Name<&'static [u8]> = Name::from_static(b"Resources");
     const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
+    const CONTENTS: Name<&'static [u8]> = Name::from_static(b"Contents");
 
     /// Create a new blank page that belongs to the given parent and media box.
-    pub fn new(id: ObjId, parent: ObjId) -> Self {
+    pub fn new(id: ObjId, contents_id: ObjId, parent: ObjId) -> Self {
         Self {
             id,
             parent,
             resources: Resources::default(),
             media_box: None,
+            contents: ContentStream::new(contents_id),
         }
     }
 
@@ -49,35 +60,64 @@ impl Page {
         self.id.clone()
     }
 
-    fn write_mediabox(writer: &mut impl Write, rect: Rectangle) -> Result<usize, Error> {
+    fn write_mediabox(writer: &mut dyn Write, rect: Rectangle) -> Result<usize, Error> {
         Ok(types::write_chain! {
             Self::MEDIA_BOX.write(writer),
             rect.write(writer),
         })
     }
+
+    pub fn add_image(&mut self, img_ref: ObjId, transform: ImageTransform) {
+        let name = self.resources.add_image(img_ref);
+        self.contents
+            .add_content(Operation::DrawImage { name, transform });
+    }
+
+    pub(crate) fn content_stream(&self) -> &ContentStream {
+        &self.contents
+    }
 }
 
 impl Object for Page {
     /// Encode the PDF Page into the given implementor of [`Write`].
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
             Self::TYPE.write(writer),
+            writer.write(constants::NL_MARKER),
 
             Self::PARENT.write(writer),
             self.parent.write_ref(writer),
-            writer.write(b" "),
+            writer.write(constants::NL_MARKER),
 
             Self::RESOURCES.write(writer),
             self.resources.write(writer),
-            writer.write(b" "),
+            writer.write(constants::NL_MARKER),
 
             self.media_box.map(|rect| Self::write_mediabox(writer, rect)).unwrap_or(Ok(0)),
+
+            self.contents
+                .is_empty()
+                .not()
+                .then_some(())
+                .map(|_| {
+                    Ok::<usize, Error>(types::write_chain! {
+                        Self::CONTENTS.write(writer),
+                        self.contents.obj_ref().write_ref(writer),
+                        writer.write(constants::NL_MARKER),
+                    })
+                })
+                .unwrap_or(Ok(0)),
+
             writer.write(b" >>"),
         };
 
         Ok(written)
+    }
+
+    fn obj_ref(&self) -> &ObjId {
+        &self.id
     }
 }
 
@@ -91,7 +131,11 @@ mod tests {
     #[test]
     fn basic_page() {
         let mut id_manager = IdManager::default();
-        let mut page = Page::new(id_manager.create_id(), id_manager.create_id());
+        let mut page = Page::new(
+            id_manager.create_id(),
+            id_manager.create_id(),
+            id_manager.create_id(),
+        );
         page.set_mediabox(Rectangle::from_units(0.0, 0.0, 100.0, 100.0));
 
         let mut writer = Vec::new();
@@ -101,7 +145,12 @@ mod tests {
 
         insta::assert_snapshot!(
             output,
-            @"<< /Type /Page /Parent 1 0 R /Resources <<  >> /MediaBox [0 0 100 100] >>"
+            @r"
+        << /Type /Page 
+        /Parent 3 0 R
+        /Resources <<  >>
+        /MediaBox [0 0 100 100] >>
+        "
         );
     }
 }
