@@ -1,7 +1,8 @@
 {
     "packages": {
         "pdfgen": {},
-        "pediferrous": {}
+        "pediferrous": {},
+        "pdfgen_macros": {}
     },
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": false,
