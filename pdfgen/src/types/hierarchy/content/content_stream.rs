@@ -1,6 +1,6 @@
 use crate::types::{
     constants,
-    hierarchy::primitives::{name::OwnedName, obj_id::ObjId, object::Object, rectangle::Position},
+    hierarchy::primitives::{name::Name, obj_id::ObjId, object::Object, rectangle::Position},
 };
 
 use super::{image::ImageTransform, stream::Stream};
@@ -14,7 +14,7 @@ pub(crate) enum Operation<'a> {
         /// [`Image`]: super::image::Image
         /// [`Resources`]: crate::types::hierarchy::primitives::resources::Resources
         /// [`Page`]: crate::types::hierarchy::page::Page
-        name: &'a OwnedName,
+        name: Name<&'a [u8]>,
 
         /// Transformation that should be applied to the [`Image`] in Pdf.
         ///
@@ -50,7 +50,7 @@ impl ContentStream {
     }
 
     /// Encodes an image in this `ContentStream`.
-    fn draw_image(&mut self, name: &OwnedName, transform: ImageTransform) {
+    fn draw_image(&mut self, name: Name<&[u8]>, transform: ImageTransform) {
         let Position {
             x: width,
             y: height,
@@ -69,7 +69,7 @@ impl ContentStream {
         self.stream.push_bytes(constants::NL_MARKER);
 
         // /ImgName Do - Paint image
-        self.stream.push_bytes(name.as_bytes());
+        self.stream.push_bytes(&name.to_bytes());
         self.stream.push_bytes(b"Do");
         self.stream.push_bytes(constants::NL_MARKER);
 

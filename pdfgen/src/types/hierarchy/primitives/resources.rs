@@ -2,22 +2,21 @@
 
 use std::io::{Error, Write};
 
+use pdfgen_macros::const_names;
+
 use crate::types::{self};
 
-use super::{
-    name::{Name, OwnedName},
-    obj_id::ObjId,
-};
+use super::{name::Name, obj_id::ObjId};
 
 /// Represents a single entry in the [`Resources`] dictionary.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
-    Image { name: OwnedName, obj_ref: ObjId },
+    Image { name: Name<Vec<u8>>, obj_ref: ObjId },
 }
 
 impl ResourceEntry {
-    const X_OBJECT: Name = Name::new(b"XObject");
+    const_names!(X_OBJECT);
 
     /// Encode and write this entry into the implementor of [`Write`].
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
@@ -57,15 +56,15 @@ impl Resources {
     /// let name = res.create_name("Im");
     /// assert_eq!(name.as_bytes(), b"/Im1 ");
     /// ```
-    fn create_name(&mut self, prefix: &str) -> OwnedName {
+    fn create_name(&mut self, prefix: &str) -> Name<Vec<u8>> {
         self.counter += 1;
-        OwnedName::from_bytes(format!("{prefix}{}", self.counter).into_bytes())
+        Name::new(format!("{prefix}{}", self.counter).into_bytes())
     }
 
     /// Adds a reference to an [`Image`] to this `Resources` dictionary.
     ///
     /// [`Image`]: crate::types::hierarchy::content::image::Image
-    pub(crate) fn add_image(&mut self, obj_ref: ObjId) -> &OwnedName {
+    pub(crate) fn add_image(&mut self, obj_ref: ObjId) -> Name<&[u8]> {
         let name = self.create_name("Im");
         let img = ResourceEntry::Image {
             name,
@@ -76,7 +75,7 @@ impl Resources {
 
         let ResourceEntry::Image { name, .. } = self.entries.last().unwrap();
 
-        name
+        name.as_ref()
     }
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].

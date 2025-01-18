@@ -1,0 +1,15 @@
+[package]
+name = "pdfgen_macros"
+version = "0.1.0"
+description = "Holding macros used across PDFGen."
+edition.workspace = true 
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = {version = "2.0", features = ["parsing"]}
+quote = "1.0"

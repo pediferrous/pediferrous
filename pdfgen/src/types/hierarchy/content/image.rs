@@ -3,6 +3,7 @@
 use std::io::{BufReader, Cursor, Error, Read, Write};
 
 use image::ImageReader;
+use pdfgen_macros::const_names;
 
 use crate::types::{
     self, constants,
@@ -93,13 +94,14 @@ pub struct Image {
 }
 
 impl Image {
-    const SUB_TYPE: Name = Name::new(b"Subtype");
-    const IMG_SUB_TYPE: Name = Name::new(b"Image");
-
-    const WIDTH: Name = Name::new(b"Width");
-    const HEIGHT: Name = Name::new(b"Height");
-    const COLOR_SPACE: Name = Name::new(b"ColorSpace");
-    const BITS_PER_COMP: Name = Name::new(b"BitsPerComponent");
+    const_names! {
+        SUBTYPE,
+        IMAGE,
+        WIDTH,
+        HEIGHT,
+        COLOR_SPACE,
+        BITS_PER_COMPONENT,
+    }
 
     /// Creates a new [`Image`] by reading the bytes from the `reader` with default width and
     /// height of 100 mm and position 0, 0 (lower left corner of a page).
@@ -180,8 +182,8 @@ impl Object for Image {
                 Name::new(b"XObject").write(writer),
                 writer.write(constants::NL_MARKER),
 
-                Self::SUB_TYPE.write(writer),
-                Self::IMG_SUB_TYPE.write(writer),
+                Self::SUBTYPE.write(writer),
+                Self::IMAGE.write(writer),
                 writer.write(constants::NL_MARKER),
 
                 Self::WIDTH.write(writer),
@@ -196,7 +198,7 @@ impl Object for Image {
                 self.dict.color_space.write(writer),
                 writer.write(constants::NL_MARKER),
 
-                Self::BITS_PER_COMP.write(writer),
+                Self::BITS_PER_COMPONENT.write(writer),
                 writer.write(format!("{}", self.dict.bits_per_comp).as_bytes()),
                 writer.write(constants::NL_MARKER),
             })

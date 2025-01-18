@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "pdfgen",
+    "pdfgen", "pdfgen_macros",
     "pediferrous",
 ]
 resolver = "2"

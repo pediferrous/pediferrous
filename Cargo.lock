@@ -688,7 +688,16 @@ dependencies = [
  "image",
  "insta",
  "md5",
+ "pdfgen_macros",
  "pretty_assertions",
+]
+
+[[package]]
+name = "pdfgen_macros"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]

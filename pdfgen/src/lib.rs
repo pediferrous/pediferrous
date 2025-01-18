@@ -17,7 +17,7 @@ use types::{
         catalog::Catalog,
         content::image::Image,
         page_tree::PageTree,
-        primitives::{obj_id::IdManager, object::Object},
+        primitives::{font::Font, obj_id::IdManager, object::Object},
     },
     page::Page,
     pdf_writer::PdfWriter,
@@ -72,6 +72,9 @@ pub struct Document {
 
     /// Collection of `objects` that are added to the [`Document`].
     objs: Vec<Box<dyn AnyObj>>,
+
+    /// Collection of all fonts in this PDF document.
+    fonts: Vec<Font>,
 }
 
 impl Default for Document {
@@ -87,6 +90,7 @@ impl Default for Document {
             id_manager,
             pages: Vec::new(),
             objs: Vec::new(),
+            fonts: Vec::new(),
         }
     }
 }
@@ -112,6 +116,15 @@ impl Document {
         ));
 
         self.pages.last_mut().unwrap()
+    }
+
+    /// Creates a new font inside the document.
+    pub fn create_font(&mut self, subtype: Vec<u8>, base_type: Vec<u8>) -> &mut Font {
+        let id = self.id_manager.create_id();
+
+        self.fonts.push(Font::new(id, subtype, base_type));
+
+        self.fonts.last_mut().unwrap()
     }
 
     /// Returns a mutable reference to the current page in document.
@@ -143,6 +156,10 @@ impl Document {
 
         for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
             pdf_writer.write_object(cs, cs.obj_ref())?;
+        }
+
+        for font in &self.fonts {
+            pdf_writer.write_object(font, font.obj_ref())?;
         }
 
         pdf_writer.write_crt()?;
@@ -182,6 +199,7 @@ mod tests {
     fn simple_document() {
         let mut document = Document::default();
         document.create_page().set_mediabox(Rectangle::A4);
+        document.create_font("Type1".into(), "Helvetica".into());
 
         let mut writer = Vec::default();
         document.write(&mut writer).unwrap();
@@ -205,20 +223,27 @@ mod tests {
         /Resources <<  >>
         /MediaBox [0 0 592.441 839.0551] >>
         endobj
+        5 0 obj
+        << /Type /Font 
+        /Subtype /Type1 
+        /BaseFont /Helvetica 
+        >>
+        endobj
         xref
-        0 3
+        0 4
         0000000009 00000 n 
         0000000059 00000 n 
         0000000117 00000 n 
+        0000000216 00000 n 
         trailer
-               << /Size 3
+               << /Size 4
                /Root 1 0 R
-               /ID [<9bb385e14fc1dd30ae230a7ea0ad2c94>
-                  <9bb385e14fc1dd30ae230a7ea0ad2c94>
+               /ID [<eef66076f3a5b37832652f242213ef85>
+                  <eef66076f3a5b37832652f242213ef85>
                   ]
                >>
         startxref
-        216
+        289
         %%EOF
         ");
     }

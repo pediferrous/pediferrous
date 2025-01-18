@@ -1,12 +1,6 @@
-use std::io::{Error, Write};
-
 pub mod hierarchy;
 pub mod pdf_writer;
 pub use hierarchy::page;
-
-pub trait WriteDictValue {
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error>;
-}
 
 /// Common constants used when writing encoded PDF into a [`Write`] or [`PdfWriter`].
 ///

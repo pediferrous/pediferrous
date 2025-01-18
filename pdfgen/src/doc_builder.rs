@@ -41,6 +41,7 @@ impl Builder {
             id_manager: self.id_manager,
             pages: Vec::default(),
             objs: Vec::default(),
+            fonts: Vec::default(),
         }
     }
 }

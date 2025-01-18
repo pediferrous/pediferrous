@@ -1,6 +1,8 @@
+//! Implementation of PDF name.
+
 use std::io::{Error, Write};
 
-use crate::types::WriteDictValue;
+use pdfgen_macros::const_names;
 
 /// [`Name`] object is an atomic symbol uniquely defined by a sequence of any characters (8-bit
 /// values) except null (character code 0) that follow these rules:
@@ -16,67 +18,74 @@ use crate::types::WriteDictValue;
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
 #[derive(Debug, Clone)]
-pub(crate) struct Name(&'static [u8]);
+pub(crate) struct Name<T: AsRef<[u8]>> {
+    inner: T,
+}
 
-impl Name {
-    pub(crate) const TYPE: Name = Name::new(b"Type");
-
-    /// Create a new [`Name`] from the given byte slice. The byte slice must contain at least two
-    /// bytes and must not contain '/'.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// const PDF_KEY: Name = Name::new(b"PdfKey");
-    ///
-    /// let mut out_buf = Vec::new();
-    /// PDF_KEY.write(&mut out_buf).unwrap();
-    /// assert_eq!(&out_buf, b"/PdfKey");
-    /// ```
-    pub(crate) const fn new<const N: usize>(inner: &'static [u8; N]) -> Self {
-        if N == 0 {
+impl<T: AsRef<[u8]>> Name<T> {
+    /// Creates a new [`Name`] from a value implementing `AsRef<[u8]>`.
+    pub fn new(inner: T) -> Self {
+        let inner_ref = inner.as_ref();
+        if inner_ref.is_empty() {
             panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
         }
 
-        let mut i = 0;
-
-        while i < N {
-            if inner[i] == b'/' {
-                panic!("Dictionary Key is not allowed to contain '/'.");
-            }
-
-            i += 1;
+        if inner_ref.contains(&b'/') {
+            panic!("Dictionary Key is not allowed to contain '/'.");
         }
 
-        Self(inner)
+        Self { inner }
     }
 
     /// Encode and write this `Name` into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+    pub fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let mut written = writer.write(b"/")?;
-        written += writer.write(self.0)?;
+        written += writer.write(self.inner.as_ref())?;
         written += writer.write(b" ")?;
         Ok(written)
     }
 
     /// The number of bytes that this `Name` occupies when written into the PDF document. This does
     /// not include the whitespace written after the `Name`.
-    ///
-    /// # Example:
-    ///
-    /// ```ignore
-    /// let name = Name::new(b"Name");
-    /// // '/Name' has length of 5 bytes.
-    /// assert_eq!(name.len(), 5); //
-    /// ```
-    pub(crate) const fn len(&self) -> usize {
-        self.0.len() + 1
+    pub fn len(&self) -> usize {
+        self.inner.as_ref().len() + 1
+    }
+
+    /// Returns the referenced version to this `Name`.
+    pub fn as_ref(&self) -> Name<&[u8]> {
+        Name {
+            inner: self.inner.as_ref(),
+        }
+    }
+
+    /// Returns the inner byte slice
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut vec = Vec::with_capacity(self.inner.as_ref().len() + 2);
+        let _ = self.write(&mut vec);
+
+        vec
     }
 }
 
-impl WriteDictValue for Name {
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
-        self.write(writer)
+impl Name<&'static [u8]> {
+    const_names!(pub(crate) TYPE);
+
+    /// Create a new [`Name`] from a static byte slice.
+    /// This allows seamless creation of `Name` for static data without specifying lifetimes.
+    pub const fn from_static(inner: &'static [u8]) -> Self {
+        if inner.is_empty() {
+            panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
+        }
+
+        let mut i = 0;
+        while i < inner.len() {
+            if inner[i] == b'/' {
+                panic!("Dictionary Key is not allowed to contain '/'.");
+            }
+            i += 1;
+        }
+
+        Self { inner }
     }
 }
 
@@ -85,67 +94,34 @@ mod tests {
     use super::Name;
 
     #[test]
-    pub fn new_name() {
-        const PDF_KEY: Name = Name::new(b"PdfKey");
+    pub fn new_name_static() {
+        let static_key = Name::from_static(b"StaticKey");
+        const STATIC_KEY: Name<&'static [u8]> = Name::from_static(b"StaticKey");
 
         let mut out_buf = Vec::new();
-        PDF_KEY.write(&mut out_buf).unwrap();
-        assert_eq!(&out_buf, b"/PdfKey ");
-    }
-}
+        static_key.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/StaticKey ");
+        out_buf.clear();
 
-/// Owned variant of the [`Name`] type with same invariants. See documentation of [`Name`] for more
-/// information.
-#[derive(Debug, Clone)]
-pub(crate) struct OwnedName(Vec<u8>);
-
-impl OwnedName {
-    /// Creates a new `OwnedName` from the given bytes.
-    pub(crate) fn from_bytes(bytes: impl Into<Vec<u8>>) -> Self {
-        let mut bytes: Vec<u8> = bytes.into();
-
-        if bytes.is_empty() {
-            panic!("Dictionary Key must start with '/' followed by at least one ASCII character.");
-        }
-
-        if bytes.contains(&b'/') {
-            panic!("Dictionary Key is not allowed to contain '/'.");
-        }
-
-        bytes.insert(0, b'/');
-        bytes.push(b' ');
-
-        Self(bytes)
+        STATIC_KEY.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/StaticKey ");
     }
 
-    /// Encode and write this `Name` into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        writer.write(&self.0)
+    #[test]
+    pub fn new_name_dynamic() {
+        let dynamic_key = Name::new(Vec::from("DynamicKey"));
+
+        let mut out_buf = Vec::new();
+        dynamic_key.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/DynamicKey ");
     }
 
-    /// The number of bytes that this `OwnedName` occupies when written into the PDF document. This
-    /// does not include the whitespace written after the `Name`.
-    ///
-    /// # Example:
-    ///
-    /// ```ignore
-    /// let name = OwnedName::from_bytes(b"Name");
-    /// // '/Name' has length of 5 bytes.
-    /// assert_eq!(name.len(), 5); //
-    /// ```
-    #[allow(dead_code)]
-    pub(crate) fn len(&self) -> usize {
-        self.0.len() + 1
-    }
+    #[test]
+    pub fn new_name_slice() {
+        let slice_key = Name::new(b"SliceKey".as_ref());
 
-    /// Returns a byte slice of this `OwnedName`.
-    pub(crate) fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
-}
-
-impl WriteDictValue for OwnedName {
-    fn write(&self, writer: &mut impl Write) -> Result<usize, Error> {
-        self.write(writer)
+        let mut out_buf = Vec::new();
+        slice_key.write(&mut out_buf).unwrap();
+        assert_eq!(&out_buf, b"/SliceKey ");
     }
 }
