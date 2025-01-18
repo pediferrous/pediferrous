@@ -2,6 +2,8 @@
 
 use std::io::{Error, Write};
 
+use pdfgen_macros::const_names;
+
 use crate::types::{self};
 
 use super::{name::Name, obj_id::ObjId};
@@ -14,7 +16,7 @@ pub(crate) enum ResourceEntry {
 }
 
 impl ResourceEntry {
-    const X_OBJECT: Name<&'static [u8]> = Name::from_static(b"XObject");
+    const_names!(X_OBJECT);
 
     /// Encode and write this entry into the implementor of [`Write`].
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {

@@ -3,6 +3,8 @@ use std::{
     ops::Not,
 };
 
+use pdfgen_macros::const_names;
+
 use crate::types::{self, constants};
 
 use super::{
@@ -34,11 +36,13 @@ pub struct Page {
 }
 
 impl Page {
-    const TYPE: Name<&'static [u8]> = Name::from_static(b"Page");
-    const PARENT: Name<&'static [u8]> = Name::from_static(b"Parent");
-    const RESOURCES: Name<&'static [u8]> = Name::from_static(b"Resources");
-    const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
-    const CONTENTS: Name<&'static [u8]> = Name::from_static(b"Contents");
+    const_names! {
+        PAGE,
+        PARENT,
+        RESOURCES,
+        MEDIA_BOX,
+        CONTENTS,
+    }
 
     /// Create a new blank page that belongs to the given parent and media box.
     pub fn new(id: ObjId, contents_id: ObjId, parent: ObjId) -> Self {
@@ -84,7 +88,7 @@ impl Object for Page {
         let written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
-            Self::TYPE.write(writer),
+            Self::PAGE.write(writer),
             writer.write(constants::NL_MARKER),
 
             Self::PARENT.write(writer),

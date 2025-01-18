@@ -2,6 +2,8 @@
 
 use std::io::{Error, Write};
 
+use pdfgen_macros::const_names;
+
 /// [`Name`] object is an atomic symbol uniquely defined by a sequence of any characters (8-bit
 /// values) except null (character code 0) that follow these rules:
 ///
@@ -66,7 +68,7 @@ impl<T: AsRef<[u8]>> Name<T> {
 }
 
 impl Name<&'static [u8]> {
-    pub(crate) const TYPE: Name<&'static [u8]> = Name::from_static(b"Type");
+    const_names!(pub(crate) TYPE);
 
     /// Create a new [`Name`] from a static byte slice.
     /// This allows seamless creation of `Name` for static data without specifying lifetimes.

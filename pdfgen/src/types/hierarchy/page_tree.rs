@@ -1,3 +1,5 @@
+use pdfgen_macros::const_names;
+
 use crate::types::{self, constants, hierarchy::primitives::name::Name};
 
 use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectangle::Rectangle};
@@ -41,11 +43,13 @@ pub struct PageTree {
 }
 
 impl PageTree {
-    const PARENT: Name<&'static [u8]> = Name::from_static(b"Parent");
-    const PAGES_TYPE: Name<&'static [u8]> = Name::from_static(b"Pages");
-    const MEDIABOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
-    const KIDS: Name<&'static [u8]> = Name::from_static(b"Kids");
-    const COUNT: Name<&'static [u8]> = Name::from_static(b"Count");
+    const_names! {
+        PARENT,
+        PAGES,
+        MEDIA_BOX,
+        KIDS,
+        COUNT,
+    }
 
     pub fn new(obj_id: ObjId, parent: Option<&PageTree>) -> Self {
         Self {
@@ -86,7 +90,7 @@ impl Object for PageTree {
         let mut written = types::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
-            Self::PAGES_TYPE.write(writer),
+            Self::PAGES.write(writer),
             writer.write(constants::NL_MARKER),
         };
 
@@ -100,7 +104,7 @@ impl Object for PageTree {
 
         if let Some(mediabox) = self.default_mediabox {
             written += types::write_chain! {
-                Self::MEDIABOX.write(writer),
+                Self::MEDIA_BOX.write(writer),
                 mediabox.write(writer),
                 writer.write(constants::NL_MARKER),
             };

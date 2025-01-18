@@ -2,6 +2,8 @@
 
 use std::io::Write;
 
+use pdfgen_macros::const_names;
+
 use crate::types::{self, constants};
 
 use super::{
@@ -32,8 +34,12 @@ impl WriteTrailer for CrossReferenceTable {
         root: ObjId,
         id: [u8; 16],
     ) -> Result<(), std::io::Error> {
-        const SIZE: Name<&'static [u8]> = Name::from_static(b"Size");
-        const ROOT: Name<&'static [u8]> = Name::from_static(b"Root");
+        const_names! {
+            SIZE,
+            ROOT,
+        }
+
+        // TODO: Expand const_names proc macro to allow custom literals
         const ID: Name<&'static [u8]> = Name::from_static(b"ID");
 
         /// Marker representing the start of the `trailer` section.

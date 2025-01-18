@@ -1,5 +1,7 @@
 use std::io::Error;
 
+use pdfgen_macros::const_names;
+
 use crate::types::{self, constants};
 
 use super::{
@@ -24,8 +26,10 @@ pub struct Catalog {
 }
 
 impl Catalog {
-    const CATALOG: Name<&'static [u8]> = Name::from_static(b"Catalog");
-    const PAGES: Name<&'static [u8]> = Name::from_static(b"Pages");
+    const_names! {
+        CATALOG,
+        PAGES,
+    }
 
     /// Create a new `Catalog` with the given [`ObjId`] and [`PageTree`].
     pub(crate) fn new(obj_ref: ObjId, root_page_tree: PageTree) -> Self {

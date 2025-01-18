@@ -1,5 +1,7 @@
 //! Implementation of PDF Font object.
 
+use pdfgen_macros::const_names;
+
 use crate::types::{self, constants};
 
 use super::{name::Name, obj_id::ObjId, object::Object};
@@ -21,9 +23,11 @@ pub struct Font {
 }
 
 impl Font {
-    const FONT: Name<&'static [u8]> = Name::from_static(b"Font");
-    const SUBTYPE: Name<&'static [u8]> = Name::from_static(b"Subtype");
-    const BASE_FONT: Name<&'static [u8]> = Name::from_static(b"BaseFont");
+    const_names! {
+        FONT,
+        SUBTYPE,
+        BASE_FONT,
+    }
 
     /// Create a new Font object with the provided id, subtype and base_font.
     pub fn new<S, B>(id: ObjId, subtype: S, base_font: B) -> Self
