@@ -11,6 +11,7 @@ license.workspace = true
 md5 = "0.7.0"
 hex = "0.4.3"
 image = "0.25.5"
+pdfgen_macros = {path = "../pdfgen_macros"}
 
 [dev-dependencies]
 insta = "1.41.1"

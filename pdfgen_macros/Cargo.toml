@@ -1,0 +1,17 @@
+[package]
+name = "pdfgen_macros"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = {version = "2.0", features = ["parsing"]}
+quote = "1.0"
