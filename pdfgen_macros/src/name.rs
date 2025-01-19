@@ -1,4 +1,4 @@
-use proc_macro::{Span, TokenStream};
+use proc_macro2::{Span, TokenStream};
 use syn::{
     parse::Parse, parse_macro_input, punctuated::Punctuated, Attribute, Ident, LitByteStr, Token,
     Visibility,
@@ -49,7 +49,7 @@ impl Parse for ConstName {
 ///     const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
 /// }
 /// ```
-pub fn const_names(token_stream: TokenStream) -> TokenStream {
+pub fn const_names(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let const_name =
         parse_macro_input!(token_stream with Punctuated<ConstName, Token![,]>::parse_terminated);
 
@@ -65,10 +65,11 @@ pub fn const_names(token_stream: TokenStream) -> TokenStream {
             #(#docs)*
             #visibility const #name: Name<&'static [u8]> = Name::from_static(#name_byte_str);
         };
-        ts.extend(TokenStream::from(expanded));
+
+        ts.extend(expanded);
     }
 
-    ts
+    ts.into()
 }
 
 /// Helper function converting uppercase literals to LitByteStr in PascalCase format
@@ -97,5 +98,5 @@ fn create_pdf_style_byte_literal(name: &Ident) -> LitByteStr {
         }
     }
 
-    syn::LitByteStr::new(literal.as_bytes(), Span::call_site().into())
+    syn::LitByteStr::new(literal.as_bytes(), Span::call_site())
 }
