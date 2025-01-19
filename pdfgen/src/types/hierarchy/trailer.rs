@@ -4,7 +4,7 @@ use std::io::Write;
 
 use pdfgen_macros::const_names;
 
-use crate::types::{self, constants};
+use crate::types::constants;
 
 use super::{
     cross_reference_table::CrossReferenceTable,
@@ -37,10 +37,8 @@ impl WriteTrailer for CrossReferenceTable {
         const_names! {
             SIZE,
             ROOT,
+            ID: b"ID",
         }
-
-        // TODO: Expand const_names proc macro to allow custom literals
-        const ID: Name<&'static [u8]> = Name::from_static(b"ID");
 
         /// Marker representing the start of the `trailer` section.
         const TRAILER_MARKER: &[u8] = b"trailer\n";
@@ -48,7 +46,7 @@ impl WriteTrailer for CrossReferenceTable {
         const START_XREF_MARKER: &[u8] = b"startxref\n";
 
         let indent = &constants::SP.repeat(TRAILER_MARKER.len() - 1);
-        types::write_chain! {
+        pdfgen_macros::write_chain! {
             // dict start
             writer.write(TRAILER_MARKER),
             writer.write(indent),

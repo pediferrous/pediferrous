@@ -1,11 +1,8 @@
-use std::{
-    io::{Error, Write},
-    ops::Not,
-};
+use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::{self, constants};
+use crate::types::constants;
 
 use super::{
     content::{image::ImageTransform, ContentStream, Operation},
@@ -65,7 +62,7 @@ impl Page {
     }
 
     fn write_mediabox(writer: &mut dyn Write, rect: Rectangle) -> Result<usize, Error> {
-        Ok(types::write_chain! {
+        Ok(pdfgen_macros::write_chain! {
             Self::MEDIA_BOX.write(writer),
             rect.write(writer),
         })
@@ -85,7 +82,7 @@ impl Page {
 impl Object for Page {
     /// Encode the PDF Page into the given implementor of [`Write`].
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = types::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
             Self::PAGE.write(writer),
@@ -101,18 +98,11 @@ impl Object for Page {
 
             self.media_box.map(|rect| Self::write_mediabox(writer, rect)).unwrap_or(Ok(0)),
 
-            self.contents
-                .is_empty()
-                .not()
-                .then_some(())
-                .map(|_| {
-                    Ok::<usize, Error>(types::write_chain! {
-                        Self::CONTENTS.write(writer),
-                        self.contents.obj_ref().write_ref(writer),
-                        writer.write(constants::NL_MARKER),
-                    })
-                })
-                .unwrap_or(Ok(0)),
+            if !self.contents.is_empty() {
+                Self::CONTENTS.write(writer),
+                self.contents.obj_ref().write_ref(writer),
+                writer.write(constants::NL_MARKER),
+            },
 
             writer.write(b" >>"),
         };

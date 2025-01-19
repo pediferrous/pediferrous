@@ -4,8 +4,6 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::{self};
-
 use super::{name::Name, obj_id::ObjId};
 
 /// Represents a single entry in the [`Resources`] dictionary.
@@ -21,7 +19,7 @@ impl ResourceEntry {
     /// Encode and write this entry into the implementor of [`Write`].
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         match self {
-            ResourceEntry::Image { name, obj_ref } => Ok(types::write_chain! {
+            ResourceEntry::Image { name, obj_ref } => Ok(pdfgen_macros::write_chain! {
                 Self::X_OBJECT.write(writer),
 
                 writer.write(b"<< "),
@@ -80,9 +78,13 @@ impl Resources {
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].
     pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = types::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
-            self.entries.iter().map(|entry| entry.write(writer)).sum::<Result<usize, _>>(),
+
+            for entry in &self.entries {
+                entry.write(writer),
+            },
+
             writer.write(b" >>"),
         };
 

@@ -6,7 +6,7 @@ use image::ImageReader;
 use pdfgen_macros::const_names;
 
 use crate::types::{
-    self, constants,
+    constants,
     hierarchy::primitives::{
         name::Name, obj_id::ObjId, object::Object, rectangle::Position, unit::Unit,
     },
@@ -177,7 +177,7 @@ impl Object for Image {
         //       colour space specified in the dictionary.
 
         self.samples.write_with_dict(writer, |writer| {
-            Ok(types::write_chain! {
+            Ok(pdfgen_macros::write_chain! {
                 Name::TYPE.write(writer),
                 Name::new(b"XObject").write(writer),
                 writer.write(constants::NL_MARKER),

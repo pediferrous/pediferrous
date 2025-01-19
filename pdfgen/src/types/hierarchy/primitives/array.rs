@@ -1,6 +1,6 @@
 use std::io::{Error, Write};
 
-use crate::types::{self, constants};
+use crate::types::constants;
 
 use super::obj_id::ObjId;
 
@@ -37,7 +37,7 @@ impl WriteArray for [u8; 16] {
     fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error> {
         let indent = " ".repeat(indent.unwrap_or(0));
 
-        let written = types::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             writer.write(b"["),
             writer.write(b"<"),
             writer.write(hex::encode(self).as_bytes()),

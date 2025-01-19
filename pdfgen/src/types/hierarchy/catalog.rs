@@ -2,7 +2,7 @@ use std::io::Error;
 
 use pdfgen_macros::const_names;
 
-use crate::types::{self, constants};
+use crate::types::constants;
 
 use super::{
     page_tree::PageTree,
@@ -57,7 +57,7 @@ impl Catalog {
 
 impl Object for Catalog {
     fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
-        let written = types::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
             Name::TYPE.write(writer),

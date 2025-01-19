@@ -1,6 +1,6 @@
 use pdfgen_macros::const_names;
 
-use crate::types::{self, constants, hierarchy::primitives::name::Name};
+use crate::types::{constants, hierarchy::primitives::name::Name};
 
 use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectangle::Rectangle};
 
@@ -87,31 +87,25 @@ impl PageTree {
 
 impl Object for PageTree {
     fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
-        let mut written = types::write_chain! {
+        let indent_level = Self::KIDS.len() + constants::SP.len();
+
+        let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
             Name::TYPE.write(writer),
             Self::PAGES.write(writer),
             writer.write(constants::NL_MARKER),
-        };
 
-        if let Some(parent) = &self.parent {
-            written += types::write_chain! {
+            if let Some(parent) = &self.parent {
                 Self::PARENT.write(writer),
                 parent.write_ref(writer),
                 writer.write(constants::NL_MARKER),
-            };
-        }
+            },
 
-        if let Some(mediabox) = self.default_mediabox {
-            written += types::write_chain! {
+            if let Some(mediabox) = self.default_mediabox {
                 Self::MEDIA_BOX.write(writer),
                 mediabox.write(writer),
                 writer.write(constants::NL_MARKER),
-            };
-        }
-
-        let indent_level = Self::KIDS.len() + constants::SP.len();
-        written += types::write_chain! {
+            },
 
             Self::KIDS.write(writer),
             self.kids.write_array(writer, Some(indent_level)),

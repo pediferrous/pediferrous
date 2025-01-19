@@ -2,7 +2,7 @@
 
 use pdfgen_macros::const_names;
 
-use crate::types::{self, constants};
+use crate::types::constants;
 
 use super::{name::Name, obj_id::ObjId, object::Object};
 
@@ -48,7 +48,7 @@ impl Font {
 
 impl Object for Font {
     fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
-        let bytes_written = types::write_chain! {
+        let bytes_written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
             // /Type /Font
