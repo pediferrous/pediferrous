@@ -41,12 +41,12 @@ impl Parse for ConstName {
 /// pub struct SomeStruct;
 ///
 /// impl SomeStruct {
-/// const_names(TYPE, SUBTYPE, MEDIA_BOX);
+///     const_names!(TYPE, SUBTYPE, MEDIA_BOX);
 ///
-/// // expands to
-/// const TYPE: Name<&'static [u8]> = Name::from_static(b"Type");
-/// const SUBTYPE: Name<&'static [u8]> = Name::from_static(b"Subtype");
-/// const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
+///     // expands to
+///     const TYPE: Name<&'static [u8]> = Name::from_static(b"Type");
+///     const SUBTYPE: Name<&'static [u8]> = Name::from_static(b"Subtype");
+///     const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
 /// }
 /// ```
 #[proc_macro]
