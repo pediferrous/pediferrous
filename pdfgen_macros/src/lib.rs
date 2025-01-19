@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 
 mod name;
+mod write_chain;
 
 /// Generate one or more `const Name<&'static [u8]>` values from the given identifiers. Identifiers
 /// should be specified in upper snake case and will be converted to pascal-cased PDF names. All
@@ -29,4 +30,34 @@ mod name;
 #[proc_macro]
 pub fn const_names(token_stream: TokenStream) -> TokenStream {
     name::const_names(token_stream)
+}
+
+/// Helper macro for counting the number of written bytes in multiple consecutive writes, where
+/// each write returns a `Result<usize, std::io::Error>`
+///
+/// # Example
+///
+/// ```ignore
+/// let mut writer = Vec::new();
+/// let optional = Some(1);
+/// let iterable = vec![1, 2, 3];
+///
+/// let written = write_chain! {
+///     writer.write(b"Hello"),
+///     writer.write(b", World!"),
+///
+///     if let Some(value) = optional {
+///         writer.write(format!(value).as_bytes()),
+///     },
+///
+///     for value in iterable {
+///         writer.write(format!(value).as_bytes()),
+///     },
+/// };
+///
+/// assert_eq!(written, 17);
+/// ```
+#[proc_macro]
+pub fn write_chain(token_stream: TokenStream) -> TokenStream {
+    write_chain::write_chain(token_stream)
 }
