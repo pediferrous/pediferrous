@@ -10,7 +10,7 @@ use syn::{
 ///
 /// For example:
 ///
-/// ```rust
+/// ```ignore
 /// for entry in &self.entries {
 ///     entry.write(writer),
 ///     writer.write(b",\n"),
@@ -73,7 +73,7 @@ impl ToTokens for LoopWrite {
 /// Represents a conditional expression rendered in `write_chain` macro. Both pattern matching and
 /// regular if expressions are supported:
 ///
-/// ```rust
+/// ```ignore
 /// // Regular if expression syntax.
 /// if x == 42 {
 ///     writer.write(x),
