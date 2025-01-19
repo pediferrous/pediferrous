@@ -100,3 +100,31 @@ fn create_pdf_style_byte_literal(name: &Ident) -> LitByteStr {
 
     syn::LitByteStr::new(literal.as_bytes(), Span::call_site())
 }
+
+#[cfg(test)]
+mod tests {
+    use proc_macro2::{Ident, Span};
+    use syn::LitByteStr;
+
+    use super::create_pdf_style_byte_literal;
+
+    #[test]
+    fn single_word_name() {
+        let span = Span::call_site();
+        let ident = Ident::new("NAME", span);
+
+        let name = create_pdf_style_byte_literal(&ident);
+
+        assert_eq!(name, LitByteStr::new(b"Name", span));
+    }
+
+    #[test]
+    fn double_word_name() {
+        let span = Span::call_site();
+        let ident = Ident::new("NAME_TWO", span);
+
+        let name = create_pdf_style_byte_literal(&ident);
+
+        assert_eq!(name, LitByteStr::new(b"NameTwo", span));
+    }
+}
