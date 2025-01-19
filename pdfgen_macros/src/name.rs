@@ -9,6 +9,7 @@ struct ConstName {
     docs: Vec<Attribute>,
     visibility: Visibility,
     name: Ident,
+    custom_lit: Option<LitByteStr>,
 }
 
 impl Parse for ConstName {
@@ -17,10 +18,17 @@ impl Parse for ConstName {
         let visibility: Visibility = input.parse()?;
         let name: Ident = input.parse()?;
 
+        let mut custom_lit = None;
+
+        if input.parse::<Token![:]>().is_ok() {
+            custom_lit = input.parse()?;
+        }
+
         Ok(ConstName {
             docs,
             visibility,
             name,
+            custom_lit,
         })
     }
 }
@@ -59,7 +67,9 @@ pub fn const_names(token_stream: proc_macro::TokenStream) -> proc_macro::TokenSt
         let visibility = cn.visibility;
         let name = cn.name;
 
-        let name_byte_str = create_pdf_style_byte_literal(&name);
+        let name_byte_str = cn
+            .custom_lit
+            .unwrap_or_else(|| create_pdf_style_byte_literal(&name));
 
         let expanded = quote::quote! {
             #(#docs)*

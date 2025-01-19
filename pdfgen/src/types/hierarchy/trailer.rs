@@ -37,10 +37,8 @@ impl WriteTrailer for CrossReferenceTable {
         const_names! {
             SIZE,
             ROOT,
+            ID: b"ID",
         }
-
-        // TODO: Expand const_names proc macro to allow custom literals
-        const ID: Name<&'static [u8]> = Name::from_static(b"ID");
 
         /// Marker representing the start of the `trailer` section.
         const TRAILER_MARKER: &[u8] = b"trailer\n";
