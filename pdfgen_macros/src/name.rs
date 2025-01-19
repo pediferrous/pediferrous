@@ -33,7 +33,7 @@ impl Parse for ConstName {
     }
 }
 
-pub fn const_names(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub(crate) fn const_names(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let const_name =
         parse_macro_input!(token_stream with Punctuated<ConstName, Token![,]>::parse_terminated);
 

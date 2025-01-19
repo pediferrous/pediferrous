@@ -189,7 +189,7 @@ impl Parse for WriteStatement {
     }
 }
 
-pub fn write_chain(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub(crate) fn write_chain(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let write_statements = parse_macro_input!(token_stream with Punctuated<WriteStatement, Token![,]>::parse_terminated);
 
     generate_write_chain(write_statements.into_iter()).into()
