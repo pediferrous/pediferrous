@@ -3,7 +3,7 @@ use std::io::{Error, Write};
 use pdfgen_macros::const_names;
 
 use crate::types::{
-    self, constants,
+    constants,
     hierarchy::primitives::{name::Name, obj_id::ObjId},
 };
 
@@ -64,7 +64,7 @@ impl Stream {
     where
         F: FnOnce(&mut dyn Write) -> Result<usize, Error>,
     {
-        let mut written = types::write_chain! {
+        let mut written = pdfgen_macros::write_chain! {
             // BEGIN_DICTIONARY:
             writer.write(b"<< "),
             // write the additional dictionary fields
@@ -85,7 +85,7 @@ impl Stream {
         writer.write_all(&self.inner)?;
         written += self.inner.len();
 
-        written += types::write_chain! {
+        written += pdfgen_macros::write_chain! {
             writer.write(constants::NL_MARKER),
             writer.write(Self::END_STREAM),
         };

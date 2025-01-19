@@ -2,8 +2,6 @@
 
 use std::io::{Error, Write};
 
-use crate::types;
-
 /// Any object in a PDF file may be labelled as an indirect object. This gives the object a unique
 /// object identifier by which other objects can refer to it. The object may be referred to from
 /// elsewhere in the file by an indirect reference. Such indirect references shall consist of the
@@ -22,7 +20,7 @@ impl ObjId {
 
     /// Write the encoded PDF object reference into the provided implementor of [`Write`].
     pub fn write_ref(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = types::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             writer.write(self.id.to_string().as_bytes()),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs
@@ -34,7 +32,7 @@ impl ObjId {
 
     /// Write the encoded PDF object id into the provided implementor of [`Write`].
     pub fn write_def(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = types::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             writer.write(self.id.to_string().as_bytes()),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs

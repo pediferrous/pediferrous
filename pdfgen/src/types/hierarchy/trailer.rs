@@ -4,7 +4,7 @@ use std::io::Write;
 
 use pdfgen_macros::const_names;
 
-use crate::types::{self, constants};
+use crate::types::constants;
 
 use super::{
     cross_reference_table::CrossReferenceTable,
@@ -46,7 +46,7 @@ impl WriteTrailer for CrossReferenceTable {
         const START_XREF_MARKER: &[u8] = b"startxref\n";
 
         let indent = &constants::SP.repeat(TRAILER_MARKER.len() - 1);
-        types::write_chain! {
+        pdfgen_macros::write_chain! {
             // dict start
             writer.write(TRAILER_MARKER),
             writer.write(indent),
