@@ -70,6 +70,9 @@ impl<W: Write> PdfWriter<W> {
         self.current_offset += self.inner.write(Self::END_OBJ_MARKER)?;
         self.current_offset += self.inner.write(constants::NL_MARKER)?;
 
+        // spacing for readability
+        self.current_offset += self.inner.write(constants::NL_MARKER)?;
+
         Ok(())
     }
 
@@ -202,24 +205,28 @@ mod tests {
         FirstLine
         SecondLine
         endobj
+
         2 0 obj
         FirstLine
         SecondLine
         endobj
+
         3 0 obj
         FirstLine
         SecondLine
         endobj
+
         4 0 obj
         FirstLine
         SecondLine
         endobj
+
         xref
         0 4
         0000000009 00000 n 
-        0000000045 00000 n 
-        0000000081 00000 n 
-        0000000117 00000 n 
+        0000000046 00000 n 
+        0000000083 00000 n 
+        0000000120 00000 n 
         %%EOF
         "
         );
@@ -254,33 +261,37 @@ mod tests {
         FirstLine
         SecondLine
         endobj
+
         2 0 obj
         FirstLine
         SecondLine
         endobj
+
         3 0 obj
         FirstLine
         SecondLine
         endobj
+
         4 0 obj
         FirstLine
         SecondLine
         endobj
+
         xref
         0 4
         0000000009 00000 n 
-        0000000045 00000 n 
-        0000000081 00000 n 
-        0000000117 00000 n 
+        0000000046 00000 n 
+        0000000083 00000 n 
+        0000000120 00000 n 
         trailer
                << /Size 4
                /Root 5 0 R
-               /ID [<ef11002f88c2f7ddd4db3d52963e3a91>
-                  <ef11002f88c2f7ddd4db3d52963e3a91>
+               /ID [<c1708bb2c706afe7d294f9a5e79bb191>
+                  <c1708bb2c706afe7d294f9a5e79bb191>
                   ]
                >>
         startxref
-        153
+        157
         %%EOF
         "
         );

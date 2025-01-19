@@ -212,38 +212,42 @@ mod tests {
         << /Type /Catalog 
         /Pages 2 0 R >>
         endobj
+
         2 0 obj
         << /Type /Pages 
         /Kids [3 0 R]
         /Count 1 >>
         endobj
+
         3 0 obj
         << /Type /Page 
         /Parent 2 0 R
         /Resources <<  >>
         /MediaBox [0 0 592.441 839.0551] >>
         endobj
+
         5 0 obj
         << /Type /Font 
         /Subtype /Type1 
         /BaseFont /Helvetica 
         >>
         endobj
+
         xref
         0 4
         0000000009 00000 n 
-        0000000059 00000 n 
-        0000000117 00000 n 
-        0000000216 00000 n 
+        0000000060 00000 n 
+        0000000119 00000 n 
+        0000000219 00000 n 
         trailer
                << /Size 4
                /Root 1 0 R
-               /ID [<eef66076f3a5b37832652f242213ef85>
-                  <eef66076f3a5b37832652f242213ef85>
+               /ID [<fbc32c429aa45e42d2bbba297e47f350>
+                  <fbc32c429aa45e42d2bbba297e47f350>
                   ]
                >>
         startxref
-        289
+        293
         %%EOF
         ");
     }
