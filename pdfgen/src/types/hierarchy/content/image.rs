@@ -1,6 +1,6 @@
 //! Image PDF object types and implementations.
 
-use std::io::{BufReader, Cursor, Error, Read, Write};
+use std::io::{BufReader, Cursor, Error, ErrorKind, Read, Write};
 
 use image::ImageReader;
 use pdfgen_macros::const_names;
@@ -8,7 +8,11 @@ use pdfgen_macros::const_names;
 use crate::types::{
     constants,
     hierarchy::primitives::{
-        name::Name, obj_id::ObjId, object::Object, rectangle::Position, unit::Unit,
+        name::Name,
+        obj_id::{IdManager, ObjId},
+        object::Object,
+        rectangle::Position,
+        unit::Unit,
     },
 };
 
@@ -73,6 +77,8 @@ pub struct ImageTransform {
 /// representing a colour.
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Image {
+    pub(crate) id: Option<ObjId>,
+
     /// Raw bytes of the image containing the samples. For an RGB image, each sample is represented
     /// by three values, one for each color component - red, green and blue.
     // NOTE: The source format for an image shall be described by four parameters:
@@ -105,15 +111,21 @@ impl Image {
 
     /// Creates a new [`Image`] by reading the bytes from the `reader` with default width and
     /// height of 100 mm and position 0, 0 (lower left corner of a page).
-    pub fn from_reader(id: ObjId, reader: impl Read) -> Self {
+    pub fn from_reader(id: ObjId, reader: impl Read) -> ImageBuilder<false> {
         let mut bytes = Vec::new();
         BufReader::new(reader).read_to_end(&mut bytes).unwrap();
         Self::from_bytes(id, bytes)
     }
 
+    pub fn from_file(file: std::fs::File) -> ImageBuilder<false> {
+        let mut bytes = Vec::new();
+        BufReader::new(file).read_to_end(&mut bytes).unwrap();
+        Self::from_bytes(IdManager::default().create_id(), bytes)
+    }
+
     /// Creates a new [`Image`] from the given bytes with default width and height of 100 mm and
     /// position 0, 0 (lower left corner of a page).
-    pub fn from_bytes(id: ObjId, bytes: impl Into<Vec<u8>>) -> Self {
+    pub fn from_bytes(id: ObjId, bytes: impl Into<Vec<u8>>) -> ImageBuilder<false> {
         let bufreader = Cursor::new(bytes.into());
 
         let decoded_image = ImageReader::new(bufreader)
@@ -126,7 +138,8 @@ impl Image {
         let (width, height) = img.dimensions();
         let pixels = img.into_raw();
 
-        Self {
+        let img = Self {
+            id: None,
             samples: Stream::with_bytes(id, pixels),
             dict: ImageDict {
                 width,
@@ -138,7 +151,9 @@ impl Image {
                 position: Position::from_mm(0.0, 0.0),
                 scale: Position::from_units(width as f32, height as f32),
             },
-        }
+        };
+
+        ImageBuilder { inner: img }
     }
 
     /// Sets the width and height of this [`Image`].
@@ -171,37 +186,50 @@ impl Image {
 }
 
 impl Object for Image {
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_def(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.id
+                .as_ref()
+                .ok_or_else(|| Error::new(ErrorKind::Other, "Image has no ID."))?
+                .write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(&mut self, writer: &mut dyn Write, _: &mut IdManager) -> Result<usize, Error> {
         // NOTE: The image dictionary shall specify the width, height, and number of bits per
         //       component explicitly. The number of colour components shall be inferred from the
         //       colour space specified in the dictionary.
 
-        self.samples.write_with_dict(writer, |writer| {
-            Ok(pdfgen_macros::write_chain! {
-                Name::TYPE.write(writer),
-                Name::new(b"XObject").write(writer),
-                writer.write(constants::NL_MARKER),
+        Ok(pdfgen_macros::write_chain! {
+            self.samples.write_with_dict(writer, |writer| {
+                Ok(pdfgen_macros::write_chain! {
+                    Name::TYPE.write(writer),
+                    Name::new(b"XObject").write(writer),
+                    writer.write(constants::NL_MARKER),
 
-                Self::SUBTYPE.write(writer),
-                Self::IMAGE.write(writer),
-                writer.write(constants::NL_MARKER),
+                    Self::SUBTYPE.write(writer),
+                    Self::IMAGE.write(writer),
+                    writer.write(constants::NL_MARKER),
 
-                Self::WIDTH.write(writer),
-                writer.write(format!("{}", self.dict.width).as_bytes()),
-                writer.write(constants::NL_MARKER),
+                    Self::WIDTH.write(writer),
+                    writer.write(format!("{}", self.dict.width).as_bytes()),
+                    writer.write(constants::NL_MARKER),
 
-                Self::HEIGHT.write(writer),
-                writer.write(format!("{}", self.dict.height).as_bytes()),
-                writer.write(constants::NL_MARKER),
+                    Self::HEIGHT.write(writer),
+                    writer.write(format!("{}", self.dict.height).as_bytes()),
+                    writer.write(constants::NL_MARKER),
 
-                Self::COLOR_SPACE.write(writer),
-                self.dict.color_space.write(writer),
-                writer.write(constants::NL_MARKER),
+                    Self::COLOR_SPACE.write(writer),
+                    self.dict.color_space.write(writer),
+                    writer.write(constants::NL_MARKER),
 
-                Self::BITS_PER_COMPONENT.write(writer),
-                writer.write(format!("{}", self.dict.bits_per_comp).as_bytes()),
-                writer.write(constants::NL_MARKER),
-            })
+                    Self::BITS_PER_COMPONENT.write(writer),
+                    writer.write(format!("{}", self.dict.bits_per_comp).as_bytes()),
+                    writer.write(constants::NL_MARKER),
+                })
+            }),
+            writer.write(constants::NL_MARKER),
         })
     }
 
@@ -210,12 +238,42 @@ impl Object for Image {
     }
 }
 
+pub struct ImageBuilder<const IS_INIT: bool> {
+    inner: Image,
+}
+
+impl<const IS_INIT: bool> ImageBuilder<IS_INIT> {
+    /// TODO: write doc comment.
+    pub fn at(mut self, pos: Position) -> ImageBuilder<true> {
+        self.inner.transform.position = pos;
+        ImageBuilder { inner: self.inner }
+    }
+
+    /// Sets the scaling of the image to the given width and height.
+    pub fn scaled(mut self, scale: Position) -> Self {
+        self.inner.transform.scale = scale;
+        self
+    }
+
+    /// This is not yet implemented and is a no-op for now.
+    pub fn rotated(self, _degree: usize) -> Self {
+        // TODO: implement rotation
+        self
+    }
+}
+
+impl ImageBuilder<true> {
+    pub fn build(self) -> Image {
+        self.inner
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use crate::types::hierarchy::primitives::{
-        obj_id::IdManager, object::Object, rectangle::Position, unit::Unit,
+        obj_id::IdManager, object::Object, rectangle::Position,
     };
 
     use super::Image;
@@ -227,11 +285,13 @@ mod tests {
 
         let mut id_mngr = IdManager::default();
 
-        let mut img = Image::from_reader(id_mngr.create_id(), img_file);
-        img.set_dimensions(Unit::from_mm(100.0), Unit::from_mm(100.0));
-        img.set_pos(Position::from_mm(10.0, 42.0));
+        let mut img = Image::from_reader(id_mngr.create_id(), img_file)
+            .scaled(Position::from_mm(100., 100.))
+            .at(Position::from_mm(10.0, 42.0))
+            .build();
 
         let mut writer = Vec::default();
+        img.id = Some(id_mngr.create_id());
         img.write(&mut writer).unwrap();
         let output = String::from_utf8_lossy(&writer);
 

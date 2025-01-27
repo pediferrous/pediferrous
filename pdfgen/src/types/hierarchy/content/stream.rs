@@ -13,6 +13,7 @@ use crate::types::{
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Stream {
     /// Object ID of this `Stream`.
+    // TODO: get rid of this (pull it out to wrappers of `Stream`)
     pub(crate) id: ObjId,
 
     // NOTE: Stream dictionaries have more entries such as filter, decode parameters etc. For now,

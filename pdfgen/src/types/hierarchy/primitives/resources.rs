@@ -4,29 +4,41 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use super::{name::Name, obj_id::ObjId};
+use crate::types::hierarchy::content::image::Image;
+
+use super::{
+    name::{Name, OwnedName},
+    obj_id::IdManager,
+    object::Object,
+};
 
 /// Represents a single entry in the [`Resources`] dictionary.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
-    Image { name: Name<Vec<u8>>, obj_ref: ObjId },
+    Image { name: OwnedName, image: Image },
 }
 
 impl ResourceEntry {
     const_names!(X_OBJECT);
 
     /// Encode and write this entry into the implementor of [`Write`].
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_ref(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
         match self {
-            ResourceEntry::Image { name, obj_ref } => Ok(pdfgen_macros::write_chain! {
+            ResourceEntry::Image { name, image } => Ok(pdfgen_macros::write_chain! {
                 Self::X_OBJECT.write(writer),
 
                 writer.write(b"<< "),
                 name.write(writer),
-                obj_ref.write_ref(writer),
+                image.id.as_ref().unwrap().write_ref(writer),
                 writer.write(b" >>"),
             }),
+        }
+    }
+
+    pub(crate) fn write(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+        match self {
+            ResourceEntry::Image { image, .. } => image.write(writer),
         }
     }
 }
@@ -38,10 +50,10 @@ impl ResourceEntry {
 /// the content stream, such as a font dictionary or a stream containing image data. This shall be
 /// accomplished by defining such objects as named resources and referring to them by name from
 /// within the content stream.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug)]
 pub struct Resources {
     counter: usize,
-    entries: Vec<ResourceEntry>,
+    pub(crate) entries: Vec<ResourceEntry>,
 }
 
 impl Resources {
@@ -62,12 +74,9 @@ impl Resources {
     /// Adds a reference to an [`Image`] to this `Resources` dictionary.
     ///
     /// [`Image`]: crate::types::hierarchy::content::image::Image
-    pub(crate) fn add_image(&mut self, obj_ref: ObjId) -> Name<&[u8]> {
+    pub(crate) fn add_image(&mut self, image: Image) -> Name<&[u8]> {
         let name = self.create_name("Im");
-        let img = ResourceEntry::Image {
-            name,
-            obj_ref: obj_ref.clone(),
-        };
+        let img = ResourceEntry::Image { name, image };
 
         self.entries.push(img);
 
@@ -77,17 +86,33 @@ impl Resources {
     }
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = pdfgen_macros::write_chain! {
+    ///
+    /// # Panics
+    ///
+    /// This method panics if IDs are not previously assigned with [`Resources::assign_ids`].
+    pub(crate) fn write_dict(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+        Ok(pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
-            for entry in &self.entries {
-                entry.write(writer),
+            for entry in &mut self.entries {
+                entry.write_ref(writer),
             },
 
             writer.write(b" >>"),
-        };
+        })
+    }
 
-        Ok(written)
+    /// Calculates and assigns IDs to all resource entries in this page which don't have IDs
+    /// assigned.
+    pub(crate) fn assign_ids(&mut self, id_manager: &mut IdManager) {
+        for entry in self.entries.iter_mut() {
+            match entry {
+                ResourceEntry::Image { image, .. } => {
+                    if image.id.is_none() {
+                        image.id = Some(id_manager.create_id())
+                    }
+                }
+            }
+        }
     }
 }

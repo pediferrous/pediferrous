@@ -1,8 +1,15 @@
+use std::io::{Error, Write};
+
 use pdfgen_macros::const_names;
 
 use crate::types::{constants, hierarchy::primitives::name::Name};
 
-use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectangle::Rectangle};
+use super::primitives::{
+    array::WriteArray,
+    obj_id::{IdManager, ObjId},
+    object::Object,
+    rectangle::Rectangle,
+};
 
 /// Page tree is a structure which defines the ordering of pages in the document. The tree contains
 /// nodes of two types:
@@ -18,7 +25,7 @@ use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectan
 #[derive(Debug, Clone)]
 pub struct PageTree {
     /// The object reference allocated for this `PageTree`.
-    obj_id: ObjId,
+    id: ObjId,
 
     /// The page tree node that is the immediate parent of this one. Required for all nodes except
     /// the root node.
@@ -53,7 +60,7 @@ impl PageTree {
 
     pub fn new(obj_id: ObjId, parent: Option<&PageTree>) -> Self {
         Self {
-            obj_id,
+            id: obj_id,
             parent: parent.map(|parent| parent.obj_ref()),
             kids: Vec::default(),
             count: 0,
@@ -77,7 +84,7 @@ impl PageTree {
     }
 
     pub fn obj_ref(&self) -> ObjId {
-        self.obj_id.clone()
+        self.id.clone()
     }
 
     pub(crate) fn set_page_size(&mut self, rect: Rectangle) {
@@ -86,7 +93,14 @@ impl PageTree {
 }
 
 impl Object for PageTree {
-    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+    fn write_def(&mut self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(&mut self, writer: &mut dyn Write, _: &mut IdManager) -> Result<usize, Error> {
         let indent_level = Self::KIDS.len() + constants::SP.len();
 
         let written = pdfgen_macros::write_chain! {
@@ -114,13 +128,14 @@ impl Object for PageTree {
             Self::COUNT.write(writer),
             writer.write(self.count.to_string().as_bytes()),
             writer.write(b" >>"),
+            writer.write(constants::NL_MARKER),
         };
 
         Ok(written)
     }
 
     fn obj_ref(&self) -> &ObjId {
-        &self.obj_id
+        &self.id
     }
 }
 
@@ -133,10 +148,12 @@ mod tests {
     #[test]
     fn simple_page_tree() {
         let mut id_manager = IdManager::default();
-        let page_tree = PageTree::new(id_manager.create_id(), None);
+        let mut page_tree = PageTree::new(id_manager.create_id(), None);
 
         let mut writer = Vec::new();
-        page_tree.write(&mut writer).unwrap();
+        page_tree
+            .write_content(&mut writer, &mut id_manager)
+            .unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 
@@ -157,7 +174,9 @@ mod tests {
         page_tree.add_page(id_manager.create_id());
 
         let mut writer = Vec::new();
-        page_tree.write(&mut writer).unwrap();
+        page_tree
+            .write_content(&mut writer, &mut id_manager)
+            .unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 

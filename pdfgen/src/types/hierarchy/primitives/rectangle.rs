@@ -83,8 +83,7 @@ impl Rectangle {
             "[{} {} {} {}]",
             self.low_left.x, self.low_left.y, self.top_right.x, self.top_right.y
         );
-        let written = writer.write(output.as_bytes())?;
-        Ok(written)
+        writer.write(output.as_bytes())
     }
 
     pub fn from_units(ll_x: f32, ll_y: f32, tr_x: f32, tr_y: f32) -> Self {

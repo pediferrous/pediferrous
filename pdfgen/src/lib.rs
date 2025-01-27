@@ -10,12 +10,10 @@ pub use doc_builder::Builder;
 use std::{
     any::Any,
     io::{Error, Write},
-    path::Path,
 };
 use types::{
     hierarchy::{
         catalog::Catalog,
-        content::image::Image,
         page_tree::PageTree,
         primitives::{font::Font, obj_id::IdManager, object::Object},
     },
@@ -25,7 +23,8 @@ use types::{
 
 pub mod types;
 
-pub trait AnyObj: Any + Object {
+#[allow(dead_code)]
+pub(crate) trait AnyObj: Any + Object {
     fn as_object(&self) -> &dyn Object;
     fn as_object_mut(&mut self) -> &mut dyn Object;
     fn as_any(&self) -> &dyn Any;
@@ -133,33 +132,31 @@ impl Document {
     }
 
     /// Write the PDF contents into the provided writer.
-    pub fn write(&self, writer: &mut impl Write) -> Result<(), Error> {
+    pub fn write(&mut self, writer: &mut impl Write) -> Result<(), Error> {
         let mut pdf_writer = PdfWriter::new(writer);
         pdf_writer.write_header()?;
 
-        pdf_writer.write_object(&self.catalog, &self.catalog.obj_ref())?;
-        pdf_writer.write_object(
-            self.catalog.page_tree(),
-            &self.catalog.page_tree().obj_ref(),
-        )?;
+        pdf_writer.write_object(&mut self.catalog, &mut self.id_manager)?;
+        pdf_writer.write_object(self.catalog.page_tree_mut(), &mut self.id_manager)?;
 
         let mut content_streams = Vec::new();
 
-        for page in &self.pages {
-            pdf_writer.write_object(page, &page.obj_ref())?;
+        for page in &mut self.pages {
+            pdf_writer.write_page(page, &mut self.id_manager)?;
             content_streams.push(page.content_stream());
         }
 
-        for obj in &self.objs {
-            pdf_writer.write_object(obj.as_object(), obj.obj_ref())?;
+        for obj in &mut self.objs {
+            pdf_writer.write_object(obj.as_object_mut(), &mut self.id_manager)?;
         }
 
         for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
-            pdf_writer.write_object(cs, cs.obj_ref())?;
+            pdf_writer.write_object(cs, &mut self.id_manager)?;
         }
 
-        for font in &self.fonts {
-            pdf_writer.write_object(font, font.obj_ref())?;
+        for font in &mut self.fonts {
+            // TODO: should this be here or in `Page`? Both?
+            pdf_writer.write_object(font, &mut self.id_manager)?;
         }
 
         pdf_writer.write_crt()?;
@@ -169,26 +166,30 @@ impl Document {
         Ok(())
     }
 
-    /// Loads an [`Image`] from a file under the given `path` and returns a mutable reference to
-    /// the loaded [`Image`].
-    pub fn load_image(&mut self, path: impl AsRef<Path>) -> Result<&mut Image, Error> {
-        let file = std::fs::File::open(path)?;
-        let id = self.id_manager.create_id();
-
-        let img = Image::from_reader(id, file);
-
-        self.objs.push(Box::new(img));
-
-        let image_mut = self
-            .objs
-            .last_mut()
-            .unwrap()
-            .as_any_mut()
-            .downcast_mut()
-            .expect("Last inserted object must be an image.");
-
-        Ok(image_mut)
+    pub fn load_image(&mut self) {
+        todo!()
     }
+
+    // /// Loads an [`Image`] from a file under the given `path` and returns a mutable reference to
+    // /// the loaded [`Image`].
+    // pub fn load_image(&mut self, path: impl AsRef<Path>) -> Result<&mut Image, Error> {
+    //     let file = std::fs::File::open(path)?;
+    //     let id = self.id_manager.create_id();
+    //
+    //     let img = Image::from_reader(id, file);
+    //
+    //     self.objs.push(Box::new(img));
+    //
+    //     let image_mut = self
+    //         .objs
+    //         .last_mut()
+    //         .unwrap()
+    //         .as_any_mut()
+    //         .downcast_mut()
+    //         .expect("Last inserted object must be an image.");
+    //
+    //     Ok(image_mut)
+    // }
 }
 
 #[cfg(test)]
@@ -223,8 +224,9 @@ mod tests {
         << /Type /Page 
         /Parent 2 0 R
         /Resources <<  >>
-        /MediaBox [0 0 592.441 839.0551] >>
+        /MediaBox [0 0 592.441 839.0551]>>
         endobj
+
 
         5 0 obj
         << /Type /Font 
@@ -235,19 +237,19 @@ mod tests {
 
         xref
         0 4
-        0000000009 00000 n 
-        0000000060 00000 n 
-        0000000119 00000 n 
-        0000000219 00000 n 
+        0000000010 00000 n 
+        0000000061 00000 n 
+        0000000120 00000 n 
+        0000000220 00000 n 
         trailer
                << /Size 4
                /Root 1 0 R
-               /ID [<fbc32c429aa45e42d2bbba297e47f350>
-                  <fbc32c429aa45e42d2bbba297e47f350>
+               /ID [<d4e71dbc01d10dfdd9eb1e094a6f1dcd>
+                  <d4e71dbc01d10dfdd9eb1e094a6f1dcd>
                   ]
                >>
         startxref
-        293
+        294
         %%EOF
         ");
     }

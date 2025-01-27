@@ -1,6 +1,11 @@
 use crate::types::{
     constants,
-    hierarchy::primitives::{name::Name, obj_id::ObjId, object::Object, rectangle::Position},
+    hierarchy::primitives::{
+        name::Name,
+        obj_id::{IdManager, ObjId},
+        object::Object,
+        rectangle::Position,
+    },
 };
 
 use super::{image::ImageTransform, stream::Stream};
@@ -83,8 +88,22 @@ impl ContentStream {
 }
 
 impl Object for ContentStream {
-    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
-        self.stream.write(writer)
+    fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.stream.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        _: &mut IdManager,
+    ) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.stream.write(writer),
+            writer.write(constants::NL_MARKER),
+        })
     }
 
     fn obj_ref(&self) -> &ObjId {

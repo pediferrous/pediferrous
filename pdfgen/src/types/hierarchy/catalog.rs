@@ -6,7 +6,11 @@ use crate::types::constants;
 
 use super::{
     page_tree::PageTree,
-    primitives::{name::Name, obj_id::ObjId, object::Object},
+    primitives::{
+        name::Name,
+        obj_id::{IdManager, ObjId},
+        object::Object,
+    },
 };
 
 /// The root of a document’s object hierarchy, located by means of the `Root` entry in the trailer
@@ -17,9 +21,10 @@ use super::{
 /// information about how the document shall be displayed on the screen, such as whether its
 /// outline and thumbnail page images shall be displayed automatically and whether some location
 /// other than the first page shall be shown when the document is opened.
+#[derive(Debug)]
 pub struct Catalog {
     /// The object reference allocated to this `Catalog`.
-    obj_ref: ObjId,
+    id: ObjId,
 
     /// Reference to the root [`PageTree`] of the PDF Document.
     root_page_tree: PageTree,
@@ -34,14 +39,14 @@ impl Catalog {
     /// Create a new `Catalog` with the given [`ObjId`] and [`PageTree`].
     pub(crate) fn new(obj_ref: ObjId, root_page_tree: PageTree) -> Self {
         Self {
-            obj_ref,
+            id: obj_ref,
             root_page_tree,
         }
     }
 
     /// Returns the [`ObjId`] allocated to this `Catalog`.
     pub(crate) fn obj_ref(&self) -> ObjId {
-        self.obj_ref.clone()
+        self.id.clone()
     }
 
     /// Returns a reference to the root [`PageTree`] that this `Catalog` holds.
@@ -56,7 +61,18 @@ impl Catalog {
 }
 
 impl Object for Catalog {
-    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
+    fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(
+        &mut self,
+        writer: &mut dyn std::io::Write,
+        _: &mut IdManager,
+    ) -> Result<usize, Error> {
         let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
@@ -68,13 +84,14 @@ impl Object for Catalog {
             self.root_page_tree.obj_ref().write_ref(writer),
 
             writer.write(b" >>"),
+            writer.write(constants::NL_MARKER),
         };
 
         Ok(written)
     }
 
     fn obj_ref(&self) -> &ObjId {
-        &self.obj_ref
+        &self.id
     }
 }
 
@@ -91,10 +108,10 @@ mod tests {
     fn simple_catalog() {
         let mut id_manager = IdManager::default();
         let page_tree = PageTree::new(id_manager.create_id(), None);
-        let catalog = Catalog::new(id_manager.create_id(), page_tree);
+        let mut catalog = Catalog::new(id_manager.create_id(), page_tree);
 
         let mut writer = Vec::default();
-        catalog.write(&mut writer).unwrap();
+        catalog.write_content(&mut writer, &mut id_manager).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
         insta::assert_snapshot!(output, @r"

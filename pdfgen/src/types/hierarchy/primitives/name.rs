@@ -22,6 +22,8 @@ pub(crate) struct Name<T: AsRef<[u8]>> {
     inner: T,
 }
 
+pub(crate) type OwnedName = Name<Vec<u8>>;
+
 impl<T: AsRef<[u8]>> Name<T> {
     /// Creates a new [`Name`] from a value implementing `AsRef<[u8]>`.
     pub fn new(inner: T) -> Self {
@@ -39,10 +41,11 @@ impl<T: AsRef<[u8]>> Name<T> {
 
     /// Encode and write this `Name` into the provided implementor of [`Write`].
     pub fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let mut written = writer.write(b"/")?;
-        written += writer.write(self.inner.as_ref())?;
-        written += writer.write(b" ")?;
-        Ok(written)
+        Ok(pdfgen_macros::write_chain! {
+            writer.write(b"/"),
+            writer.write(self.inner.as_ref()),
+            writer.write(b" "),
+        })
     }
 
     /// The number of bytes that this `Name` occupies when written into the PDF document. This does
