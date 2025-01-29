@@ -6,11 +6,7 @@ use crate::types::constants;
 
 use super::{
     page_tree::PageTree,
-    primitives::{
-        name::Name,
-        obj_id::{IdManager, ObjId},
-        object::Object,
-    },
+    primitives::{name::Name, obj_id::ObjId, object::Object},
 };
 
 /// The root of a document’s object hierarchy, located by means of the `Root` entry in the trailer
@@ -68,11 +64,7 @@ impl Object for Catalog {
         })
     }
 
-    fn write_content(
-        &mut self,
-        writer: &mut dyn std::io::Write,
-        _: &mut IdManager,
-    ) -> Result<usize, Error> {
+    fn write_content(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
         let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
@@ -111,7 +103,7 @@ mod tests {
         let mut catalog = Catalog::new(id_manager.create_id(), page_tree);
 
         let mut writer = Vec::default();
-        catalog.write_content(&mut writer, &mut id_manager).unwrap();
+        catalog.write_content(&mut writer).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
         insta::assert_snapshot!(output, @r"

@@ -196,7 +196,7 @@ impl Object for Image {
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write, _: &mut IdManager) -> Result<usize, Error> {
+    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
         // NOTE: The image dictionary shall specify the width, height, and number of bits per
         //       component explicitly. The number of colour components shall be inferred from the
         //       colour space specified in the dictionary.

@@ -136,8 +136,8 @@ impl Document {
         let mut pdf_writer = PdfWriter::new(writer);
         pdf_writer.write_header()?;
 
-        pdf_writer.write_object(&mut self.catalog, &mut self.id_manager)?;
-        pdf_writer.write_object(self.catalog.page_tree_mut(), &mut self.id_manager)?;
+        pdf_writer.write_object(&mut self.catalog)?;
+        pdf_writer.write_object(self.catalog.page_tree_mut())?;
 
         let mut content_streams = Vec::new();
 
@@ -147,16 +147,16 @@ impl Document {
         }
 
         for obj in &mut self.objs {
-            pdf_writer.write_object(obj.as_object_mut(), &mut self.id_manager)?;
+            pdf_writer.write_object(obj.as_object_mut())?;
         }
 
         for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
-            pdf_writer.write_object(cs, &mut self.id_manager)?;
+            pdf_writer.write_object(cs)?;
         }
 
         for font in &mut self.fonts {
             // TODO: should this be here or in `Page`? Both?
-            pdf_writer.write_object(font, &mut self.id_manager)?;
+            pdf_writer.write_object(font)?;
         }
 
         pdf_writer.write_crt()?;
@@ -165,31 +165,6 @@ impl Document {
 
         Ok(())
     }
-
-    pub fn load_image(&mut self) {
-        todo!()
-    }
-
-    // /// Loads an [`Image`] from a file under the given `path` and returns a mutable reference to
-    // /// the loaded [`Image`].
-    // pub fn load_image(&mut self, path: impl AsRef<Path>) -> Result<&mut Image, Error> {
-    //     let file = std::fs::File::open(path)?;
-    //     let id = self.id_manager.create_id();
-    //
-    //     let img = Image::from_reader(id, file);
-    //
-    //     self.objs.push(Box::new(img));
-    //
-    //     let image_mut = self
-    //         .objs
-    //         .last_mut()
-    //         .unwrap()
-    //         .as_any_mut()
-    //         .downcast_mut()
-    //         .expect("Last inserted object must be an image.");
-    //
-    //     Ok(image_mut)
-    // }
 }
 
 #[cfg(test)]

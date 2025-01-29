@@ -6,11 +6,7 @@ use pdfgen_macros::const_names;
 
 use crate::types::constants;
 
-use super::{
-    name::Name,
-    obj_id::{IdManager, ObjId},
-    object::Object,
-};
+use super::{name::Name, obj_id::ObjId, object::Object};
 
 /// Represents a font object in a PDF document.
 /// This struct represents a font object in a PDF document, encapsulating the info required to
@@ -61,7 +57,7 @@ impl Object for Font {
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write, _: &mut IdManager) -> Result<usize, Error> {
+    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
         let bytes_written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 

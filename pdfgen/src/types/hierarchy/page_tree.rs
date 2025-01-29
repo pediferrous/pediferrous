@@ -4,12 +4,7 @@ use pdfgen_macros::const_names;
 
 use crate::types::{constants, hierarchy::primitives::name::Name};
 
-use super::primitives::{
-    array::WriteArray,
-    obj_id::{IdManager, ObjId},
-    object::Object,
-    rectangle::Rectangle,
-};
+use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectangle::Rectangle};
 
 /// Page tree is a structure which defines the ordering of pages in the document. The tree contains
 /// nodes of two types:
@@ -100,7 +95,7 @@ impl Object for PageTree {
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write, _: &mut IdManager) -> Result<usize, Error> {
+    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
         let indent_level = Self::KIDS.len() + constants::SP.len();
 
         let written = pdfgen_macros::write_chain! {
@@ -151,9 +146,7 @@ mod tests {
         let mut page_tree = PageTree::new(id_manager.create_id(), None);
 
         let mut writer = Vec::new();
-        page_tree
-            .write_content(&mut writer, &mut id_manager)
-            .unwrap();
+        page_tree.write_content(&mut writer).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 
@@ -174,9 +167,7 @@ mod tests {
         page_tree.add_page(id_manager.create_id());
 
         let mut writer = Vec::new();
-        page_tree
-            .write_content(&mut writer, &mut id_manager)
-            .unwrap();
+        page_tree.write_content(&mut writer).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 

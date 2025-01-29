@@ -2,10 +2,7 @@ use std::io::{Error, Write};
 
 use crate::types::{constants, hierarchy::content::stream::Stream};
 
-use super::{
-    obj_id::{IdManager, ObjId},
-    object::Object,
-};
+use super::{obj_id::ObjId, object::Object};
 
 /// Represents a PDF String with UTF-8 encoding.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -39,7 +36,7 @@ impl Object for PdfString {
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write, _: &mut IdManager) -> Result<usize, Error> {
+    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
         self.stream.write(writer)
     }
 
@@ -60,9 +57,7 @@ mod tests {
         let mut pdf_string = PdfString::from(id_manager.create_id(), "This is text.");
 
         let mut writer = Vec::default();
-        pdf_string
-            .write_content(&mut writer, &mut id_manager)
-            .unwrap();
+        pdf_string.write_content(&mut writer).unwrap();
         let output = String::from_utf8(writer).unwrap();
 
         insta::assert_snapshot!(output, @r"

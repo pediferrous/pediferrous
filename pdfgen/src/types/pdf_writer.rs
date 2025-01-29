@@ -57,11 +57,7 @@ impl<W: Write> PdfWriter<W> {
     /// Writes the object start marker(`X X obj`), following with the structured data of the object
     /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
     /// and cursor update.
-    pub(crate) fn write_object(
-        &mut self,
-        obj: &mut dyn Object,
-        id_manager: &mut IdManager,
-    ) -> Result<(), io::Error> {
+    pub(crate) fn write_object(&mut self, obj: &mut dyn Object) -> Result<(), io::Error> {
         // Save the objects byte offset in the CrossReferenceTable.
         self.cross_reference_table.add_object(self.current_offset);
 
@@ -69,7 +65,7 @@ impl<W: Write> PdfWriter<W> {
         self.current_offset += obj.write_def(&mut self.inner)?;
 
         // Delegate the actual writing to the inner writer.
-        self.current_offset += obj.write_content(&mut self.inner, id_manager)?;
+        self.current_offset += obj.write_content(&mut self.inner)?;
 
         // endobj\n
         self.current_offset += obj.write_end(&mut self.inner)?;
