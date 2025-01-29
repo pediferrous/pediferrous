@@ -123,198 +123,211 @@ impl<W: Write> PdfWriter<W> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::io::Error;
-//
-//     use crate::{
-//         types::hierarchy::primitives::obj_id::{IdManager, ObjId},
-//         PdfWriter,
-//     };
-//
-//     use super::Object;
-//
-//     struct Dummy(ObjId);
-//     impl Object for Dummy {
-//         fn write(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
-//             writer.write(b"FirstLine\nSecondLine")
-//         }
-//
-//         fn obj_ref(&self) -> &ObjId {
-//             &self.0
-//         }
-//     }
-//
-//     #[test]
-//     fn write_header() {
-//         let mut writer = Vec::new();
-//         let mut pdf_writer = PdfWriter::new(&mut writer);
-//
-//         pdf_writer.write_header().unwrap();
-//
-//         let output = String::from_utf8(writer).unwrap();
-//
-//         insta::assert_snapshot!(
-//             output,
-//             @"%PDF-2.0"
-//         );
-//     }
-//
-//     #[test]
-//     fn write_eof() {
-//         let mut writer = Vec::new();
-//         let mut pdf_writer = PdfWriter::new(&mut writer);
-//
-//         pdf_writer.write_eof().unwrap();
-//
-//         let output = String::from_utf8(writer).unwrap();
-//
-//         insta::assert_snapshot!(
-//             output,
-//             @"%%EOF"
-//         );
-//     }
-//
-//     #[test]
-//     fn write_object() {
-//         let mut writer = Vec::new();
-//         let mut pdf_writer = PdfWriter::new(&mut writer);
-//         let mut id_manager = IdManager::default();
-//
-//         let mut dummy = Dummy(id_manager.create_id());
-//         let dummy_ref = dummy.obj_ref().clone();
-//         pdf_writer.write_object(&mut dummy, &dummy_ref).unwrap();
-//
-//         let output = String::from_utf8(writer).unwrap();
-//
-//         insta::assert_snapshot!(
-//             output,
-//             @r"
-//         1 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//         "
-//         );
-//     }
-//
-//     #[test]
-//     fn write_crt() {
-//         let mut writer = Vec::new();
-//         let mut pdf_writer = PdfWriter::new(&mut writer);
-//         let mut id_manager = IdManager::default();
-//
-//         pdf_writer.write_header().unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         pdf_writer.write_crt().unwrap();
-//         pdf_writer.write_eof().unwrap();
-//
-//         let output = String::from_utf8(writer).unwrap();
-//
-//         insta::assert_snapshot!(
-//             output,
-//             @r"
-//         %PDF-2.0
-//         1 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         2 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         3 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         4 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         xref
-//         0 4
-//         0000000009 00000 n
-//         0000000046 00000 n
-//         0000000083 00000 n
-//         0000000120 00000 n
-//         %%EOF
-//         "
-//         );
-//     }
-//
-//     #[test]
-//     fn write_trailer() {
-//         let mut writer = Vec::new();
-//         let mut pdf_writer = PdfWriter::new(&mut writer);
-//         let mut id_manager = IdManager::default();
-//
-//         pdf_writer.write_header().unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         let dummy = Dummy(id_manager.create_id());
-//         pdf_writer.write_object(&dummy, &dummy.0).unwrap();
-//         pdf_writer.write_crt().unwrap();
-//         pdf_writer.write_trailer(id_manager.create_id()).unwrap();
-//         pdf_writer.write_eof().unwrap();
-//
-//         let output = String::from_utf8(writer).unwrap();
-//
-//         insta::assert_snapshot!(
-//             output,
-//             @r"
-//         %PDF-2.0
-//         1 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         2 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         3 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         4 0 obj
-//         FirstLine
-//         SecondLine
-//         endobj
-//
-//         xref
-//         0 4
-//         0000000009 00000 n
-//         0000000046 00000 n
-//         0000000083 00000 n
-//         0000000120 00000 n
-//         trailer
-//                << /Size 4
-//                /Root 5 0 R
-//                /ID [<c1708bb2c706afe7d294f9a5e79bb191>
-//                   <c1708bb2c706afe7d294f9a5e79bb191>
-//                   ]
-//                >>
-//         startxref
-//         157
-//         %%EOF
-//         "
-//         );
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use crate::{
+        types::{
+            constants,
+            hierarchy::primitives::obj_id::{IdManager, ObjId},
+        },
+        PdfWriter,
+    };
+
+    use super::Object;
+
+    #[derive(Debug)]
+    struct Dummy(ObjId);
+
+    impl Object for Dummy {
+        fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+            Ok(pdfgen_macros::write_chain! {
+                self.0.write_def(writer),
+                writer.write(constants::NL_MARKER),
+            })
+        }
+
+        fn write_content(
+            &mut self,
+            writer: &mut dyn std::io::Write,
+        ) -> Result<usize, std::io::Error> {
+            writer.write(b"FirstLine\nSecondLine\n")
+        }
+
+        fn obj_ref(&self) -> &ObjId {
+            &self.0
+        }
+    }
+
+    #[test]
+    fn write_header() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+
+        pdf_writer.write_header().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @"%PDF-2.0"
+        );
+    }
+
+    #[test]
+    fn write_eof() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+
+        pdf_writer.write_eof().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @"%%EOF"
+        );
+    }
+
+    #[test]
+    fn write_object() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+        let mut id_manager = IdManager::default();
+
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @r"
+        1 0 obj
+        FirstLine
+        SecondLine
+        endobj
+        "
+        );
+    }
+
+    #[test]
+    fn write_crt() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+        let mut id_manager = IdManager::default();
+
+        pdf_writer.write_header().unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+
+        pdf_writer.write_crt().unwrap();
+        pdf_writer.write_eof().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @r"
+        %PDF-2.0
+        1 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        2 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        3 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        4 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        xref
+        0 4
+        0000000010 00000 n 
+        0000000047 00000 n 
+        0000000084 00000 n 
+        0000000121 00000 n 
+        %%EOF
+        "
+        );
+    }
+
+    #[test]
+    fn write_trailer() {
+        let mut writer = Vec::new();
+        let mut pdf_writer = PdfWriter::new(&mut writer);
+        let mut id_manager = IdManager::default();
+
+        pdf_writer.write_header().unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        let mut dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&mut dummy).unwrap();
+        pdf_writer.write_crt().unwrap();
+        pdf_writer.write_trailer(id_manager.create_id()).unwrap();
+        pdf_writer.write_eof().unwrap();
+
+        let output = String::from_utf8(writer).unwrap();
+
+        insta::assert_snapshot!(
+            output,
+            @r"
+        %PDF-2.0
+        1 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        2 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        3 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        4 0 obj
+        FirstLine
+        SecondLine
+        endobj
+
+        xref
+        0 4
+        0000000010 00000 n 
+        0000000047 00000 n 
+        0000000084 00000 n 
+        0000000121 00000 n 
+        trailer
+               << /Size 4
+               /Root 5 0 R
+               /ID [<ffb2e086bea707d8d867d4a23074276b>
+                  <ffb2e086bea707d8d867d4a23074276b>
+                  ]
+               >>
+        startxref
+        158
+        %%EOF
+        "
+        );
+    }
+}
