@@ -61,10 +61,6 @@ impl Resources {
     }
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].
-    ///
-    /// # Panics
-    ///
-    /// This method panics if IDs are not previously assigned with [`Resources::assign_ids`].
     pub(crate) fn write_dict(
         &self,
         writer: &mut dyn Write,
