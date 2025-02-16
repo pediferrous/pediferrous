@@ -69,9 +69,6 @@ pub struct Document {
     /// Collection of all pages in this PDF document.
     pages: Vec<Page>,
 
-    /// Collection of `objects` that are added to the [`Document`].
-    objs: Vec<Box<dyn AnyObj>>,
-
     /// Collection of all fonts in this PDF document.
     fonts: Vec<Font>,
 }
@@ -88,7 +85,6 @@ impl Default for Document {
             catalog,
             id_manager,
             pages: Vec::new(),
-            objs: Vec::new(),
             fonts: Vec::new(),
         }
     }
@@ -144,10 +140,6 @@ impl Document {
         for page in &mut self.pages {
             pdf_writer.write_page(page, &mut self.id_manager)?;
             content_streams.push(page.content_stream());
-        }
-
-        for obj in &mut self.objs {
-            pdf_writer.write_object(obj.as_object_mut())?;
         }
 
         for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
