@@ -1,13 +1,11 @@
 //! Implementation of the [`PdfWriter`] wrapper.
 
+use crate::{IdManager, ObjId};
+
 use super::{
     constants,
     hierarchy::{
-        cross_reference_table::CrossReferenceTable,
-        primitives::{
-            obj_id::{IdManager, ObjId},
-            object::Object,
-        },
+        cross_reference_table::CrossReferenceTable, primitives::object::Object,
         trailer::WriteTrailer,
     },
     page::Page,
@@ -126,11 +124,8 @@ impl<W: Write> PdfWriter<W> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        types::{
-            constants,
-            hierarchy::primitives::obj_id::{IdManager, ObjId},
-        },
-        PdfWriter,
+        types::{constants, pdf_writer::PdfWriter},
+        IdManager, ObjId,
     };
 
     use super::Object;
@@ -185,7 +180,7 @@ mod tests {
     fn write_object() {
         let mut writer = Vec::new();
         let mut pdf_writer = PdfWriter::new(&mut writer);
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
 
         let dummy = Dummy(id_manager.create_id());
         pdf_writer.write_object(&dummy).unwrap();
@@ -207,7 +202,7 @@ mod tests {
     fn write_crt() {
         let mut writer = Vec::new();
         let mut pdf_writer = PdfWriter::new(&mut writer);
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
 
         pdf_writer.write_header().unwrap();
         let dummy = Dummy(id_manager.create_id());
@@ -263,7 +258,7 @@ mod tests {
     fn write_trailer() {
         let mut writer = Vec::new();
         let mut pdf_writer = PdfWriter::new(&mut writer);
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
 
         pdf_writer.write_header().unwrap();
         let dummy = Dummy(id_manager.create_id());

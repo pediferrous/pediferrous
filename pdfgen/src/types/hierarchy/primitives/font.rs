@@ -4,9 +4,9 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::constants;
+use crate::{types::constants, ObjId};
 
-use super::{name::Name, obj_id::ObjId, object::Object};
+use super::{name::Name, object::Object};
 
 /// Represents a font object in a PDF document.
 /// This struct represents a font object in a PDF document, encapsulating the info required to

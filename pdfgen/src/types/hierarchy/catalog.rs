@@ -2,11 +2,11 @@ use std::io::Error;
 
 use pdfgen_macros::const_names;
 
-use crate::types::constants;
+use crate::{types::constants, ObjId};
 
 use super::{
     page_tree::PageTree,
-    primitives::{name::Name, obj_id::ObjId, object::Object},
+    primitives::{name::Name, object::Object},
 };
 
 /// The root of a document’s object hierarchy, located by means of the `Root` entry in the trailer
@@ -85,16 +85,16 @@ impl Object for Catalog {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::{
-        page_tree::PageTree,
-        primitives::{obj_id::IdManager, object::Object},
+    use crate::{
+        types::hierarchy::{page_tree::PageTree, primitives::object::Object},
+        IdManager,
     };
 
     use super::Catalog;
 
     #[test]
     fn simple_catalog() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let page_tree = PageTree::new(id_manager.create_id(), None);
         let catalog = Catalog::new(id_manager.create_id(), page_tree);
 

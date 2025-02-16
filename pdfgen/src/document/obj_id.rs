@@ -40,17 +40,21 @@ impl ObjId {
     }
 }
 
-pub struct IdManager {
+pub(crate) struct IdManager {
     curr: u64,
 }
 
-impl Default for IdManager {
-    fn default() -> Self {
+impl IdManager {
+    pub(crate) fn new() -> Self {
         Self { curr: 1 }
     }
-}
 
-impl IdManager {
+    /// Creates a clone of this [`IdManager`]. Take great care when doing this, otherwise the
+    /// document might get into an invalid state.
+    pub(in crate::document) fn clone(&self) -> Self {
+        Self { curr: self.curr }
+    }
+
     pub fn create_id(&mut self) -> ObjId {
         let inner_id = self.curr;
         self.curr += 1;

@@ -1,6 +1,9 @@
-use crate::types::{
-    constants,
-    hierarchy::primitives::{name::Name, obj_id::ObjId, object::Object, rectangle::Position},
+use crate::{
+    types::{
+        constants,
+        hierarchy::primitives::{name::Name, object::Object, rectangle::Position},
+    },
+    ObjId,
 };
 
 use super::{image::ImageTransform, stream::Stream};
