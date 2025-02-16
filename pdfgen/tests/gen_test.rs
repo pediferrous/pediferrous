@@ -50,7 +50,7 @@ fn page_with_image() {
     let page = document.create_page();
 
     let img = Image::from_file(
-        File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
+        &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
     )
     .at(Position::from_units(0., 0.))
     .build();
@@ -72,7 +72,7 @@ fn page_image_moved() {
     let page = document.create_page();
 
     let img = Image::from_file(
-        File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
+        &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
     )
     .at(Position::from_units(64. - 88. / 2., 13.))
     .build();
@@ -94,15 +94,13 @@ fn page_image_moved_and_scaled() {
     let page = document.create_page();
 
     let img = Image::from_file(
-        File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
+        &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
     )
     .at(Position::from_units(64. - 88. / 2., 13.))
     .scaled(Position::from_units(88., 88.))
     .build();
 
     page.add_image(img);
-
-    document.current_page();
 
     macros::snap_test!(document);
 }
