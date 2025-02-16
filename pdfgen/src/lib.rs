@@ -98,12 +98,12 @@ impl Document {
         let mut pdf_writer = PdfWriter::new(writer);
         pdf_writer.write_header()?;
 
-        pdf_writer.write_object(&mut self.catalog)?;
+        pdf_writer.write_object(&self.catalog)?;
         pdf_writer.write_object(self.catalog.page_tree_mut())?;
 
         let mut content_streams = Vec::new();
 
-        for page in &mut self.pages {
+        for page in &self.pages {
             pdf_writer.write_page(page, &mut self.id_manager)?;
             content_streams.push(page.content_stream());
         }
