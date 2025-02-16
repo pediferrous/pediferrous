@@ -1,12 +1,17 @@
 use std::io::{Error, Write};
 
-use crate::types::hierarchy::content::stream::Stream;
+use crate::{
+    types::{constants, hierarchy::content::stream::Stream},
+    ObjId,
+};
 
-use super::{obj_id::ObjId, object::Object};
+use super::object::Object;
 
 /// Represents a PDF String with UTF-8 encoding.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PdfString {
+    id: ObjId,
+
     /// Inner [`Stream`] is the object that actually stores the bytes of a `PdfString`.
     stream: Stream,
 }
@@ -23,34 +28,38 @@ impl PdfString {
         bytes.push(b')');
 
         Self {
-            stream: Stream::with_bytes(id, bytes),
+            id,
+            stream: Stream::with_bytes(bytes),
         }
     }
 }
 
 impl Object for PdfString {
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        self.stream.write(writer)
+    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
     }
 
-    fn obj_ref(&self) -> &ObjId {
-        &self.stream.id
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+        self.stream.write(writer)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+    use crate::{types::hierarchy::primitives::object::Object, IdManager};
 
     use super::PdfString;
 
     #[test]
     fn simple_string() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let pdf_string = PdfString::from(id_manager.create_id(), "This is text.");
 
         let mut writer = Vec::default();
-        pdf_string.write(&mut writer).unwrap();
+        pdf_string.write_content(&mut writer).unwrap();
         let output = String::from_utf8(writer).unwrap();
 
         insta::assert_snapshot!(output, @r"

@@ -1,7 +1,10 @@
-use std::path::PathBuf;
+use std::{fs::File, path::PathBuf};
 
 use pdfgen::{
-    types::hierarchy::primitives::{object::Object, rectangle::Rectangle},
+    types::hierarchy::{
+        content::image::Image,
+        primitives::rectangle::{Position, Rectangle},
+    },
     Document,
 };
 
@@ -39,19 +42,65 @@ fn three_pages_different_size() {
 
 #[test]
 fn page_with_image() {
-    let page_side = 64.;
+    let page_size = 64.;
     let mut document = Document::builder()
-        .with_page_size(Rectangle::from_units(0., 0., page_side, page_side))
+        .with_page_size(Rectangle::from_units(0., 0., page_size, page_size))
         .build();
 
-    let img = document
-        .load_image(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg"))
-        .unwrap();
-
-    let img_ref = img.obj_ref().clone();
-    let img_transform = img.transform();
     let page = document.create_page();
-    page.add_image(img_ref, img_transform);
+
+    let img = Image::from_file(
+        &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
+    )
+    .at(Position::from_units(0., 0.))
+    .build();
+
+    page.add_image(img);
+
+    document.current_page();
+
+    macros::snap_test!(document);
+}
+
+#[test]
+fn page_image_moved() {
+    let page_size = 128.;
+    let mut document = Document::builder()
+        .with_page_size(Rectangle::from_units(0., 0., page_size, page_size))
+        .build();
+
+    let page = document.create_page();
+
+    let img = Image::from_file(
+        &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
+    )
+    .at(Position::from_units(64. - 88. / 2., 13.))
+    .build();
+
+    page.add_image(img);
+
+    document.current_page();
+
+    macros::snap_test!(document);
+}
+
+#[test]
+fn page_image_moved_and_scaled() {
+    let page_size = 128.;
+    let mut document = Document::builder()
+        .with_page_size(Rectangle::from_units(0., 0., page_size, page_size))
+        .build();
+
+    let page = document.create_page();
+
+    let img = Image::from_file(
+        &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
+    )
+    .at(Position::from_units(64. - 88. / 2., 13.))
+    .scaled(Position::from_units(88., 88.))
+    .build();
+
+    page.add_image(img);
 
     macros::snap_test!(document);
 }

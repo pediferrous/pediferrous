@@ -20,41 +20,41 @@ impl ObjId {
 
     /// Write the encoded PDF object reference into the provided implementor of [`Write`].
     pub fn write_ref(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = pdfgen_macros::write_chain! {
+        Ok(pdfgen_macros::write_chain! {
             writer.write(self.id.to_string().as_bytes()),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs
             writer.write(b" 0 R"),
-        };
-
-        Ok(written)
+        })
     }
 
     /// Write the encoded PDF object id into the provided implementor of [`Write`].
     pub fn write_def(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = pdfgen_macros::write_chain! {
+        Ok(pdfgen_macros::write_chain! {
             writer.write(self.id.to_string().as_bytes()),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs
             writer.write(b" 0 "),
             writer.write(Self::START_OBJ_MARKER),
-        };
-
-        Ok(written)
+        })
     }
 }
 
-pub struct IdManager {
+pub(crate) struct IdManager {
     curr: u64,
 }
 
-impl Default for IdManager {
-    fn default() -> Self {
+impl IdManager {
+    pub(crate) fn new() -> Self {
         Self { curr: 1 }
     }
-}
 
-impl IdManager {
+    /// Creates a clone of this [`IdManager`]. Take great care when doing this, otherwise the
+    /// document might get into an invalid state.
+    pub(in crate::document) fn clone(&self) -> Self {
+        Self { curr: self.curr }
+    }
+
     pub fn create_id(&mut self) -> ObjId {
         let inner_id = self.curr;
         self.curr += 1;

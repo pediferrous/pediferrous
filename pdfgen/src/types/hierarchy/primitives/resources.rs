@@ -4,31 +4,15 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use super::{name::Name, obj_id::ObjId};
+use crate::{types::hierarchy::content::image::Image, IdManager, ObjId};
+
+use super::name::{Name, OwnedName};
 
 /// Represents a single entry in the [`Resources`] dictionary.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
-    Image { name: Name<Vec<u8>>, obj_ref: ObjId },
-}
-
-impl ResourceEntry {
-    const_names!(X_OBJECT);
-
-    /// Encode and write this entry into the implementor of [`Write`].
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        match self {
-            ResourceEntry::Image { name, obj_ref } => Ok(pdfgen_macros::write_chain! {
-                Self::X_OBJECT.write(writer),
-
-                writer.write(b"<< "),
-                name.write(writer),
-                obj_ref.write_ref(writer),
-                writer.write(b" >>"),
-            }),
-        }
-    }
+    Image { name: OwnedName, image: Image },
 }
 
 /// Resource dictionary enumerates the named resources needed by the operators in the content
@@ -38,10 +22,10 @@ impl ResourceEntry {
 /// the content stream, such as a font dictionary or a stream containing image data. This shall be
 /// accomplished by defining such objects as named resources and referring to them by name from
 /// within the content stream.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug)]
 pub struct Resources {
     counter: usize,
-    entries: Vec<ResourceEntry>,
+    pub(crate) entries: Vec<ResourceEntry>,
 }
 
 impl Resources {
@@ -62,12 +46,9 @@ impl Resources {
     /// Adds a reference to an [`Image`] to this `Resources` dictionary.
     ///
     /// [`Image`]: crate::types::hierarchy::content::image::Image
-    pub(crate) fn add_image(&mut self, obj_ref: ObjId) -> Name<&[u8]> {
+    pub(crate) fn add_image(&mut self, image: Image) -> Name<&[u8]> {
         let name = self.create_name("Im");
-        let img = ResourceEntry::Image {
-            name,
-            obj_ref: obj_ref.clone(),
-        };
+        let img = ResourceEntry::Image { name, image };
 
         self.entries.push(img);
 
@@ -77,17 +58,59 @@ impl Resources {
     }
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].
-    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
-        let written = pdfgen_macros::write_chain! {
+    pub(crate) fn write_dict(
+        &self,
+        writer: &mut dyn Write,
+        renderables: &[Renderable],
+    ) -> Result<usize, Error> {
+        Ok(pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
-            for entry in &self.entries {
-                entry.write(writer),
+            for renderable in renderables.iter() {
+                renderable.write_ref(writer),
             },
 
             writer.write(b" >>"),
-        };
+        })
+    }
 
-        Ok(written)
+    pub(crate) fn renderables(&self, id_manager: &mut IdManager) -> Vec<Renderable> {
+        self.entries
+            .iter()
+            .map(|entry| Renderable {
+                id: id_manager.create_id(),
+                entry,
+            })
+            .collect()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Renderable<'entry> {
+    id: ObjId,
+    entry: &'entry ResourceEntry,
+}
+
+impl Renderable<'_> {
+    const_names!(X_OBJECT);
+
+    pub(crate) fn write_def(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
+        match self.entry {
+            ResourceEntry::Image { image, .. } => image.write(writer, &self.id),
+        }
+    }
+
+    pub(crate) fn write_ref(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
+        match self.entry {
+            ResourceEntry::Image { name, .. } => Ok(pdfgen_macros::write_chain! {
+                Self::X_OBJECT.write(writer),
+
+                writer.write(b"<< "),
+                name.write(writer),
+                self.id
+                    .write_ref(writer),
+                writer.write(b" >>"),
+            }),
+        }
     }
 }

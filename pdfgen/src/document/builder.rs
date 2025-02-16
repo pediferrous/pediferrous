@@ -1,12 +1,8 @@
 //! Types for easier construction of a PDF [`Document`].
 
 use crate::{
-    types::hierarchy::{
-        catalog::Catalog,
-        page_tree::PageTree,
-        primitives::{obj_id::IdManager, rectangle::Rectangle},
-    },
-    Document,
+    types::hierarchy::{catalog::Catalog, page_tree::PageTree, primitives::rectangle::Rectangle},
+    Document, IdManager,
 };
 
 /// Used for construction of a PDF [`Document`], enabling streamlined configuration of the
@@ -40,7 +36,6 @@ impl Builder {
             catalog,
             id_manager: self.id_manager,
             pages: Vec::default(),
-            objs: Vec::default(),
             fonts: Vec::default(),
         }
     }

@@ -1,12 +1,14 @@
 //! Implementation of the [`PdfWriter`] wrapper.
 
+use crate::{IdManager, ObjId};
+
 use super::{
     constants,
     hierarchy::{
-        cross_reference_table::CrossReferenceTable,
-        primitives::{obj_id::ObjId, object::Object},
+        cross_reference_table::CrossReferenceTable, primitives::object::Object,
         trailer::WriteTrailer,
     },
+    page::Page,
 };
 use std::io::{self, Write};
 
@@ -28,14 +30,13 @@ impl<W: Write> PdfWriter<W> {
     const PDF_HEADER: &[u8] = b"%PDF-2.0";
     /// The last line of the file shall contain only the end-of-file marker, %%EOF
     const EOF_MARKER: &[u8] = b"%%EOF";
-    /// Marker indicating end of an object section
-    const END_OBJ_MARKER: &[u8] = b"endobj";
 
     /// Creates a new [`PdfWriter`] instance.
     pub fn new(inner: W) -> Self {
         PdfWriter {
             inner,
-            current_offset: 0,
+            // NOTE: The current byte is included in offset.
+            current_offset: 1,
             cross_reference_table: CrossReferenceTable::default(),
         }
     }
@@ -54,21 +55,18 @@ impl<W: Write> PdfWriter<W> {
     /// Writes the object start marker(`X X obj`), following with the structured data of the object
     /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
     /// and cursor update.
-    pub fn write_object(&mut self, obj: &dyn Object, obj_ref: &ObjId) -> Result<(), io::Error> {
+    pub(crate) fn write_object(&mut self, obj: &dyn Object) -> Result<(), io::Error> {
         // Save the objects byte offset in the CrossReferenceTable.
         self.cross_reference_table.add_object(self.current_offset);
 
         // X Y obj\n
-        self.current_offset += obj_ref.write_def(&mut self.inner)?;
-        self.current_offset += self.inner.write(constants::NL_MARKER)?;
+        self.current_offset += obj.write_def(&mut self.inner)?;
 
         // Delegate the actual writing to the inner writer.
-        self.current_offset += obj.write(&mut self.inner)?;
-        self.current_offset += self.inner.write(constants::NL_MARKER)?;
+        self.current_offset += obj.write_content(&mut self.inner)?;
 
         // endobj\n
-        self.current_offset += self.inner.write(Self::END_OBJ_MARKER)?;
-        self.current_offset += self.inner.write(constants::NL_MARKER)?;
+        self.current_offset += obj.write_end(&mut self.inner)?;
 
         // spacing for readability
         self.current_offset += self.inner.write(constants::NL_MARKER)?;
@@ -101,27 +99,50 @@ impl<W: Write> PdfWriter<W> {
         // Delegate the actual writing to the inner writer.
         self.inner.write_all(Self::EOF_MARKER)
     }
+
+    /// Writes the page contents into the PDF document.
+    pub(crate) fn write_page(
+        &mut self,
+        page: &Page,
+        id_manager: &mut IdManager,
+    ) -> Result<(), io::Error> {
+        self.cross_reference_table.add_object(self.current_offset);
+
+        let (bytes_written, offsets) = page.write(&mut self.inner, id_manager)?;
+
+        for offset in offsets {
+            self.cross_reference_table
+                .add_object(self.current_offset + offset);
+        }
+
+        self.current_offset += bytes_written;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::io::Error;
-
     use crate::{
-        types::hierarchy::primitives::obj_id::{IdManager, ObjId},
-        PdfWriter,
+        types::{constants, pdf_writer::PdfWriter},
+        IdManager, ObjId,
     };
 
     use super::Object;
 
+    #[derive(Debug)]
     struct Dummy(ObjId);
+
     impl Object for Dummy {
-        fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
-            writer.write(b"FirstLine\nSecondLine")
+        fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+            Ok(pdfgen_macros::write_chain! {
+                self.0.write_def(writer),
+                writer.write(constants::NL_MARKER),
+            })
         }
 
-        fn obj_ref(&self) -> &ObjId {
-            &self.0
+        fn write_content(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+            writer.write(b"FirstLine\nSecondLine\n")
         }
     }
 
@@ -159,10 +180,10 @@ mod tests {
     fn write_object() {
         let mut writer = Vec::new();
         let mut pdf_writer = PdfWriter::new(&mut writer);
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
 
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 
@@ -181,17 +202,18 @@ mod tests {
     fn write_crt() {
         let mut writer = Vec::new();
         let mut pdf_writer = PdfWriter::new(&mut writer);
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
 
         pdf_writer.write_header().unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
+
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_eof().unwrap();
 
@@ -223,10 +245,10 @@ mod tests {
 
         xref
         0 4
-        0000000009 00000 n 
-        0000000046 00000 n 
-        0000000083 00000 n 
-        0000000120 00000 n 
+        0000000010 00000 n 
+        0000000047 00000 n 
+        0000000084 00000 n 
+        0000000121 00000 n 
         %%EOF
         "
         );
@@ -236,17 +258,17 @@ mod tests {
     fn write_trailer() {
         let mut writer = Vec::new();
         let mut pdf_writer = PdfWriter::new(&mut writer);
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
 
         pdf_writer.write_header().unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         let dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&dummy, &dummy.0).unwrap();
+        pdf_writer.write_object(&dummy).unwrap();
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_trailer(id_manager.create_id()).unwrap();
         pdf_writer.write_eof().unwrap();
@@ -279,19 +301,19 @@ mod tests {
 
         xref
         0 4
-        0000000009 00000 n 
-        0000000046 00000 n 
-        0000000083 00000 n 
-        0000000120 00000 n 
+        0000000010 00000 n 
+        0000000047 00000 n 
+        0000000084 00000 n 
+        0000000121 00000 n 
         trailer
                << /Size 4
                /Root 5 0 R
-               /ID [<c1708bb2c706afe7d294f9a5e79bb191>
-                  <c1708bb2c706afe7d294f9a5e79bb191>
+               /ID [<ffb2e086bea707d8d867d4a23074276b>
+                  <ffb2e086bea707d8d867d4a23074276b>
                   ]
                >>
         startxref
-        157
+        158
         %%EOF
         "
         );
