@@ -97,9 +97,11 @@ impl Page {
         writer: &mut dyn Write,
         id_manager: &mut IdManager,
     ) -> Result<(usize, Vec<usize>), Error> {
-        self.resources.assign_ids(id_manager);
+        let mut offsets = Vec::with_capacity(self.resources.entries.len());
 
-        let mut written = pdfgen_macros::write_chain! {
+        let mut renderable_resources = self.resources.renderables(id_manager);
+
+        let written = pdfgen_macros::write_chain! {
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
 
@@ -113,7 +115,7 @@ impl Page {
             writer.write(constants::NL_MARKER),
 
             Self::RESOURCES.write(writer),
-            self.resources.write_dict(writer),
+            self.resources.write_dict(writer, &renderable_resources),
             writer.write(constants::NL_MARKER),
 
             if let Some(media_box) = self.media_box {
@@ -133,15 +135,16 @@ impl Page {
             writer.write(constants::END_OBJ_MARKER),
             writer.write(constants::NL_MARKER),
             writer.write(constants::NL_MARKER),
+
+            for renderable_entry in renderable_resources.iter_mut() {
+                {
+                    offsets.push(written);
+                    renderable_entry.write_def(writer)
+                }
+            },
+
+            writer.write(constants::NL_MARKER),
         };
-
-        let mut offsets = Vec::with_capacity(self.resources.entries.len());
-        for entry in self.resources.entries.iter_mut() {
-            offsets.push(written);
-            written += entry.write(writer)?;
-        }
-
-        written += writer.write(constants::NL_MARKER)?;
 
         Ok((written, offsets))
     }

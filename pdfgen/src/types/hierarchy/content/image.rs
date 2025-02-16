@@ -1,6 +1,6 @@
 //! Image PDF object types and implementations.
 
-use std::io::{BufReader, Cursor, Error, ErrorKind, Read, Write};
+use std::io::{BufReader, Cursor, Error, Read, Write};
 
 use image::ImageReader;
 use pdfgen_macros::const_names;
@@ -73,8 +73,6 @@ pub struct ImageTransform {
 /// representing a colour.
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Image {
-    pub(crate) id: Option<ObjId>,
-
     /// Raw bytes of the image containing the samples. For an RGB image, each sample is represented
     /// by three values, one for each color component - red, green and blue.
     // NOTE: The source format for an image shall be described by four parameters:
@@ -135,7 +133,6 @@ impl Image {
         let pixels = img.into_raw();
 
         let img = Self {
-            id: None,
             samples: Stream::with_bytes(pixels),
             dict: ImageDict {
                 width,
@@ -179,20 +176,24 @@ impl Image {
     pub fn transform(&self) -> ImageTransform {
         self.transform
     }
+
+    pub fn write(&self, writer: &mut dyn Write, id: &ObjId) -> Result<usize, Error> {
+        Ok(pdfgen_macros::write_chain! {
+            id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+
+            self.write_content(writer),
+            self.write_end(writer),
+        })
+    }
 }
 
 impl Object for Image {
-    fn write_def(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
-        Ok(pdfgen_macros::write_chain! {
-            self.id
-                .as_ref()
-                .ok_or_else(|| Error::new(ErrorKind::Other, "Image has no ID."))?
-                .write_def(writer),
-            writer.write(constants::NL_MARKER),
-        })
+    fn write_def(&self, _writer: &mut dyn Write) -> Result<usize, Error> {
+        panic!("Image does not fully implement the Object trait.")
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         // NOTE: The image dictionary shall specify the width, height, and number of bits per
         //       component explicitly. The number of colour components shall be inferred from the
         //       colour space specified in the dictionary.
@@ -264,9 +265,7 @@ impl ImageBuilder<true> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::types::hierarchy::primitives::{
-        obj_id::IdManager, object::Object, rectangle::Position,
-    };
+    use crate::types::hierarchy::primitives::{obj_id::IdManager, rectangle::Position};
 
     use super::Image;
 
@@ -277,14 +276,14 @@ mod tests {
 
         let mut id_mngr = IdManager::default();
 
-        let mut img = Image::from_reader(img_file)
+        let img = Image::from_reader(img_file)
             .scaled(Position::from_mm(100., 100.))
             .at(Position::from_mm(10.0, 42.0))
             .build();
 
         let mut writer = Vec::default();
-        img.id = Some(id_mngr.create_id());
-        img.write(&mut writer).unwrap();
+        // NOTE: same function defined on Image directly, so call using qualified syntax
+        img.write(&mut writer, &id_mngr.create_id()).unwrap();
         let output = String::from_utf8_lossy(&writer);
 
         insta::assert_snapshot!(output);

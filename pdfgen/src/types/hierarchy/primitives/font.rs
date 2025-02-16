@@ -50,14 +50,14 @@ impl Font {
 }
 
 impl Object for Font {
-    fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let bytes_written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 

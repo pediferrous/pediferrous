@@ -32,14 +32,14 @@ impl PdfString {
 }
 
 impl Object for PdfString {
-    fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         self.stream.write(writer)
     }
 }
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn simple_string() {
         let mut id_manager = IdManager::default();
-        let mut pdf_string = PdfString::from(id_manager.create_id(), "This is text.");
+        let pdf_string = PdfString::from(id_manager.create_id(), "This is text.");
 
         let mut writer = Vec::default();
         pdf_string.write_content(&mut writer).unwrap();
