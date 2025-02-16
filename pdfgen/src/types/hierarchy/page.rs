@@ -9,7 +9,6 @@ use super::{
     primitives::{
         name::Name,
         obj_id::{IdManager, ObjId},
-        object::Object,
         rectangle::Rectangle,
         resources::Resources,
     },

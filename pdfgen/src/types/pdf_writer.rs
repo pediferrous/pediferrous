@@ -152,10 +152,6 @@ mod tests {
         ) -> Result<usize, std::io::Error> {
             writer.write(b"FirstLine\nSecondLine\n")
         }
-
-        fn obj_ref(&self) -> &ObjId {
-            &self.0
-        }
     }
 
     #[test]

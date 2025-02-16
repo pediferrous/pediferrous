@@ -82,8 +82,4 @@ impl Object for Font {
 
         Ok(bytes_written)
     }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.id
-    }
 }

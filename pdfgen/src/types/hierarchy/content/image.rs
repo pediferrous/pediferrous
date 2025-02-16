@@ -8,11 +8,7 @@ use pdfgen_macros::const_names;
 use crate::types::{
     constants,
     hierarchy::primitives::{
-        name::Name,
-        obj_id::{IdManager, ObjId},
-        object::Object,
-        rectangle::Position,
-        unit::Unit,
+        name::Name, obj_id::ObjId, object::Object, rectangle::Position, unit::Unit,
     },
 };
 
@@ -111,21 +107,21 @@ impl Image {
 
     /// Creates a new [`Image`] by reading the bytes from the `reader` with default width and
     /// height of 100 mm and position 0, 0 (lower left corner of a page).
-    pub fn from_reader(id: ObjId, reader: impl Read) -> ImageBuilder<false> {
+    pub fn from_reader(reader: impl Read) -> ImageBuilder<false> {
         let mut bytes = Vec::new();
         BufReader::new(reader).read_to_end(&mut bytes).unwrap();
-        Self::from_bytes(id, bytes)
+        Self::from_bytes(bytes)
     }
 
     pub fn from_file(file: std::fs::File) -> ImageBuilder<false> {
         let mut bytes = Vec::new();
         BufReader::new(file).read_to_end(&mut bytes).unwrap();
-        Self::from_bytes(IdManager::default().create_id(), bytes)
+        Self::from_bytes(bytes)
     }
 
     /// Creates a new [`Image`] from the given bytes with default width and height of 100 mm and
     /// position 0, 0 (lower left corner of a page).
-    pub fn from_bytes(id: ObjId, bytes: impl Into<Vec<u8>>) -> ImageBuilder<false> {
+    pub fn from_bytes(bytes: impl Into<Vec<u8>>) -> ImageBuilder<false> {
         let bufreader = Cursor::new(bytes.into());
 
         let decoded_image = ImageReader::new(bufreader)
@@ -140,7 +136,7 @@ impl Image {
 
         let img = Self {
             id: None,
-            samples: Stream::with_bytes(id, pixels),
+            samples: Stream::with_bytes(pixels),
             dict: ImageDict {
                 width,
                 height,
@@ -232,10 +228,6 @@ impl Object for Image {
             writer.write(constants::NL_MARKER),
         })
     }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.samples.id
-    }
 }
 
 pub struct ImageBuilder<const IS_INIT: bool> {
@@ -285,7 +277,7 @@ mod tests {
 
         let mut id_mngr = IdManager::default();
 
-        let mut img = Image::from_reader(id_mngr.create_id(), img_file)
+        let mut img = Image::from_reader(img_file)
             .scaled(Position::from_mm(100., 100.))
             .at(Position::from_mm(10.0, 42.0))
             .build();

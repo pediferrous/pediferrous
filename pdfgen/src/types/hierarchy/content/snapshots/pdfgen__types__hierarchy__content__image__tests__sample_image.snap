@@ -1,9 +1,8 @@
 ---
 source: pdfgen/src/types/hierarchy/content/image.rs
 expression: output
-snapshot_kind: text
 ---
-2 0 obj
+1 0 obj
 << /Type /XObject 
 /Subtype /Image 
 /Width 64
