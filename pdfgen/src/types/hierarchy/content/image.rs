@@ -173,7 +173,6 @@ impl Image {
 
     /// Returns the width, height and position tuple of this [`Image`].
     // TODO: should this be exposed in public API?
-    #[allow(dead_code)]
     pub fn transform(&self) -> ImageTransform {
         self.transform
     }
