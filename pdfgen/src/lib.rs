@@ -7,52 +7,18 @@ mod doc_builder;
 
 pub use doc_builder::Builder;
 
-use std::{
-    any::Any,
-    io::{Error, Write},
-};
+use std::io::{Error, Write};
 use types::{
     hierarchy::{
         catalog::Catalog,
         page_tree::PageTree,
-        primitives::{font::Font, obj_id::IdManager, object::Object},
+        primitives::{font::Font, obj_id::IdManager},
     },
     page::Page,
     pdf_writer::PdfWriter,
 };
 
 pub mod types;
-
-#[allow(dead_code)]
-pub(crate) trait AnyObj: Any + Object {
-    fn as_object(&self) -> &dyn Object;
-    fn as_object_mut(&mut self) -> &mut dyn Object;
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-}
-
-impl<T> AnyObj for T
-where
-    T: Any + Object,
-{
-    fn as_object(&self) -> &dyn Object {
-        self
-    }
-
-    fn as_object_mut(&mut self) -> &mut dyn Object {
-        self
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-}
-
-impl dyn AnyObj {}
 
 /// This represents one cohesive PDF document that can contain multiple pages of content.
 pub struct Document {
