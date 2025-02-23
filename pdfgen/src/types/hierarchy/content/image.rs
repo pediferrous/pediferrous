@@ -111,7 +111,7 @@ impl Image {
         Self::from_bytes(bytes)
     }
 
-    pub fn from_file(file: std::fs::File) -> ImageBuilder<false> {
+    pub fn from_file(file: &std::fs::File) -> ImageBuilder<false> {
         let mut bytes = Vec::new();
         BufReader::new(file).read_to_end(&mut bytes).unwrap();
         Self::from_bytes(bytes)
