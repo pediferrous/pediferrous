@@ -2,8 +2,6 @@
 
 use std::io::{Error, Write};
 
-use pdfgen_macros::const_names;
-
 use crate::{types::hierarchy::content::image::Image, IdManager, ObjId};
 
 use super::name::{Name, OwnedName};
