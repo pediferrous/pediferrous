@@ -243,7 +243,7 @@ pub struct ImageBuilder<const IS_INIT: bool> {
 }
 
 impl<const IS_INIT: bool> ImageBuilder<IS_INIT> {
-    /// TODO: write doc comment.
+    /// Sets the position of an [`Image`] on a page.
     pub fn at(mut self, pos: Position) -> ImageBuilder<true> {
         self.inner.transform.position = pos;
         ImageBuilder { inner: self.inner }
