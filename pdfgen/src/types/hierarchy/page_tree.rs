@@ -2,9 +2,12 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::{constants, hierarchy::primitives::name::Name};
+use crate::{
+    types::{constants, hierarchy::primitives::name::Name},
+    ObjId,
+};
 
-use super::primitives::{array::WriteArray, obj_id::ObjId, object::Object, rectangle::Rectangle};
+use super::primitives::{array::WriteArray, object::Object, rectangle::Rectangle};
 
 /// Page tree is a structure which defines the ordering of pages in the document. The tree contains
 /// nodes of two types:
@@ -132,13 +135,13 @@ impl Object for PageTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+    use crate::{types::hierarchy::primitives::object::Object, IdManager};
 
     use super::PageTree;
 
     #[test]
     fn simple_page_tree() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let page_tree = PageTree::new(id_manager.create_id(), None);
 
         let mut writer = Vec::new();
@@ -155,7 +158,7 @@ mod tests {
 
     #[test]
     fn page_tree_with_kids() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let mut page_tree = PageTree::new(id_manager.create_id(), None);
 
         page_tree.add_page(id_manager.create_id());

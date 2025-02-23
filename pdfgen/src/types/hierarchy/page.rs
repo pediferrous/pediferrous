@@ -2,16 +2,11 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::constants;
+use crate::{types::constants, IdManager, ObjId};
 
 use super::{
     content::{image::Image, ContentStream, Operation},
-    primitives::{
-        name::Name,
-        obj_id::{IdManager, ObjId},
-        rectangle::Rectangle,
-        resources::Resources,
-    },
+    primitives::{name::Name, rectangle::Rectangle, resources::Resources},
 };
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
@@ -153,11 +148,11 @@ impl Page {
 #[cfg(test)]
 mod tests {
     use super::Page;
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, rectangle::Rectangle};
+    use crate::{types::hierarchy::primitives::rectangle::Rectangle, IdManager};
 
     #[test]
     fn basic_page() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let mut page = Page::new(
             id_manager.create_id(),
             id_manager.create_id(),

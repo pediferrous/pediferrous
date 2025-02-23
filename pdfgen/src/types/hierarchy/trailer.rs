@@ -4,11 +4,11 @@ use std::io::Write;
 
 use pdfgen_macros::const_names;
 
-use crate::types::constants;
+use crate::{types::constants, ObjId};
 
 use super::{
     cross_reference_table::CrossReferenceTable,
-    primitives::{array::WriteArray, name::Name, obj_id::ObjId},
+    primitives::{array::WriteArray, name::Name},
 };
 
 /// Extension trait for implementations of Trailer sections (currently only CRT).

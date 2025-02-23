@@ -4,12 +4,9 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::hierarchy::content::image::Image;
+use crate::{types::hierarchy::content::image::Image, IdManager, ObjId};
 
-use super::{
-    name::{Name, OwnedName},
-    obj_id::{IdManager, ObjId},
-};
+use super::name::{Name, OwnedName};
 
 /// Represents a single entry in the [`Resources`] dictionary.
 #[derive(Debug)]

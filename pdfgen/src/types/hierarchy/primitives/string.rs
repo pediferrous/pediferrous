@@ -1,8 +1,11 @@
 use std::io::{Error, Write};
 
-use crate::types::{constants, hierarchy::content::stream::Stream};
+use crate::{
+    types::{constants, hierarchy::content::stream::Stream},
+    ObjId,
+};
 
-use super::{obj_id::ObjId, object::Object};
+use super::object::Object;
 
 /// Represents a PDF String with UTF-8 encoding.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -46,13 +49,13 @@ impl Object for PdfString {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, object::Object};
+    use crate::{types::hierarchy::primitives::object::Object, IdManager};
 
     use super::PdfString;
 
     #[test]
     fn simple_string() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let pdf_string = PdfString::from(id_manager.create_id(), "This is text.");
 
         let mut writer = Vec::default();

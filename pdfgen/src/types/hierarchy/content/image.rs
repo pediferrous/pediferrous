@@ -5,11 +5,12 @@ use std::io::{BufReader, Cursor, Error, Read, Write};
 use image::ImageReader;
 use pdfgen_macros::const_names;
 
-use crate::types::{
-    constants,
-    hierarchy::primitives::{
-        name::Name, obj_id::ObjId, object::Object, rectangle::Position, unit::Unit,
+use crate::{
+    types::{
+        constants,
+        hierarchy::primitives::{name::Name, object::Object, rectangle::Position, unit::Unit},
     },
+    ObjId,
 };
 
 use super::stream::Stream;
@@ -265,7 +266,7 @@ impl ImageBuilder<true> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::types::hierarchy::primitives::{obj_id::IdManager, rectangle::Position};
+    use crate::{types::hierarchy::primitives::rectangle::Position, IdManager};
 
     use super::Image;
 
@@ -274,7 +275,7 @@ mod tests {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg");
         let img_file = std::fs::File::open(dbg!(path)).unwrap();
 
-        let mut id_mngr = IdManager::default();
+        let mut id_mngr = IdManager::new();
 
         let img = Image::from_reader(img_file)
             .scaled(Position::from_mm(100., 100.))
