@@ -202,7 +202,7 @@ impl Object for Image {
             self.samples.write_with_dict(writer, |writer| {
                 Ok(pdfgen_macros::write_chain! {
                     Name::TYPE.write(writer),
-                    Name::new(b"XObject").write(writer),
+                    Name::X_OBJECT.write(writer),
                     writer.write(constants::NL_MARKER),
 
                     Self::SUBTYPE.write(writer),

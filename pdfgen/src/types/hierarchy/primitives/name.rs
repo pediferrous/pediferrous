@@ -71,7 +71,10 @@ impl<T: AsRef<[u8]>> Name<T> {
 }
 
 impl Name<&'static [u8]> {
-    const_names!(pub(crate) TYPE);
+    const_names! {
+        pub(crate) TYPE,
+        pub(crate) X_OBJECT
+    }
 
     /// Create a new [`Name`] from a static byte slice.
     /// This allows seamless creation of `Name` for static data without specifying lifetimes.

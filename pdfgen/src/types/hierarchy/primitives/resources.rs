@@ -92,8 +92,6 @@ pub(crate) struct Renderable<'entry> {
 }
 
 impl Renderable<'_> {
-    const_names!(X_OBJECT);
-
     pub(crate) fn write_def(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
         match self.entry {
             ResourceEntry::Image { image, .. } => image.write(writer, &self.id),
@@ -103,7 +101,7 @@ impl Renderable<'_> {
     pub(crate) fn write_ref(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
         match self.entry {
             ResourceEntry::Image { name, .. } => Ok(pdfgen_macros::write_chain! {
-                Self::X_OBJECT.write(writer),
+                Name::X_OBJECT.write(writer),
 
                 writer.write(b"<< "),
                 name.write(writer),
