@@ -139,17 +139,14 @@ mod tests {
     struct Dummy(ObjId);
 
     impl Object for Dummy {
-        fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
             Ok(pdfgen_macros::write_chain! {
                 self.0.write_def(writer),
                 writer.write(constants::NL_MARKER),
             })
         }
 
-        fn write_content(
-            &mut self,
-            writer: &mut dyn std::io::Write,
-        ) -> Result<usize, std::io::Error> {
+        fn write_content(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
             writer.write(b"FirstLine\nSecondLine\n")
         }
     }

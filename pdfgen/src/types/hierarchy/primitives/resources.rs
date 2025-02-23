@@ -8,8 +8,7 @@ use crate::types::hierarchy::content::image::Image;
 
 use super::{
     name::{Name, OwnedName},
-    obj_id::IdManager,
-    object::Object,
+    obj_id::{IdManager, ObjId},
 };
 
 /// Represents a single entry in the [`Resources`] dictionary.
@@ -17,33 +16,6 @@ use super::{
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
     Image { name: OwnedName, image: Image },
-}
-
-impl ResourceEntry {
-    const_names!(X_OBJECT);
-
-    /// Encode and write this entry into the implementor of [`Write`].
-    fn write_ref(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
-        match self {
-            ResourceEntry::Image { name, image } => Ok(pdfgen_macros::write_chain! {
-                Self::X_OBJECT.write(writer),
-
-                writer.write(b"<< "),
-                name.write(writer),
-                image.id
-                    .as_ref()
-                    .expect("Expected image with an id, but this image does not have it.")
-                    .write_ref(writer),
-                writer.write(b" >>"),
-            }),
-        }
-    }
-
-    pub(crate) fn write(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
-        match self {
-            ResourceEntry::Image { image, .. } => image.write(writer),
-        }
-    }
 }
 
 /// Resource dictionary enumerates the named resources needed by the operators in the content
@@ -93,29 +65,59 @@ impl Resources {
     /// # Panics
     ///
     /// This method panics if IDs are not previously assigned with [`Resources::assign_ids`].
-    pub(crate) fn write_dict(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+    pub(crate) fn write_dict(
+        &self,
+        writer: &mut dyn Write,
+        renderables: &[Renderable],
+    ) -> Result<usize, Error> {
         Ok(pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
-            for entry in &mut self.entries {
-                entry.write_ref(writer),
+            for renderable in renderables.iter() {
+                renderable.write_ref(writer),
             },
 
             writer.write(b" >>"),
         })
     }
 
-    /// Calculates and assigns IDs to all resource entries in this page which don't have IDs
-    /// assigned.
-    pub(crate) fn assign_ids(&mut self, id_manager: &mut IdManager) {
-        for entry in self.entries.iter_mut() {
-            match entry {
-                ResourceEntry::Image { image, .. } => {
-                    if image.id.is_none() {
-                        image.id = Some(id_manager.create_id())
-                    }
-                }
-            }
+    pub(crate) fn renderables(&self, id_manager: &mut IdManager) -> Vec<Renderable> {
+        self.entries
+            .iter()
+            .map(|entry| Renderable {
+                id: id_manager.create_id(),
+                entry,
+            })
+            .collect()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Renderable<'entry> {
+    id: ObjId,
+    entry: &'entry ResourceEntry,
+}
+
+impl Renderable<'_> {
+    const_names!(X_OBJECT);
+
+    pub(crate) fn write_def(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
+        match self.entry {
+            ResourceEntry::Image { image, .. } => image.write(writer, &self.id),
+        }
+    }
+
+    pub(crate) fn write_ref(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
+        match self.entry {
+            ResourceEntry::Image { name, .. } => Ok(pdfgen_macros::write_chain! {
+                Self::X_OBJECT.write(writer),
+
+                writer.write(b"<< "),
+                name.write(writer),
+                self.id
+                    .write_ref(writer),
+                writer.write(b" >>"),
+            }),
         }
     }
 }

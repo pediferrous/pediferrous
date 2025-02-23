@@ -57,14 +57,14 @@ impl Catalog {
 }
 
 impl Object for Catalog {
-    fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
+    fn write_content(&self, writer: &mut dyn std::io::Write) -> Result<usize, Error> {
         let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
@@ -96,7 +96,7 @@ mod tests {
     fn simple_catalog() {
         let mut id_manager = IdManager::default();
         let page_tree = PageTree::new(id_manager.create_id(), None);
-        let mut catalog = Catalog::new(id_manager.create_id(), page_tree);
+        let catalog = Catalog::new(id_manager.create_id(), page_tree);
 
         let mut writer = Vec::default();
         catalog.write_content(&mut writer).unwrap();

@@ -88,14 +88,14 @@ impl PageTree {
 }
 
 impl Object for PageTree {
-    fn write_def(&mut self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+    fn write_def(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
         })
     }
 
-    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let indent_level = Self::KIDS.len() + constants::SP.len();
 
         let written = pdfgen_macros::write_chain! {
@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn simple_page_tree() {
         let mut id_manager = IdManager::default();
-        let mut page_tree = PageTree::new(id_manager.create_id(), None);
+        let page_tree = PageTree::new(id_manager.create_id(), None);
 
         let mut writer = Vec::new();
         page_tree.write_content(&mut writer).unwrap();

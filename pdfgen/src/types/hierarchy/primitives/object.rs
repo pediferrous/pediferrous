@@ -8,24 +8,24 @@ use crate::types::constants;
 /// provide a custom implementation for serializing or outputting their
 /// structured data in a consistent manner.
 pub(crate) trait Object: std::fmt::Debug {
-    fn write(&mut self, writer: &mut dyn Write) -> Result<usize, io::Error> {
-        Ok(pdfgen_macros::write_chain! {
-            self.write_def(writer),
-            self.write_content(writer),
-            self.write_end(writer),
-        })
-    }
+    // fn write(&mut self, writer: &mut dyn Write) -> Result<usize, io::Error> {
+    //     Ok(pdfgen_macros::write_chain! {
+    //         self.write_def(writer),
+    //         self.write_content(writer),
+    //         self.write_end(writer),
+    //     })
+    // }
 
     /// Writes the object definition part of this object, for example `3 0 obj\n`.
     ///
     /// The newline should be included in the implementation of this function.
-    fn write_def(&mut self, writer: &mut dyn Write) -> Result<usize, io::Error>;
+    fn write_def(&self, writer: &mut dyn Write) -> Result<usize, io::Error>;
 
     /// Writes the structured data of the object to the provided writer.
-    fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, io::Error>;
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, io::Error>;
 
     /// Writes the `endobj` marker for objects.
-    fn write_end(&mut self, writer: &mut dyn Write) -> Result<usize, io::Error> {
+    fn write_end(&self, writer: &mut dyn Write) -> Result<usize, io::Error> {
         Ok(pdfgen_macros::write_chain! {
             writer.write(constants::END_OBJ_MARKER),
             writer.write(constants::NL_MARKER),
