@@ -122,11 +122,40 @@ impl Document {
 mod tests {
     use crate::{types::hierarchy::primitives::rectangle::Rectangle, Document};
 
-    #[test]
-    fn simple_document() {
+    fn create_sample_doc() -> Document {
         let mut document = Document::default();
         document.create_page().set_mediabox(Rectangle::A4);
         document.create_font("Type1".into(), "Helvetica".into());
+
+        document
+    }
+
+    #[test]
+    fn parallel_but_identical() {
+        let mut left_doc = Vec::new();
+        let mut right_doc = Vec::new();
+
+        let document = create_sample_doc();
+
+        std::thread::scope(|scope| {
+            scope.spawn(|| {
+                document.write(&mut left_doc).unwrap();
+            });
+
+            scope.spawn(|| {
+                document.write(&mut right_doc).unwrap();
+            });
+        });
+
+        let left_output = String::from_utf8_lossy(&left_doc);
+        let right_output = String::from_utf8_lossy(&right_doc);
+
+        pretty_assertions::assert_eq!(left_output, right_output);
+    }
+
+    #[test]
+    fn simple_document() {
+        let document = create_sample_doc();
 
         let mut writer = Vec::default();
         document.write(&mut writer).unwrap();
