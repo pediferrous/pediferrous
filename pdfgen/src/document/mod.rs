@@ -21,7 +21,6 @@ pub struct Document {
     /// regarding [`ObjId`]s, ensuring that every [`ObjId`] is unique.
     ///
     /// [`ObjId`]: types::hierarchy::primitives::obj_id::ObjId
-    #[allow(dead_code)]
     id_manager: IdManager,
 
     /// Collection of all pages in this PDF document.

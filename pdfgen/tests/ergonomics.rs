@@ -1,5 +1,4 @@
 #![allow(unused)]
-#![allow(dead_code)]
 
 use std::{fs::File, path::PathBuf};
 
