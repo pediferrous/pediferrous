@@ -1,16 +1,19 @@
 //! Implementation of PDF Font object.
 
+use std::io::{Error, Write};
+
 use pdfgen_macros::const_names;
 
-use crate::types::constants;
+use crate::{types::constants, ObjId};
 
-use super::{name::Name, obj_id::ObjId, object::Object};
+use super::{name::Name, object::Object};
 
 /// Represents a font object in a PDF document.
 /// This struct represents a font object in a PDF document, encapsulating the info required to
 /// define and reference a font, including its unique ID, subtype, and base font type.
 /// Fonts are essential for rendering text in PDFs and specify the appearance and
 /// characteristics of text elements.
+#[derive(Debug)]
 pub struct Font {
     /// ID of this Font object.
     id: ObjId,
@@ -47,7 +50,14 @@ impl Font {
 }
 
 impl Object for Font {
-    fn write(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let bytes_written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
@@ -67,12 +77,9 @@ impl Object for Font {
             writer.write(constants::NL_MARKER),
 
             writer.write(b">>"),
+            writer.write(constants::NL_MARKER),
         };
 
         Ok(bytes_written)
-    }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.id
     }
 }

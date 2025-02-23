@@ -1,8 +1,6 @@
 use std::io::{Error, Write};
 
-use crate::types::constants;
-
-use super::obj_id::ObjId;
+use crate::{types::constants, ObjId};
 
 /// Extension trait for implementations of arrays. This trait should be implemented for array-like
 /// data structures that can be used to represent PDF's array primitive type.

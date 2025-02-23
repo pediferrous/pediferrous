@@ -2,15 +2,25 @@
 
 use std::io::{self, Write};
 
-use super::obj_id::ObjId;
+use crate::types::constants;
 
 /// The [`Object`] trait serves as a blueprint for all types that need to
 /// provide a custom implementation for serializing or outputting their
 /// structured data in a consistent manner.
-pub trait Object {
-    /// Writes the structured data of the object to the provided writer.
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, io::Error>;
+pub(crate) trait Object: std::fmt::Debug {
+    /// Writes the object definition part of this object, for example `3 0 obj\n`.
+    ///
+    /// The newline should be included in the implementation of this function.
+    fn write_def(&self, writer: &mut dyn Write) -> Result<usize, io::Error>;
 
-    /// Returns the [`ObjId`] associated with this object.
-    fn obj_ref(&self) -> &ObjId;
+    /// Writes the structured data of the object to the provided writer.
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, io::Error>;
+
+    /// Writes the `endobj` marker for objects.
+    fn write_end(&self, writer: &mut dyn Write) -> Result<usize, io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            writer.write(constants::END_OBJ_MARKER),
+            writer.write(constants::NL_MARKER),
+        })
+    }
 }

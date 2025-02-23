@@ -2,13 +2,11 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::constants;
+use crate::{types::constants, IdManager, ObjId};
 
 use super::{
-    content::{image::ImageTransform, ContentStream, Operation},
-    primitives::{
-        name::Name, obj_id::ObjId, object::Object, rectangle::Rectangle, resources::Resources,
-    },
+    content::{image::Image, ContentStream, Operation},
+    primitives::{name::Name, rectangle::Rectangle, resources::Resources},
 };
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
@@ -68,8 +66,18 @@ impl Page {
         })
     }
 
-    pub fn add_image(&mut self, img_ref: ObjId, transform: ImageTransform) {
-        let name = self.resources.add_image(img_ref);
+    // ids = vec[17, 18]
+    // add_image -> id = ids.len() = 0; ids.push(0);
+    // add_image -> id = ids.len() = 1; ids.push(0);
+    //
+    // when rendering:
+    // for each id in ids.iter_mut() { *id = id_manager.create_id() }
+    pub fn add_image(&mut self, image: Image) {
+        // /Im1 <-> ids[0] -> /Im1 17
+        // ids[0] obj    -> 17 0 obj
+        let transform = image.transform();
+        let name = self.resources.add_image(image);
+
         self.contents
             .add_content(Operation::DrawImage { name, transform });
     }
@@ -77,12 +85,21 @@ impl Page {
     pub(crate) fn content_stream(&self) -> &ContentStream {
         &self.contents
     }
-}
 
-impl Object for Page {
     /// Encode the PDF Page into the given implementor of [`Write`].
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+    pub(crate) fn write(
+        &self,
+        writer: &mut dyn Write,
+        id_manager: &mut IdManager,
+    ) -> Result<(usize, Vec<usize>), Error> {
+        let mut offsets = Vec::with_capacity(self.resources.entries.len());
+
+        let mut renderable_resources = self.resources.renderables(id_manager);
+
         let written = pdfgen_macros::write_chain! {
+            self.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+
             writer.write(b"<< "),
             Name::TYPE.write(writer),
             Self::PAGE.write(writer),
@@ -93,10 +110,12 @@ impl Object for Page {
             writer.write(constants::NL_MARKER),
 
             Self::RESOURCES.write(writer),
-            self.resources.write(writer),
+            self.resources.write_dict(writer, &renderable_resources),
             writer.write(constants::NL_MARKER),
 
-            self.media_box.map(|rect| Self::write_mediabox(writer, rect)).unwrap_or(Ok(0)),
+            if let Some(media_box) = self.media_box {
+                Self::write_mediabox(writer, media_box),
+            },
 
             if !self.contents.is_empty() {
                 Self::CONTENTS.write(writer),
@@ -104,27 +123,36 @@ impl Object for Page {
                 writer.write(constants::NL_MARKER),
             },
 
-            writer.write(b" >>"),
+            writer.write(b">>"),
+            writer.write(constants::NL_MARKER),
+
+            // endobj\n
+            writer.write(constants::END_OBJ_MARKER),
+            writer.write(constants::NL_MARKER),
+            writer.write(constants::NL_MARKER),
+
+            for renderable_entry in renderable_resources.iter_mut() {
+                {
+                    offsets.push(written);
+                    renderable_entry.write_def(writer)
+                }
+            },
+
+            writer.write(constants::NL_MARKER),
         };
 
-        Ok(written)
-    }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.id
+        Ok((written, offsets))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Page;
-    use crate::types::hierarchy::primitives::{
-        obj_id::IdManager, object::Object, rectangle::Rectangle,
-    };
+    use crate::{types::hierarchy::primitives::rectangle::Rectangle, IdManager};
 
     #[test]
     fn basic_page() {
-        let mut id_manager = IdManager::default();
+        let mut id_manager = IdManager::new();
         let mut page = Page::new(
             id_manager.create_id(),
             id_manager.create_id(),
@@ -133,17 +161,19 @@ mod tests {
         page.set_mediabox(Rectangle::from_units(0.0, 0.0, 100.0, 100.0));
 
         let mut writer = Vec::new();
-        page.write(&mut writer).unwrap();
+        page.write(&mut writer, &mut id_manager).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 
         insta::assert_snapshot!(
             output,
             @r"
+        1 0 obj
         << /Type /Page 
         /Parent 3 0 R
         /Resources <<  >>
-        /MediaBox [0 0 100 100] >>
+        /MediaBox [0 0 100 100]>>
+        endobj
         "
         );
     }

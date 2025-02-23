@@ -4,7 +4,6 @@
 pub mod array;
 pub mod font;
 pub mod name;
-pub mod obj_id;
 pub mod object;
 pub mod rectangle;
 pub mod resources;

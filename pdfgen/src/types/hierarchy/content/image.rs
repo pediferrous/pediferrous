@@ -5,11 +5,12 @@ use std::io::{BufReader, Cursor, Error, Read, Write};
 use image::ImageReader;
 use pdfgen_macros::const_names;
 
-use crate::types::{
-    constants,
-    hierarchy::primitives::{
-        name::Name, obj_id::ObjId, object::Object, rectangle::Position, unit::Unit,
+use crate::{
+    types::{
+        constants,
+        hierarchy::primitives::{name::Name, object::Object, rectangle::Position, unit::Unit},
     },
+    ObjId,
 };
 
 use super::stream::Stream;
@@ -105,15 +106,21 @@ impl Image {
 
     /// Creates a new [`Image`] by reading the bytes from the `reader` with default width and
     /// height of 100 mm and position 0, 0 (lower left corner of a page).
-    pub fn from_reader(id: ObjId, reader: impl Read) -> Self {
+    pub fn from_reader(reader: impl Read) -> ImageBuilder<false> {
         let mut bytes = Vec::new();
         BufReader::new(reader).read_to_end(&mut bytes).unwrap();
-        Self::from_bytes(id, bytes)
+        Self::from_bytes(bytes)
+    }
+
+    pub fn from_file(file: &std::fs::File) -> ImageBuilder<false> {
+        let mut bytes = Vec::new();
+        BufReader::new(file).read_to_end(&mut bytes).unwrap();
+        Self::from_bytes(bytes)
     }
 
     /// Creates a new [`Image`] from the given bytes with default width and height of 100 mm and
     /// position 0, 0 (lower left corner of a page).
-    pub fn from_bytes(id: ObjId, bytes: impl Into<Vec<u8>>) -> Self {
+    pub fn from_bytes(bytes: impl Into<Vec<u8>>) -> ImageBuilder<false> {
         let bufreader = Cursor::new(bytes.into());
 
         let decoded_image = ImageReader::new(bufreader)
@@ -126,8 +133,8 @@ impl Image {
         let (width, height) = img.dimensions();
         let pixels = img.into_raw();
 
-        Self {
-            samples: Stream::with_bytes(id, pixels),
+        let img = Self {
+            samples: Stream::with_bytes(pixels),
             dict: ImageDict {
                 width,
                 height,
@@ -138,7 +145,9 @@ impl Image {
                 position: Position::from_mm(0.0, 0.0),
                 scale: Position::from_units(width as f32, height as f32),
             },
-        }
+        };
+
+        ImageBuilder { inner: img }
     }
 
     /// Sets the width and height of this [`Image`].
@@ -164,49 +173,91 @@ impl Image {
 
     /// Returns the width, height and position tuple of this [`Image`].
     // TODO: should this be exposed in public API?
-    #[allow(dead_code)]
     pub fn transform(&self) -> ImageTransform {
         self.transform
+    }
+
+    pub fn write(&self, writer: &mut dyn Write, id: &ObjId) -> Result<usize, Error> {
+        Ok(pdfgen_macros::write_chain! {
+            id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+
+            self.write_content(writer),
+            self.write_end(writer),
+        })
     }
 }
 
 impl Object for Image {
-    fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+    fn write_def(&self, _writer: &mut dyn Write) -> Result<usize, Error> {
+        panic!("Image does not fully implement the Object trait.")
+    }
+
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         // NOTE: The image dictionary shall specify the width, height, and number of bits per
         //       component explicitly. The number of colour components shall be inferred from the
         //       colour space specified in the dictionary.
 
-        self.samples.write_with_dict(writer, |writer| {
-            Ok(pdfgen_macros::write_chain! {
-                Name::TYPE.write(writer),
-                Name::new(b"XObject").write(writer),
-                writer.write(constants::NL_MARKER),
+        Ok(pdfgen_macros::write_chain! {
+            self.samples.write_with_dict(writer, |writer| {
+                Ok(pdfgen_macros::write_chain! {
+                    Name::TYPE.write(writer),
+                    Name::X_OBJECT.write(writer),
+                    writer.write(constants::NL_MARKER),
 
-                Self::SUBTYPE.write(writer),
-                Self::IMAGE.write(writer),
-                writer.write(constants::NL_MARKER),
+                    Self::SUBTYPE.write(writer),
+                    Self::IMAGE.write(writer),
+                    writer.write(constants::NL_MARKER),
 
-                Self::WIDTH.write(writer),
-                writer.write(format!("{}", self.dict.width).as_bytes()),
-                writer.write(constants::NL_MARKER),
+                    Self::WIDTH.write(writer),
+                    writer.write(format!("{}", self.dict.width).as_bytes()),
+                    writer.write(constants::NL_MARKER),
 
-                Self::HEIGHT.write(writer),
-                writer.write(format!("{}", self.dict.height).as_bytes()),
-                writer.write(constants::NL_MARKER),
+                    Self::HEIGHT.write(writer),
+                    writer.write(format!("{}", self.dict.height).as_bytes()),
+                    writer.write(constants::NL_MARKER),
 
-                Self::COLOR_SPACE.write(writer),
-                self.dict.color_space.write(writer),
-                writer.write(constants::NL_MARKER),
+                    Self::COLOR_SPACE.write(writer),
+                    self.dict.color_space.write(writer),
+                    writer.write(constants::NL_MARKER),
 
-                Self::BITS_PER_COMPONENT.write(writer),
-                writer.write(format!("{}", self.dict.bits_per_comp).as_bytes()),
-                writer.write(constants::NL_MARKER),
-            })
+                    Self::BITS_PER_COMPONENT.write(writer),
+                    writer.write(format!("{}", self.dict.bits_per_comp).as_bytes()),
+                    writer.write(constants::NL_MARKER),
+                })
+            }),
+            writer.write(constants::NL_MARKER),
         })
     }
+}
 
-    fn obj_ref(&self) -> &ObjId {
-        &self.samples.id
+pub struct ImageBuilder<const IS_INIT: bool> {
+    inner: Image,
+}
+
+impl<const IS_INIT: bool> ImageBuilder<IS_INIT> {
+    /// Sets the position of an [`Image`] on a page.
+    pub fn at(mut self, pos: Position) -> ImageBuilder<true> {
+        self.inner.transform.position = pos;
+        ImageBuilder { inner: self.inner }
+    }
+
+    /// Sets the scaling of the image to the given width and height.
+    pub fn scaled(mut self, scale: Position) -> Self {
+        self.inner.transform.scale = scale;
+        self
+    }
+
+    /// This is not yet implemented and is a no-op for now.
+    pub fn rotated(self, _degree: usize) -> Self {
+        // TODO: implement rotation
+        self
+    }
+}
+
+impl ImageBuilder<true> {
+    pub fn build(self) -> Image {
+        self.inner
     }
 }
 
@@ -214,9 +265,7 @@ impl Object for Image {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::types::hierarchy::primitives::{
-        obj_id::IdManager, object::Object, rectangle::Position, unit::Unit,
-    };
+    use crate::{types::hierarchy::primitives::rectangle::Position, IdManager};
 
     use super::Image;
 
@@ -225,14 +274,16 @@ mod tests {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg");
         let img_file = std::fs::File::open(dbg!(path)).unwrap();
 
-        let mut id_mngr = IdManager::default();
+        let mut id_mngr = IdManager::new();
 
-        let mut img = Image::from_reader(id_mngr.create_id(), img_file);
-        img.set_dimensions(Unit::from_mm(100.0), Unit::from_mm(100.0));
-        img.set_pos(Position::from_mm(10.0, 42.0));
+        let img = Image::from_reader(img_file)
+            .scaled(Position::from_mm(100., 100.))
+            .at(Position::from_mm(10.0, 42.0))
+            .build();
 
         let mut writer = Vec::default();
-        img.write(&mut writer).unwrap();
+        // NOTE: same function defined on Image directly, so call using qualified syntax
+        img.write(&mut writer, &id_mngr.create_id()).unwrap();
         let output = String::from_utf8_lossy(&writer);
 
         insta::assert_snapshot!(output);
