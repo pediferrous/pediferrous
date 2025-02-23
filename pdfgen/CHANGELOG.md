@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/pediferrous/pediferrous/compare/pdfgen-v0.2.0...pdfgen-v0.3.0) (2025-02-23)
+
+
+### Features
+
+* implement basic support for the `Stream` object ([#49](https://github.com/pediferrous/pediferrous/issues/49)) ([7949d9c](https://github.com/pediferrous/pediferrous/commit/7949d9cea9dbf18b60d790ba092ec8d55667ad21)), closes [#35](https://github.com/pediferrous/pediferrous/issues/35)
+* implement font support ([#52](https://github.com/pediferrous/pediferrous/issues/52)) ([92cdce0](https://github.com/pediferrous/pediferrous/commit/92cdce0589be53378db1ff24296a603ceb2a3490)), closes [#37](https://github.com/pediferrous/pediferrous/issues/37)
+* implement support for basic UTF8 encoded PDF String ([#50](https://github.com/pediferrous/pediferrous/issues/50)) ([5cd87a9](https://github.com/pediferrous/pediferrous/commit/5cd87a9dda2a82fe104d10d15a5f3e9a64933bca)), closes [#36](https://github.com/pediferrous/pediferrous/issues/36)
+* implement support for raster images ([#51](https://github.com/pediferrous/pediferrous/issues/51)) ([a000468](https://github.com/pediferrous/pediferrous/commit/a00046823e080a176d05b7d144f394b520afe4e4)), closes [#41](https://github.com/pediferrous/pediferrous/issues/41)
+
+
+### Bug Fixes
+
+* re-use variable instead of direct env var check in snap macro ([#46](https://github.com/pediferrous/pediferrous/issues/46)) ([9cf99f4](https://github.com/pediferrous/pediferrous/commit/9cf99f4cea53bcf6e83baf5ba7c1eeeec4ccb199))
+* use absolute paths in `snap_test` macro ([#48](https://github.com/pediferrous/pediferrous/issues/48)) ([43944b4](https://github.com/pediferrous/pediferrous/commit/43944b4c691851523ddbe76dd448443b27dd7397))
+
 ## [0.2.0](https://github.com/pediferrous/pediferrous/compare/pdfgen-v0.1.0...pdfgen-v0.2.0) (2024-12-07)
 
 
