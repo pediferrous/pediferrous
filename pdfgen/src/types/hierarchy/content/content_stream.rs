@@ -29,6 +29,8 @@ pub(crate) enum Operation<'a> {
 /// [`Page`]: crate::types::hierarchy::page::Page
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct ContentStream {
+    id: ObjId,
+
     /// Inner stream object containing the actual bytes of the content.
     stream: Stream,
 }
@@ -37,7 +39,8 @@ impl ContentStream {
     /// Creates a new `ContentStream` with the given [`ObjId`].
     pub fn new(id: ObjId) -> Self {
         Self {
-            stream: Stream::new(id),
+            id,
+            stream: Stream::new(),
         }
     }
 
@@ -80,12 +83,16 @@ impl ContentStream {
     pub fn is_empty(&self) -> bool {
         self.stream.is_empty()
     }
+
+    pub(crate) fn obj_ref(&self) -> &ObjId {
+        &self.id
+    }
 }
 
 impl Object for ContentStream {
     fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
-            self.stream.id.write_def(writer),
+            self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
         })
     }
@@ -95,9 +102,5 @@ impl Object for ContentStream {
             self.stream.write(writer),
             writer.write(constants::NL_MARKER),
         })
-    }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.stream.id
     }
 }

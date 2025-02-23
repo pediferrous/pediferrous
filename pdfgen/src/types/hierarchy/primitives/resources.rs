@@ -30,7 +30,10 @@ impl ResourceEntry {
 
                 writer.write(b"<< "),
                 name.write(writer),
-                image.id.as_ref().unwrap().write_ref(writer),
+                image.id
+                    .as_ref()
+                    .expect("Expected image with an id, but this image does not have it.")
+                    .write_ref(writer),
                 writer.write(b" >>"),
             }),
         }

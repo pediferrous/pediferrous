@@ -2,20 +2,13 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::types::{
-    constants,
-    hierarchy::primitives::{name::Name, obj_id::ObjId},
-};
+use crate::types::{constants, hierarchy::primitives::name::Name};
 
 /// A stream object, like a string object, is a sequence of bytes that may be of unlimited length.
 /// Streams should be used to represent objects with potentially large amounts of data, such as
 /// images and page descriptions.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Stream {
-    /// Object ID of this `Stream`.
-    // TODO: get rid of this (pull it out to wrappers of `Stream`)
-    pub(crate) id: ObjId,
-
     // NOTE: Stream dictionaries have more entries such as filter, decode parameters etc. For now,
     //       we only need the required dictionary entry 'Length', implicitly available in `Vec`
     //       implementation.
@@ -30,17 +23,15 @@ impl Stream {
     const_names!(LENGTH);
 
     /// Creates a new empty `Stream`, containing no bytes and with length 0.
-    pub fn new(id: ObjId) -> Self {
+    pub fn new() -> Self {
         Self {
-            id,
             inner: Vec::default(),
         }
     }
 
     /// Creates a new `Stream` with given bytes as the stream's bytes.
-    pub fn with_bytes(id: ObjId, bytes: impl Into<Vec<u8>>) -> Self {
+    pub fn with_bytes(bytes: impl Into<Vec<u8>>) -> Self {
         Self {
-            id,
             inner: bytes.into(),
         }
     }
@@ -102,16 +93,13 @@ impl Stream {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::primitives::obj_id::IdManager;
-
     use super::Stream;
 
     #[test]
     fn basic_stream() {
         let bytes = String::from("This is the content of a stream.");
 
-        let mut id_manager = IdManager::default();
-        let stream = Stream::with_bytes(id_manager.create_id(), bytes);
+        let stream = Stream::with_bytes(bytes);
 
         let mut writer = Vec::default();
         stream.write(&mut writer).unwrap();

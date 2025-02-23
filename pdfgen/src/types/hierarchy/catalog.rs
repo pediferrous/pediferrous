@@ -81,10 +81,6 @@ impl Object for Catalog {
 
         Ok(written)
     }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.id
-    }
 }
 
 #[cfg(test)]

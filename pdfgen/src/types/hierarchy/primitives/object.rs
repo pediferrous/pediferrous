@@ -4,8 +4,6 @@ use std::io::{self, Write};
 
 use crate::types::constants;
 
-use super::obj_id::ObjId;
-
 /// The [`Object`] trait serves as a blueprint for all types that need to
 /// provide a custom implementation for serializing or outputting their
 /// structured data in a consistent manner.
@@ -33,7 +31,4 @@ pub(crate) trait Object: std::fmt::Debug {
             writer.write(constants::NL_MARKER),
         })
     }
-
-    /// Returns the [`ObjId`] associated with this object.
-    fn obj_ref(&self) -> &ObjId;
 }

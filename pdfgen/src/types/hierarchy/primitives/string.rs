@@ -7,6 +7,8 @@ use super::{obj_id::ObjId, object::Object};
 /// Represents a PDF String with UTF-8 encoding.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PdfString {
+    id: ObjId,
+
     /// Inner [`Stream`] is the object that actually stores the bytes of a `PdfString`.
     stream: Stream,
 }
@@ -23,7 +25,8 @@ impl PdfString {
         bytes.push(b')');
 
         Self {
-            stream: Stream::with_bytes(id, bytes),
+            id,
+            stream: Stream::with_bytes(bytes),
         }
     }
 }
@@ -31,17 +34,13 @@ impl PdfString {
 impl Object for PdfString {
     fn write_def(&mut self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
-            self.stream.id.write_def(writer),
+            self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
         })
     }
 
     fn write_content(&mut self, writer: &mut dyn Write) -> Result<usize, Error> {
         self.stream.write(writer)
-    }
-
-    fn obj_ref(&self) -> &ObjId {
-        &self.stream.id
     }
 }
 
