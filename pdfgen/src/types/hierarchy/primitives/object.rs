@@ -8,14 +8,6 @@ use crate::types::constants;
 /// provide a custom implementation for serializing or outputting their
 /// structured data in a consistent manner.
 pub(crate) trait Object: std::fmt::Debug {
-    // fn write(&mut self, writer: &mut dyn Write) -> Result<usize, io::Error> {
-    //     Ok(pdfgen_macros::write_chain! {
-    //         self.write_def(writer),
-    //         self.write_content(writer),
-    //         self.write_end(writer),
-    //     })
-    // }
-
     /// Writes the object definition part of this object, for example `3 0 obj\n`.
     ///
     /// The newline should be included in the implementation of this function.
