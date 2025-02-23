@@ -87,13 +87,13 @@ impl Page {
             .add_content(Operation::DrawImage { name, transform });
     }
 
-    pub(crate) fn content_stream(&mut self) -> &mut ContentStream {
-        &mut self.contents
+    pub(crate) fn content_stream(&self) -> &ContentStream {
+        &self.contents
     }
 
     /// Encode the PDF Page into the given implementor of [`Write`].
     pub(crate) fn write(
-        &mut self,
+        &self,
         writer: &mut dyn Write,
         id_manager: &mut IdManager,
     ) -> Result<(usize, Vec<usize>), Error> {

@@ -57,7 +57,7 @@ impl<W: Write> PdfWriter<W> {
     /// Writes the object start marker(`X X obj`), following with the structured data of the object
     /// itself, finalizing with object end marker(`endobj`), ensuring correct CrossReferenceTable
     /// and cursor update.
-    pub(crate) fn write_object(&mut self, obj: &mut dyn Object) -> Result<(), io::Error> {
+    pub(crate) fn write_object(&mut self, obj: &dyn Object) -> Result<(), io::Error> {
         // Save the objects byte offset in the CrossReferenceTable.
         self.cross_reference_table.add_object(self.current_offset);
 
@@ -105,7 +105,7 @@ impl<W: Write> PdfWriter<W> {
     /// Writes the page contents into the PDF document.
     pub(crate) fn write_page(
         &mut self,
-        page: &mut Page,
+        page: &Page,
         id_manager: &mut IdManager,
     ) -> Result<(), io::Error> {
         self.cross_reference_table.add_object(self.current_offset);
@@ -187,8 +187,8 @@ mod tests {
         let mut pdf_writer = PdfWriter::new(&mut writer);
         let mut id_manager = IdManager::default();
 
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 
@@ -210,14 +210,14 @@ mod tests {
         let mut id_manager = IdManager::default();
 
         pdf_writer.write_header().unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
 
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_eof().unwrap();
@@ -266,14 +266,14 @@ mod tests {
         let mut id_manager = IdManager::default();
 
         pdf_writer.write_header().unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
-        let mut dummy = Dummy(id_manager.create_id());
-        pdf_writer.write_object(&mut dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
+        let dummy = Dummy(id_manager.create_id());
+        pdf_writer.write_object(&dummy).unwrap();
         pdf_writer.write_crt().unwrap();
         pdf_writer.write_trailer(id_manager.create_id()).unwrap();
         pdf_writer.write_eof().unwrap();
