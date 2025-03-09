@@ -15,10 +15,10 @@ use super::{name::Name, object::Object};
 /// characteristics of text elements.
 #[derive(Debug)]
 pub struct Font {
-    /// ID of this Font object.
+    /// ID of this [`Font`] object.
     id: ObjId,
 
-    /// Comment
+    /// Name of this [`Font`], allowing it to be referenced with it.
     name: String,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
@@ -35,7 +35,7 @@ impl Font {
         BASE_FONT,
     }
 
-    /// Create a new Font object with the provided id, subtype and base_font.
+    /// Create a new [`Font`] object with the provided id, subtype and base_font.
     pub fn new<S, B>(name: impl Into<String>, id: ObjId, subtype: S, base_font: B) -> Self
     where
         S: Into<Vec<u8>>,
