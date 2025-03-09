@@ -54,7 +54,7 @@ impl Font {
         }
     }
 
-    /// Comment
+    /// Returns a PDF Font reference, using the FontName and provided size .
     pub fn write_ref(
         &self,
         size: u32,
