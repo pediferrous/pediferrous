@@ -18,6 +18,9 @@ pub struct Font {
     /// ID of this Font object.
     id: ObjId,
 
+    /// Comment
+    name: String,
+
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
     subtype: Name<Vec<u8>>,
 
@@ -33,7 +36,7 @@ impl Font {
     }
 
     /// Create a new Font object with the provided id, subtype and base_font.
-    pub fn new<S, B>(id: ObjId, subtype: S, base_font: B) -> Self
+    pub fn new<S, B>(name: impl Into<String>, id: ObjId, subtype: S, base_font: B) -> Self
     where
         S: Into<Vec<u8>>,
         B: Into<Vec<u8>>,
@@ -42,6 +45,7 @@ impl Font {
         let base_font = Name::new(base_font.into());
 
         Font {
+            name: name.into(),
             id,
             subtype,
             base_font,
