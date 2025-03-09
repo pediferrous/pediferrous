@@ -73,7 +73,7 @@ impl Document {
     /// Creates a new font inside the document.
     pub fn create_font(
         &mut self,
-        name: impl Into<String>,
+        name: Vec<u8>,
         subtype: Vec<u8>,
         base_type: Vec<u8>,
     ) -> &mut Font {
@@ -129,7 +129,7 @@ mod tests {
     fn create_sample_doc() -> Document {
         let mut document = Document::default();
         document.create_page().set_mediabox(Rectangle::A4);
-        document.create_font("TestName", "Type1".into(), "Helvetica".into());
+        document.create_font("TestName".into(), "Type1".into(), "Helvetica".into());
 
         document
     }

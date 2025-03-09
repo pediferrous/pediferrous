@@ -19,7 +19,7 @@ pub struct Font {
     id: ObjId,
 
     /// Name of this [`Font`], allowing it to be referenced with it.
-    name: String,
+    name: Name<Vec<u8>>,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
     subtype: Name<Vec<u8>>,
@@ -36,20 +36,35 @@ impl Font {
     }
 
     /// Create a new [`Font`] object with the provided id, subtype and base_font.
-    pub fn new<S, B>(name: impl Into<String>, id: ObjId, subtype: S, base_font: B) -> Self
+    pub fn new<N, S, B>(name: N, id: ObjId, subtype: S, base_font: B) -> Self
     where
+        N: Into<Vec<u8>>,
         S: Into<Vec<u8>>,
         B: Into<Vec<u8>>,
     {
+        let name = Name::new(name.into());
         let subtype = Name::new(subtype.into());
         let base_font = Name::new(base_font.into());
 
         Font {
-            name: name.into(),
-            id,
+            name,
+            id: Some(id),
             subtype,
             base_font,
         }
+    }
+
+    /// Comment
+    pub fn write_ref(
+        &self,
+        size: u32,
+        writer: &mut dyn std::io::Write,
+    ) -> Result<usize, std::io::Error> {
+        // /FName size
+        Ok(pdfgen_macros::write_chain! {
+            self.name.write(writer),
+            writer.write(format!{" {}", size}.as_bytes()),
+        })
     }
 }
 
