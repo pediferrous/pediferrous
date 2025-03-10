@@ -6,3 +6,4 @@ pub use content_stream::*;
 
 pub mod image;
 pub mod stream;
+pub mod text;

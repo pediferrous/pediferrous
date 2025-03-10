@@ -8,5 +8,4 @@ pub mod object;
 pub mod rectangle;
 pub mod resources;
 pub mod string;
-pub mod text;
 pub mod unit;

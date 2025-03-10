@@ -1,8 +1,9 @@
 //! Implementation of PDF Text object.
 
-use crate::types::constants;
-
-use super::{object::Object, rectangle::Position, string::PdfString};
+use crate::types::{
+    constants,
+    hierarchy::primitives::{object::Object, rectangle::Position, string::PdfString},
+};
 
 /// Comment
 #[derive(Debug)]
