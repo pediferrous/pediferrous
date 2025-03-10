@@ -5,42 +5,51 @@ use crate::types::{
     hierarchy::primitives::{object::Object, rectangle::Position, string::PdfString},
 };
 
-/// Comment
+/// Defines the transformation properties of a [`Text`] object, including its position and size on a [`Page`].
+///
+/// [`Page`]: crate::types::hierarchy::page::Page
 #[derive(Debug)]
 pub(crate) struct TextTransform {
-    /// Comment
+    /// The position of the [`Text`] on the [`Page`].
+    ///
+    /// [`Page`]: crate::types::hierarchy::page::Page
     position: Position,
 
-    /// Comment
+    /// The font size of the [`Text`] in user space units.
     size: u32,
 }
 
-/// Comment
+/// A PDF text object, encapsulating a selected font, size, position, and content for rendering
+/// text on a [`Page`].
+///
+/// [`Page`]: crate::types::hierarchy::page::Page
 #[derive(Debug)]
 pub struct Text {
-    /// Comment
+    /// Represents the content (literal) to be rendered.
     content: PdfString,
 
-    /// Comment
+    /// Represents the [`Text`] objects rendering position and scale.
     transform: TextTransform,
 
-    /// Comment
+    /// Represents a PDF Resources reference name of an already defined font.
     font_name: String,
 }
 
 impl Text {
-    /// Comment
+    /// Represents the Begin Text marker.
     pub const BT_MARKER: &[u8] = b"BT";
-    /// Comment
+    /// Represents the End Text marker.
     pub const ET_MARKER: &[u8] = b"ET";
-    /// Comment
+
+    /// Represents the Tf (Text Font) operator.
     pub const TF_OPERATOR: &[u8] = b"Tf";
-    /// Comment
+    /// Represents the Td (Text Move) operator.
     pub const TD_OPERATOR: &[u8] = b"Td";
-    /// Comment
+    /// Represents the Tj (Text Show) operator.
     pub const TJ_OPERATOR: &[u8] = b"Tj";
 
-    /// Comment
+    /// Creates a default initialized [`TexBuilder`], providing default values for font (Helvetica) and it's
+    /// size (12).
     fn builder() -> TextBuilder<false> {
         let txt = Self {
             content: PdfString::from(""),
@@ -54,14 +63,15 @@ impl Text {
         TextBuilder { inner: txt }
     }
 
-    /// Comment
+    /// Expands the inner content with the provided one.
     fn expand(&mut self, content: impl Into<String>) {
         self.content.expand(content);
     }
 }
 
 impl Object for Text {
-    /// Comment
+    /// Writes the object definition part of this object, in this case `BT`, representing Begin
+    /// Text.
     fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
             writer.write(Self::BT_MARKER),
@@ -89,7 +99,8 @@ impl Object for Text {
         })
     }
 
-    /// Comment
+    /// Writes the object definition closure part of this object, in this case `ET`, representing
+    /// End Text.
     fn write_end(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
         Ok(pdfgen_macros::write_chain! {
             writer.write(Self::ET_MARKER),
@@ -98,14 +109,17 @@ impl Object for Text {
     }
 }
 
-/// Comment
+/// A builder for constructing a [`Text`] object, allowing incremental modifications.
+/// The `IS_INIT` const generic tracks whether initialization has been completed (if position has
+/// been set).
 pub struct TextBuilder<const IS_INIT: bool> {
-    /// Comment
+    /// The underlying [`Text`] object being built.
     inner: Text,
 }
 
 impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
-    /// Sets the position of the [`Text`] on a page.
+    /// Sets the position of the [`Text`] on a page, after which the building of the [`Text`]
+    /// object is allowed.
     pub fn at(mut self, pos: Position) -> TextBuilder<true> {
         self.inner.transform.position = pos;
         TextBuilder { inner: self.inner }
@@ -137,7 +151,7 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
 }
 
 impl TextBuilder<true> {
-    /// Comment
+    /// Creates the [`Text`] object from the already provided configurations.
     pub fn build(self) -> Text {
         self.inner
     }
