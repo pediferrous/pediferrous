@@ -1,0 +1,12 @@
+---
+source: pdfgen/src/types/hierarchy/primitives/font.rs
+expression: output
+snapshot_kind: text
+---
+1 0 obj
+<< /Type /Font 
+/Subtype /Type1 
+/BaseFont /Helvetica 
+/Name /CustomFnt 
+>>
+endobj

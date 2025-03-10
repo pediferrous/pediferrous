@@ -33,6 +33,7 @@ impl Font {
         FONT,
         SUBTYPE,
         BASE_FONT,
+        NAME,
     }
 
     /// Create a new [`Font`] object with the provided id, subtype and base_font.
@@ -47,8 +48,8 @@ impl Font {
         let base_font = Name::new(base_font.into());
 
         Font {
+            id,
             name,
-            id: Some(id),
             subtype,
             base_font,
         }
@@ -93,6 +94,11 @@ impl Object for Font {
             // /BaseFont /xyz
             Self::BASE_FONT.write(writer),
             self.base_font.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            // /Name /xyz
+            Self::NAME.write(writer),
+            self.name.write(writer),
             writer.write(constants::NL_MARKER),
 
             writer.write(b">>"),

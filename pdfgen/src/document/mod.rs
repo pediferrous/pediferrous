@@ -191,6 +191,7 @@ mod tests {
         << /Type /Font 
         /Subtype /Type1 
         /BaseFont /Helvetica 
+        /Name /TestName 
         >>
         endobj
 
@@ -208,7 +209,7 @@ mod tests {
                   ]
                >>
         startxref
-        294
+        311
         %%EOF
         ");
     }

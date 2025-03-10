@@ -1,0 +1,10 @@
+---
+source: pdfgen/src/types/hierarchy/primitives/text.rs
+expression: output
+snapshot_kind: text
+---
+BT
+/BiHDef 12 Tf
+0 0 Td
+() Tj
+ET
