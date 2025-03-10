@@ -141,3 +141,43 @@ impl TextBuilder<true> {
         self.inner
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::types::hierarchy::primitives::object::Object;
+    use crate::types::hierarchy::primitives::rectangle::Position;
+
+    use super::Text;
+
+    #[test]
+    pub fn default_text() {
+        let txt = Text::builder().at(Position::from_mm(0.0, 0.0)).build();
+
+        let mut writer = Vec::default();
+        let _ = txt.write_def(&mut writer);
+        let _ = txt.write_content(&mut writer);
+        let _ = txt.write_end(&mut writer);
+
+        let output = String::from_utf8_lossy(&writer);
+        insta::assert_snapshot!(output);
+    }
+
+    #[test]
+    pub fn custom_text() {
+        let txt = Text::builder()
+            .with_content("This is")
+            .with_expanded_content(" a custom text content.")
+            .with_size(14)
+            .with_font("CustomFnt")
+            .at(Position::from_mm(0.0, 0.0))
+            .build();
+
+        let mut writer = Vec::default();
+        let _ = txt.write_def(&mut writer);
+        let _ = txt.write_content(&mut writer);
+        let _ = txt.write_end(&mut writer);
+
+        let output = String::from_utf8_lossy(&writer);
+        insta::assert_snapshot!(output);
+    }
+}
