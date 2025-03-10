@@ -46,12 +46,7 @@ mod tests {
         pdf_string.write_content(&mut writer).unwrap();
         let output = String::from_utf8(writer).unwrap();
 
-        insta::assert_snapshot!(output, @r"
-        << /Length 18 >>
-        stream
-        (﻿This is text.)
-        endstream
-        ");
+        insta::assert_snapshot!(output, @"(This is text.)");
     }
 
     #[test]
@@ -63,11 +58,6 @@ mod tests {
         pdf_string.write_content(&mut writer).unwrap();
         let output = String::from_utf8(writer).unwrap();
 
-        insta::assert_snapshot!(output, @r"
-        << /Length 18 >>
-        stream
-        (﻿This is text.)
-        endstream
-        ");
+        insta::assert_snapshot!(output, @"(This is an expanded text.)");
     }
 }

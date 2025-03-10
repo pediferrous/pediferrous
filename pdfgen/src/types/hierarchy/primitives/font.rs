@@ -108,3 +108,24 @@ impl Object for Font {
         Ok(bytes_written)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{types::hierarchy::primitives::font::Object, IdManager};
+
+    use super::Font;
+
+    #[test]
+    pub fn font_object() {
+        let mut id_manager = IdManager::new();
+        let font = Font::new("CustomFnt", id_manager.create_id(), "Type1", "Helvetica");
+
+        let mut writer = Vec::default();
+        let _ = font.write_def(&mut writer);
+        let _ = font.write_content(&mut writer);
+        let _ = font.write_end(&mut writer);
+
+        let output = String::from_utf8_lossy(&writer);
+        insta::assert_snapshot!(output);
+    }
+}
