@@ -58,8 +58,45 @@ impl Text {
         self.content.expand(content);
     }
 }
+
+impl Object for Text {
+    /// Comment
+    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            writer.write(Self::BT_MARKER),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            // /FName Size Tf
+            writer.write(format!{"/{} {} ", self.font_name, self.transform.size}.as_bytes()),
+            writer.write(Self::TF_OPERATOR),
+            writer.write(constants::NL_MARKER),
+
+            // posx posy Td
+            writer.write(format!("{} {} ", self.transform.position.x, self.transform.position.y).as_bytes()),
+            writer.write(Self::TD_OPERATOR),
+            writer.write(constants::NL_MARKER),
+
+            // (Text) Tj
+            self.content.write_content(writer),
+            writer.write(constants::SP),
+            writer.write(Self::TJ_OPERATOR),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    /// Comment
+    fn write_end(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
+        Ok(pdfgen_macros::write_chain! {
+            writer.write(Self::ET_MARKER),
+            writer.write(constants::NL_MARKER),
+        })
     }
 }
+
 /// Comment
 pub struct TextBuilder<const IS_INIT: bool> {
     /// Comment
