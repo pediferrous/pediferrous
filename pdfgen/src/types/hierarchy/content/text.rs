@@ -50,7 +50,7 @@ impl Text {
 
     /// Creates a default initialized [`TexBuilder`], providing default values for font (Helvetica) and it's
     /// size (12).
-    fn builder() -> TextBuilder<false> {
+    pub fn builder() -> TextBuilder<false> {
         let txt = Self {
             content: PdfString::from(""),
             transform: TextTransform {
