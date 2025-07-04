@@ -6,7 +6,10 @@ use pdfgen_macros::const_names;
 
 use crate::{types::constants, ObjId};
 
-use super::{name::Name, object::Object};
+use super::{
+    name::{Name, OwnedName},
+    object::Object,
+};
 
 /// Represents a font object in a PDF document.
 /// This struct represents a font object in a PDF document, encapsulating the info required to
@@ -19,13 +22,13 @@ pub struct Font {
     id: ObjId,
 
     /// Name of this [`Font`], allowing it to be referenced with it.
-    name: Name<Vec<u8>>,
+    name: OwnedName,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
-    subtype: Name<Vec<u8>>,
+    subtype: OwnedName,
 
     /// Represents the base font type, identifying the general font family or format.
-    base_font: Name<Vec<u8>>,
+    base_font: OwnedName,
 }
 
 impl Font {
@@ -37,22 +40,27 @@ impl Font {
     }
 
     /// Create a new [`Font`] object with the provided id, subtype and base_font.
-    pub fn new<N, S, B>(name: N, id: ObjId, subtype: S, base_font: B) -> Self
+    pub fn try_new<N, S, B>(
+        name: N,
+        id: ObjId,
+        subtype: S,
+        base_font: B,
+    ) -> Result<Self, &'static str>
     where
         N: Into<Vec<u8>>,
         S: Into<Vec<u8>>,
         B: Into<Vec<u8>>,
     {
-        let name = Name::new(name.into());
-        let subtype = Name::new(subtype.into());
-        let base_font = Name::new(base_font.into());
+        let name = Name::try_new(name.into())?;
+        let subtype = Name::try_new(subtype.into())?;
+        let base_font = Name::try_new(base_font.into())?;
 
-        Font {
+        Ok(Font {
             id,
             name,
             subtype,
             base_font,
-        }
+        })
     }
 
     /// Writes the PDF Font reference, using the FontName and provided size.
@@ -64,7 +72,7 @@ impl Font {
         // /FName size
         Ok(pdfgen_macros::write_chain! {
             self.name.write(writer),
-            writer.write(format!{" {}", size}.as_bytes()),
+            writer.write(format!{" {size}"}.as_bytes()),
         })
     }
 }
@@ -118,7 +126,8 @@ mod tests {
     #[test]
     pub fn font_object() {
         let mut id_manager = IdManager::new();
-        let font = Font::new("CustomFnt", id_manager.create_id(), "Type1", "Helvetica");
+        let font =
+            Font::try_new("CustomFnt", id_manager.create_id(), "Type1", "Helvetica").unwrap();
 
         let mut writer = Vec::default();
         let _ = font.write_def(&mut writer);

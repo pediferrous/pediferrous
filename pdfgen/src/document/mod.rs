@@ -76,12 +76,13 @@ impl Document {
         name: Vec<u8>,
         subtype: Vec<u8>,
         base_type: Vec<u8>,
-    ) -> &mut Font {
+    ) -> Result<&mut Font, &'static str> {
         let id = self.id_manager.create_id();
 
-        self.fonts.push(Font::new(name, id, subtype, base_type));
+        let font = Font::try_new(name, id, subtype, base_type)?;
+        self.fonts.push(font);
 
-        self.fonts.last_mut().unwrap()
+        Ok(self.fonts.last_mut().unwrap())
     }
 
     /// Returns a mutable reference to the current page in document.
@@ -129,7 +130,9 @@ mod tests {
     fn create_sample_doc() -> Document {
         let mut document = Document::default();
         document.create_page().set_mediabox(Rectangle::A4);
-        document.create_font("TestName".into(), "Type1".into(), "Helvetica".into());
+        document
+            .create_font("TestName".into(), "Type1".into(), "Helvetica".into())
+            .unwrap();
 
         document
     }
