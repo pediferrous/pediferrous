@@ -4,7 +4,7 @@ use std::io::Write;
 
 use pdfgen_macros::const_names;
 
-use crate::{types::constants, ObjId};
+use crate::{ObjId, types::constants};
 
 use super::{
     cross_reference_table::CrossReferenceTable,

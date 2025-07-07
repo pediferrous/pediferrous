@@ -2,10 +2,10 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::{types::constants, IdManager, ObjId};
+use crate::{IdManager, ObjId, types::constants};
 
 use super::{
-    content::{image::Image, ContentStream, Operation},
+    content::{ContentStream, Operation, image::Image},
     primitives::{name::Name, rectangle::Rectangle, resources::Resources},
 };
 
@@ -148,7 +148,7 @@ impl Page {
 #[cfg(test)]
 mod tests {
     use super::Page;
-    use crate::{types::hierarchy::primitives::rectangle::Rectangle, IdManager};
+    use crate::{IdManager, types::hierarchy::primitives::rectangle::Rectangle};
 
     #[test]
     fn basic_page() {

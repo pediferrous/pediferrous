@@ -2,7 +2,7 @@ use std::io::Error;
 
 use pdfgen_macros::const_names;
 
-use crate::{types::constants, ObjId};
+use crate::{ObjId, types::constants};
 
 use super::{
     page_tree::PageTree,
@@ -86,8 +86,8 @@ impl Object for Catalog {
 #[cfg(test)]
 mod tests {
     use crate::{
-        types::hierarchy::{page_tree::PageTree, primitives::object::Object},
         IdManager,
+        types::hierarchy::{page_tree::PageTree, primitives::object::Object},
     };
 
     use super::Catalog;

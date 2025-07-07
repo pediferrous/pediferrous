@@ -2,7 +2,7 @@
 
 use std::io::{Error, Write};
 
-use crate::{types::hierarchy::content::image::Image, IdManager, ObjId};
+use crate::{IdManager, ObjId, types::hierarchy::content::image::Image};
 
 use super::name::{Name, OwnedName};
 

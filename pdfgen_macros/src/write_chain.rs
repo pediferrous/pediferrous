@@ -1,9 +1,9 @@
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
+    Expr, Pat, Token,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
-    Expr, Pat, Token,
 };
 
 /// Represents a sequence of expressions inside of a `for` loop in `write_chain` macro.
