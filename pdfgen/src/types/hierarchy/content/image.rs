@@ -6,11 +6,11 @@ use image::ImageReader;
 use pdfgen_macros::const_names;
 
 use crate::{
+    ObjId,
     types::{
         constants,
         hierarchy::primitives::{name::Name, object::Object, rectangle::Position, unit::Unit},
     },
-    ObjId,
 };
 
 use super::stream::Stream;
@@ -265,7 +265,7 @@ impl ImageBuilder<true> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::{types::hierarchy::primitives::rectangle::Position, IdManager};
+    use crate::{IdManager, types::hierarchy::primitives::rectangle::Position};
 
     use super::Image;
 

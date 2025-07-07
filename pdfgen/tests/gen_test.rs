@@ -1,11 +1,11 @@
 use std::{fs::File, path::PathBuf};
 
 use pdfgen::{
+    Document,
     types::hierarchy::{
         content::image::Image,
         primitives::rectangle::{Position, Rectangle},
     },
-    Document,
 };
 
 mod macros;

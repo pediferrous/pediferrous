@@ -4,7 +4,7 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_names;
 
-use crate::{types::constants, ObjId};
+use crate::{ObjId, types::constants};
 
 use super::{name::Name, object::Object};
 

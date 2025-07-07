@@ -1,8 +1,8 @@
 //! Types for easier construction of a PDF [`Document`].
 
 use crate::{
-    types::hierarchy::{catalog::Catalog, page_tree::PageTree, primitives::rectangle::Rectangle},
     Document, IdManager,
+    types::hierarchy::{catalog::Catalog, page_tree::PageTree, primitives::rectangle::Rectangle},
 };
 
 /// Used for construction of a PDF [`Document`], enabling streamlined configuration of the

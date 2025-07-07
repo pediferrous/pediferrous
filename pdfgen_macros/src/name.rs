@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 use syn::{
-    parse::Parse, parse_macro_input, punctuated::Punctuated, Attribute, Ident, LitByteStr, Token,
-    Visibility,
+    Attribute, Ident, LitByteStr, Token, Visibility, parse::Parse, parse_macro_input,
+    punctuated::Punctuated,
 };
 
 /// Represents the input to the `const_names` macro.

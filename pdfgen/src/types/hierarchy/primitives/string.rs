@@ -1,8 +1,8 @@
 use std::io::{Error, Write};
 
 use crate::{
-    types::{constants, hierarchy::content::stream::Stream},
     ObjId,
+    types::{constants, hierarchy::content::stream::Stream},
 };
 
 use super::object::Object;
@@ -49,7 +49,7 @@ impl Object for PdfString {
 
 #[cfg(test)]
 mod tests {
-    use crate::{types::hierarchy::primitives::object::Object, IdManager};
+    use crate::{IdManager, types::hierarchy::primitives::object::Object};
 
     use super::PdfString;
 
