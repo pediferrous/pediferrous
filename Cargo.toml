@@ -7,7 +7,7 @@ resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["Nadir Fejzić <nadirfejzo@gmail.com>", "Kasim Fejzić <kasimfejzo@gmail.com>"]
 description = "PDF Generation and rendering libraries written in Rust."
 repository = "https://github.com/pediferrous/pediferrous"
