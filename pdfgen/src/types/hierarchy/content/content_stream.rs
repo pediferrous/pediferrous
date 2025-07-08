@@ -1,9 +1,9 @@
 use crate::{
+    ObjId,
     types::{
         constants,
         hierarchy::primitives::{name::Name, object::Object, rectangle::Position},
     },
-    ObjId,
 };
 
 use super::{image::ImageTransform, stream::Stream};

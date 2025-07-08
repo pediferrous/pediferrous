@@ -124,8 +124,8 @@ impl<W: Write> PdfWriter<W> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        types::{constants, pdf_writer::PdfWriter},
         IdManager, ObjId,
+        types::{constants, pdf_writer::PdfWriter},
     };
 
     use super::Object;

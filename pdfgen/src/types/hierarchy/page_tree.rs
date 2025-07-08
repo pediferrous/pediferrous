@@ -3,8 +3,8 @@ use std::io::{Error, Write};
 use pdfgen_macros::const_names;
 
 use crate::{
-    types::{constants, hierarchy::primitives::name::Name},
     ObjId,
+    types::{constants, hierarchy::primitives::name::Name},
 };
 
 use super::primitives::{array::WriteArray, object::Object, rectangle::Rectangle};
@@ -135,7 +135,7 @@ impl Object for PageTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::{types::hierarchy::primitives::object::Object, IdManager};
+    use crate::{IdManager, types::hierarchy::primitives::object::Object};
 
     use super::PageTree;
 

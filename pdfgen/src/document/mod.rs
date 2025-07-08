@@ -124,7 +124,7 @@ impl Document {
 
 #[cfg(test)]
 mod tests {
-    use crate::{types::hierarchy::primitives::rectangle::Rectangle, Document};
+    use crate::{Document, types::hierarchy::primitives::rectangle::Rectangle};
 
     fn create_sample_doc() -> Document {
         let mut document = Document::default();
