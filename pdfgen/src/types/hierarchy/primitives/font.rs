@@ -111,7 +111,7 @@ impl Object for Font {
 
 #[cfg(test)]
 mod tests {
-    use crate::{types::hierarchy::primitives::font::Object, IdManager};
+    use crate::{IdManager, types::hierarchy::primitives::font::Object};
 
     use super::Font;
 
