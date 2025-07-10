@@ -1,8 +1,10 @@
 //! Implementation of PDF Text object.
 
+use std::io::{self, Write};
+
 use crate::types::{
     constants,
-    hierarchy::primitives::{object::Object, rectangle::Position, string::PdfString},
+    hierarchy::primitives::{name::Name, rectangle::Position, string::PdfString},
 };
 
 /// Defines the transformation properties of a [`Text`] object, including its position and size on a [`Page`].
@@ -30,9 +32,6 @@ pub struct Text {
 
     /// Represents the [`Text`] objects rendering position and scale.
     transform: TextTransform,
-
-    /// Represents a PDF Resources reference name of an already defined font.
-    font_name: String,
 }
 
 impl Text {
@@ -57,7 +56,6 @@ impl Text {
                 position: Position::from_mm(0.0, 0.0),
                 size: 12,
             },
-            font_name: String::from_utf8_lossy(constants::DEFAULT_FONT).to_string(),
         };
 
         TextBuilder { inner: txt }
@@ -67,45 +65,42 @@ impl Text {
     fn expand(&mut self, content: impl Into<String>) {
         self.content.expand(content);
     }
-}
 
-impl Object for Text {
-    /// Writes the object definition part of this object, in this case `BT`, representing Begin
-    /// Text.
-    fn write_def(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
-        Ok(pdfgen_macros::write_chain! {
-            writer.write(Self::BT_MARKER),
-            writer.write(constants::NL_MARKER),
-        })
-    }
+    /// Comment
+    pub(crate) fn to_bytes(&self, font_name: Name<&[u8]>) -> io::Result<Vec<u8>> {
+        let mut writer = Vec::new();
 
-    fn write_content(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
-        Ok(pdfgen_macros::write_chain! {
-            // /FName Size Tf
-            writer.write(format!{"/{} {} ", self.font_name, self.transform.size}.as_bytes()),
-            writer.write(Self::TF_OPERATOR),
-            writer.write(constants::NL_MARKER),
+        // BT
+        writer.write_all(Self::BT_MARKER)?;
+        writer.write_all(constants::NL_MARKER)?;
 
-            // posx posy Td
-            writer.write(format!("{} {} ", self.transform.position.x, self.transform.position.y).as_bytes()),
-            writer.write(Self::TD_OPERATOR),
-            writer.write(constants::NL_MARKER),
+        // /FName Size Tf
+        font_name.write(&mut writer)?;
+        writer.write_all(format! {"{} ", self.transform.size}.as_bytes())?;
+        writer.write_all(Self::TF_OPERATOR)?;
+        writer.write_all(constants::NL_MARKER)?;
 
-            // (Text) Tj
-            self.content.write_content(writer),
-            writer.write(constants::SP),
-            writer.write(Self::TJ_OPERATOR),
-            writer.write(constants::NL_MARKER),
-        })
-    }
+        // posx posy Td
+        writer.write_all(
+            format!(
+                "{} {} ",
+                self.transform.position.x, self.transform.position.y
+            )
+            .as_bytes(),
+        )?;
+        writer.write_all(Self::TD_OPERATOR)?;
+        writer.write_all(constants::NL_MARKER)?;
 
-    /// Writes the object definition closure part of this object, in this case `ET`, representing
-    /// End Text.
-    fn write_end(&self, writer: &mut dyn std::io::Write) -> Result<usize, std::io::Error> {
-        Ok(pdfgen_macros::write_chain! {
-            writer.write(Self::ET_MARKER),
-            writer.write(constants::NL_MARKER),
-        })
+        // (Text) Tj
+        self.content.write_content(&mut writer)?;
+        writer.write_all(constants::SP)?;
+        writer.write_all(Self::TJ_OPERATOR)?;
+        writer.write_all(constants::NL_MARKER)?;
+
+        // ET
+        writer.write_all(Self::ET_MARKER)?;
+
+        Ok(writer)
     }
 }
 
@@ -142,12 +137,6 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
         self.inner.transform.size = size;
         self
     }
-
-    /// Sets the font of the [`Text`].
-    pub fn with_font(mut self, font_name: impl Into<String>) -> Self {
-        self.inner.font_name = font_name.into();
-        self
-    }
 }
 
 impl TextBuilder<true> {
@@ -159,21 +148,19 @@ impl TextBuilder<true> {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::primitives::object::Object;
-    use crate::types::hierarchy::primitives::rectangle::Position;
+    use crate::types::hierarchy::{content::text::Name, primitives::rectangle::Position};
 
     use super::Text;
 
     #[test]
     pub fn default_text() {
-        let txt = Text::builder().at(Position::from_mm(0.0, 0.0)).build();
+        let txt = Text::builder()
+            .at(Position::from_mm(0.0, 0.0))
+            .build()
+            .to_bytes(Name::from_static(b"BiHDef"))
+            .unwrap();
 
-        let mut writer = Vec::default();
-        let _ = txt.write_def(&mut writer);
-        let _ = txt.write_content(&mut writer);
-        let _ = txt.write_end(&mut writer);
-
-        let output = String::from_utf8_lossy(&writer);
+        let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output);
     }
 
@@ -183,16 +170,12 @@ mod tests {
             .with_content("This is")
             .with_expanded_content(" a custom text content.")
             .with_size(14)
-            .with_font("CustomFnt")
             .at(Position::from_mm(0.0, 0.0))
-            .build();
+            .build()
+            .to_bytes(Name::from_static(b"CustomFnt"))
+            .unwrap();
 
-        let mut writer = Vec::default();
-        let _ = txt.write_def(&mut writer);
-        let _ = txt.write_content(&mut writer);
-        let _ = txt.write_end(&mut writer);
-
-        let output = String::from_utf8_lossy(&writer);
+        let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output);
     }
 }

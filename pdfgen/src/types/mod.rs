@@ -15,7 +15,4 @@ pub(crate) mod constants {
 
     /// Marker indicating end of an object section.
     pub const END_OBJ_MARKER: &[u8] = b"endobj";
-
-    /// Default font name.
-    pub const DEFAULT_FONT: &[u8] = b"BiHDef";
 }

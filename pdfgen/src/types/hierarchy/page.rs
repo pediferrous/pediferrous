@@ -5,7 +5,7 @@ use pdfgen_macros::const_names;
 use crate::{IdManager, ObjId, types::constants};
 
 use super::{
-    content::{ContentStream, Operation, image::Image},
+    content::{ContentStream, Operation, image::Image, text::Text},
     primitives::{name::Name, rectangle::Rectangle, resources::Resources},
 };
 
@@ -80,6 +80,14 @@ impl Page {
 
         self.contents
             .add_content(Operation::DrawImage { name, transform });
+    }
+
+    /// Comment
+    pub fn add_text(&mut self, text: Text, font_id: ObjId) {
+        let font_name = self.resources.add_font(font_id);
+
+        self.contents
+            .add_content(Operation::DrawText { text, font_name });
     }
 
     pub(crate) fn content_stream(&self) -> &ContentStream {

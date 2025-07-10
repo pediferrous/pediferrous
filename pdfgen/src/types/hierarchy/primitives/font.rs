@@ -16,10 +16,7 @@ use super::{name::Name, object::Object};
 #[derive(Debug)]
 pub struct Font {
     /// ID of this [`Font`] object.
-    id: ObjId,
-
-    /// Name of this [`Font`], allowing it to be referenced with it.
-    name: Name<Vec<u8>>,
+    pub(crate) id: ObjId,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
     subtype: Name<Vec<u8>>,
@@ -33,39 +30,22 @@ impl Font {
         FONT,
         SUBTYPE,
         BASE_FONT,
-        NAME,
     }
 
     /// Create a new [`Font`] object with the provided id, subtype and base_font.
-    pub fn new<N, S, B>(name: N, id: ObjId, subtype: S, base_font: B) -> Self
+    pub fn new<S, B>(id: ObjId, subtype: S, base_font: B) -> Self
     where
-        N: Into<Vec<u8>>,
         S: Into<Vec<u8>>,
         B: Into<Vec<u8>>,
     {
-        let name = Name::new(name.into());
         let subtype = Name::new(subtype.into());
         let base_font = Name::new(base_font.into());
 
         Font {
             id,
-            name,
             subtype,
             base_font,
         }
-    }
-
-    /// Writes the PDF Font reference, using the FontName and provided size.
-    pub fn write_ref(
-        &self,
-        size: u32,
-        writer: &mut dyn std::io::Write,
-    ) -> Result<usize, std::io::Error> {
-        // /FName size
-        Ok(pdfgen_macros::write_chain! {
-            self.name.write(writer),
-            writer.write(format!{" {}", size}.as_bytes()),
-        })
     }
 }
 
@@ -96,11 +76,6 @@ impl Object for Font {
             self.base_font.write(writer),
             writer.write(constants::NL_MARKER),
 
-            // /Name /xyz
-            Self::NAME.write(writer),
-            self.name.write(writer),
-            writer.write(constants::NL_MARKER),
-
             writer.write(b">>"),
             writer.write(constants::NL_MARKER),
         };
@@ -118,7 +93,7 @@ mod tests {
     #[test]
     pub fn font_object() {
         let mut id_manager = IdManager::new();
-        let font = Font::new("CustomFnt", id_manager.create_id(), "Type1", "Helvetica");
+        let font = Font::new(id_manager.create_id(), "Type1", "Helvetica");
 
         let mut writer = Vec::default();
         let _ = font.write_def(&mut writer);

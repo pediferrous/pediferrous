@@ -11,6 +11,7 @@ use super::name::{Name, OwnedName};
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
     Image { name: OwnedName, image: Image },
+    Font { name: OwnedName, id: ObjId },
 }
 
 /// Resource dictionary enumerates the named resources needed by the operators in the content
@@ -50,7 +51,23 @@ impl Resources {
 
         self.entries.push(img);
 
-        let ResourceEntry::Image { name, .. } = self.entries.last().unwrap();
+        let ResourceEntry::Image { name, .. } = self.entries.last().unwrap() else {
+            unreachable!("We added an image.")
+        };
+
+        name.as_ref()
+    }
+
+    /// Comment
+    pub(crate) fn add_font(&mut self, font_id: ObjId) -> Name<&[u8]> {
+        let name = self.create_name("F");
+        let fnt = ResourceEntry::Font { name, id: font_id };
+
+        self.entries.push(fnt);
+
+        let ResourceEntry::Font { name, .. } = self.entries.last().unwrap() else {
+            unreachable!("We added a font.")
+        };
 
         name.as_ref()
     }
@@ -76,6 +93,7 @@ impl Resources {
         self.entries
             .iter()
             .map(|entry| Renderable {
+                // TODO: skip creating ids for Fonts (global objects).
                 id: id_manager.create_id(),
                 entry,
             })
@@ -93,6 +111,7 @@ impl Renderable<'_> {
     pub(crate) fn write_def(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
         match self.entry {
             ResourceEntry::Image { image, .. } => image.write(writer, &self.id),
+            ResourceEntry::Font { .. } => Ok(0),
         }
     }
 
@@ -105,6 +124,15 @@ impl Renderable<'_> {
                 name.write(writer),
                 self.id
                     .write_ref(writer),
+                writer.write(b" >>"),
+            }),
+
+            ResourceEntry::Font { name, id } => Ok(pdfgen_macros::write_chain! {
+                Name::FONT.write(writer),
+
+                writer.write(b"<< "),
+                name.write(writer),
+                id.write_ref(writer),
                 writer.write(b" >>"),
             }),
         }
