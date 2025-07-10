@@ -58,7 +58,9 @@ impl Resources {
         name.as_ref()
     }
 
-    /// Comment
+    /// Adds a reference to a [`Font`] to this `Resources` dictionary.
+    ///
+    /// [`Font`]: crate::types::hierarchy::primitives::font::Font
     pub(crate) fn add_font(&mut self, font_id: ObjId) -> Name<&[u8]> {
         let name = self.create_name("F");
         let fnt = ResourceEntry::Font { name, id: font_id };

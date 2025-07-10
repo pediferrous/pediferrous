@@ -66,7 +66,7 @@ impl Text {
         self.content.expand(content);
     }
 
-    /// Comment
+    /// Returns a byte representation of this `Text` object in PDF syntax.
     pub(crate) fn to_bytes(&self, font_name: Name<&[u8]>) -> io::Result<Vec<u8>> {
         let mut writer = Vec::new();
 

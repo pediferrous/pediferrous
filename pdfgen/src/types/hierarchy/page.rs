@@ -82,7 +82,7 @@ impl Page {
             .add_content(Operation::DrawImage { name, transform });
     }
 
-    /// Comment
+    /// Adds a text to the PDF page.
     pub fn add_text(&mut self, text: Text, font_id: ObjId) {
         let font_name = self.resources.add_font(font_id);
 

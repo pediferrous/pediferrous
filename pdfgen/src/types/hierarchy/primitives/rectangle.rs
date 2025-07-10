@@ -93,12 +93,12 @@ impl Rectangle {
         }
     }
 
-    /// Comment
+    /// Returns the width of this `Rectangle`.
     pub fn width(&self) -> Unit {
         self.top_right.x - self.low_left.x
     }
 
-    /// Comment
+    /// Returns the height of this `Rectangle`.
     pub fn height(&self) -> Unit {
         self.top_right.y - self.low_left.y
     }

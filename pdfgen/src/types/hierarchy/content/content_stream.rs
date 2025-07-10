@@ -27,10 +27,14 @@ pub(crate) enum Operation<'a> {
 
     /// Represents a text drawing operation.
     DrawText {
-        /// Comment
+        /// Text object to be drawn.
         text: Text,
 
-        /// Comment
+        /// Name of the [`Font`] as defined in [`Resources`] of a [`Page`].
+        ///
+        /// [`Font`]: crate::types::hierarchy::primitives::font::Font
+        /// [`Resources`]: crate::types::hierarchy::primitives::resources::Resources
+        /// [`Page`]: crate::types::hierarchy::page::Page
         font_name: Name<&'a [u8]>,
     },
 }
@@ -93,7 +97,7 @@ impl ContentStream {
         self.stream.push_bytes(b"Q");
     }
 
-    /// Comment
+    /// Encodes a text object in this `ContentStream`.
     fn draw_text(&mut self, text: Text, font_name: Name<&[u8]>) {
         self.stream.push_bytes(
             &text
