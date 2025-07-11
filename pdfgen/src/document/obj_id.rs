@@ -1,6 +1,9 @@
 //! Implementation of PDF object reference.
 
-use std::io::{Error, Write};
+use std::{
+    io::{Error, Write},
+    marker::PhantomData,
+};
 
 /// Any object in a PDF file may be labelled as an indirect object. This gives the object a unique
 /// object identifier by which other objects can refer to it. The object may be referred to from
@@ -9,9 +12,12 @@ use std::io::{Error, Write};
 ///
 /// Example: `4 0 R`
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ObjId {
+pub struct ObjId<T = ()> {
     /// Identifier of referenced object.
     id: u64,
+
+    /// Marks the type of object this ObjId refers to.
+    _marker: PhantomData<T>,
 }
 
 impl ObjId {
@@ -55,9 +61,12 @@ impl IdManager {
         Self { curr: self.curr }
     }
 
-    pub fn create_id(&mut self) -> ObjId {
+    pub fn create_id<T>(&mut self) -> ObjId<T> {
         let inner_id = self.curr;
         self.curr += 1;
-        ObjId { id: inner_id }
+        ObjId {
+            id: inner_id,
+            _marker: PhantomData,
+        }
     }
 }
