@@ -66,7 +66,7 @@ impl Text {
         self.content.expand(content);
     }
 
-    /// Returns a byte representation of this `Text` object in PDF syntax.
+    /// Returns a byte representation for drawing operations of this `Text` object in PDF syntax.
     pub(crate) fn to_bytes(&self, font_name: Name<&[u8]>) -> io::Result<Vec<u8>> {
         let mut writer = Vec::new();
 
@@ -162,6 +162,13 @@ mod tests {
 
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output);
+        insta::assert_snapshot!(output, @r"
+        BT
+        /BiHDef 12 Tf
+        0 0 Td
+        () Tj
+        ET
+        ");
     }
 
     #[test]
@@ -176,6 +183,12 @@ mod tests {
             .unwrap();
 
         let output = String::from_utf8_lossy(&txt);
-        insta::assert_snapshot!(output);
+        insta::assert_snapshot!(output, @r"
+        BT
+        /CustomFnt 14 Tf
+        0 0 Td
+        (This is a custom text content.) Tj
+        ET
+        ");
     }
 }
