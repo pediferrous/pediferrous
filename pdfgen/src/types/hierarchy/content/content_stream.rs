@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{image::ImageTransform, stream::Stream};
+use super::{image::ImageTransform, stream::Stream, text::Text};
 
 /// Represents a specific operation in [`ContentStream`] such as drawing an image or text.
 pub(crate) enum Operation<'a> {
@@ -23,6 +23,19 @@ pub(crate) enum Operation<'a> {
         ///
         /// [`Image`]: super::image::Image
         transform: ImageTransform,
+    },
+
+    /// Represents a text drawing operation.
+    DrawText {
+        /// Text object to be drawn.
+        text: Text,
+
+        /// Name of the [`Font`] as defined in [`Resources`] of a [`Page`].
+        ///
+        /// [`Font`]: crate::types::hierarchy::primitives::font::Font
+        /// [`Resources`]: crate::types::hierarchy::primitives::resources::Resources
+        /// [`Page`]: crate::types::hierarchy::page::Page
+        font_name: Name<&'a [u8]>,
     },
 }
 
@@ -52,6 +65,7 @@ impl ContentStream {
     pub(crate) fn add_content(&mut self, operation: Operation) {
         match operation {
             Operation::DrawImage { name, transform } => self.draw_image(name, transform),
+            Operation::DrawText { text, font_name } => self.draw_text(text, font_name),
         }
     }
 
@@ -81,6 +95,15 @@ impl ContentStream {
 
         // Restore graphics state
         self.stream.push_bytes(b"Q");
+    }
+
+    /// Encodes a text object in this `ContentStream`.
+    fn draw_text(&mut self, text: Text, font_name: Name<&[u8]>) {
+        self.stream.push_bytes(
+            &text
+                .to_bytes(font_name)
+                .expect("Writing to Vec should never fail."),
+        );
     }
 
     pub fn is_empty(&self) -> bool {

@@ -15,8 +15,8 @@ use super::{name::Name, object::Object};
 /// characteristics of text elements.
 #[derive(Debug)]
 pub struct Font {
-    /// ID of this Font object.
-    id: ObjId,
+    /// ID of this [`Font`] object.
+    pub(crate) id: ObjId,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
     subtype: Name<Vec<u8>>,
@@ -32,7 +32,7 @@ impl Font {
         BASE_FONT,
     }
 
-    /// Create a new Font object with the provided id, subtype and base_font.
+    /// Create a new [`Font`] object with the provided id, subtype and base_font.
     pub fn new<S, B>(id: ObjId, subtype: S, base_font: B) -> Self
     where
         S: Into<Vec<u8>>,
@@ -81,5 +81,33 @@ impl Object for Font {
         };
 
         Ok(bytes_written)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{IdManager, types::hierarchy::primitives::font::Object};
+
+    use super::Font;
+
+    #[test]
+    pub fn font_object() {
+        let mut id_manager = IdManager::new();
+        let font = Font::new(id_manager.create_id(), "Type1", "Helvetica");
+
+        let mut writer = Vec::default();
+        let _ = font.write_def(&mut writer);
+        let _ = font.write_content(&mut writer);
+        let _ = font.write_end(&mut writer);
+
+        let output = String::from_utf8_lossy(&writer);
+        insta::assert_snapshot!(output, @r"
+        1 0 obj
+        << /Type /Font 
+        /Subtype /Type1 
+        /BaseFont /Helvetica 
+        >>
+        endobj
+        ");
     }
 }

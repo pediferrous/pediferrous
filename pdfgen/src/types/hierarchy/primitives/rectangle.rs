@@ -92,6 +92,16 @@ impl Rectangle {
             top_right: Position::from_units(tr_x, tr_y),
         }
     }
+
+    /// Returns the width of this `Rectangle`.
+    pub fn width(&self) -> Unit {
+        self.top_right.x - self.low_left.x
+    }
+
+    /// Returns the height of this `Rectangle`.
+    pub fn height(&self) -> Unit {
+        self.top_right.y - self.low_left.y
+    }
 }
 
 impl From<(u32, u32, u32, u32)> for Rectangle {

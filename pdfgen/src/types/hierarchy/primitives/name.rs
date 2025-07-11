@@ -73,7 +73,8 @@ impl<T: AsRef<[u8]>> Name<T> {
 impl Name<&'static [u8]> {
     const_names! {
         pub(crate) TYPE,
-        pub(crate) X_OBJECT
+        pub(crate) X_OBJECT,
+        pub(crate) FONT
     }
 
     /// Create a new [`Name`] from a static byte slice.

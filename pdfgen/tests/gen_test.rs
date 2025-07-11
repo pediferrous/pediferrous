@@ -3,7 +3,7 @@ use std::{fs::File, path::PathBuf};
 use pdfgen::{
     Document,
     types::hierarchy::{
-        content::image::Image,
+        content::{image::Image, text::Text},
         primitives::rectangle::{Position, Rectangle},
     },
 };
@@ -101,6 +101,28 @@ fn page_image_moved_and_scaled() {
     .build();
 
     page.add_image(img);
+
+    macros::snap_test!(document);
+}
+
+#[test]
+fn page_text() {
+    let mut document = Document::builder().with_page_size(Rectangle::A4).build();
+
+    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let page = document.create_page();
+
+    let txt = Text::builder()
+        .with_content("Hello ")
+        .with_expanded_content("from pdfgen!")
+        .with_size(14)
+        .at(Position::from_units(
+            Rectangle::A4.width().into_user_unit() / 2.,
+            Rectangle::A4.height().into_user_unit() / 2.,
+        ))
+        .build();
+
+    page.add_text(txt, font_id);
 
     macros::snap_test!(document);
 }
