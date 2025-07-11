@@ -29,10 +29,21 @@ macro_rules! write_fmt {
     ($dst:expr, $($arg:tt)*) => {{
         let mut writer = $crate::macros::WriteCounter { writer: $dst, counter: 0 };
 
-        if std::fmt::write(&mut writer, ::std::format_args!($($arg)*)).is_err() {
-            return Err(std::io::Error::other("could not write formatted string"));
+        match std::fmt::write(&mut writer, ::std::format_args!($($arg)*)) {
+            Err(_) => Err(std::io::Error::other("could not write formatted string")),
+            Ok(_) => Ok::<usize, std::io::Error>(writer.counter),
         }
+    }}
+}
 
-        Ok::<usize, std::io::Error>(writer.counter)
-    }};
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn write_fmt_macro() {
+        let mut writer = Vec::new();
+        let count = crate::write_fmt!(&mut writer, "{}", 42).unwrap();
+
+        assert_eq!(writer, b"42");
+        assert_eq!(count, 2);
+    }
 }
