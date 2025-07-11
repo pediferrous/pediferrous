@@ -16,7 +16,7 @@ use super::{name::Name, object::Object};
 #[derive(Debug)]
 pub struct Font {
     /// ID of this [`Font`] object.
-    pub(crate) id: ObjId,
+    pub(crate) id: ObjId<Self>,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
     subtype: Name<Vec<u8>>,
@@ -33,7 +33,7 @@ impl Font {
     }
 
     /// Create a new [`Font`] object with the provided id, subtype and base_font.
-    pub fn new<S, B>(id: ObjId, subtype: S, base_font: B) -> Self
+    pub fn new<S, B>(id: ObjId<Self>, subtype: S, base_font: B) -> Self
     where
         S: Into<Vec<u8>>,
         B: Into<Vec<u8>>,

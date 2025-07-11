@@ -11,7 +11,7 @@ use std::{
 /// object number, the generation number, and the keyword R (with whitespace separating each part).
 ///
 /// Example: `4 0 R`
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ObjId<T = ()> {
     /// Identifier of referenced object.
     id: u64,
@@ -20,7 +20,16 @@ pub struct ObjId<T = ()> {
     _marker: PhantomData<T>,
 }
 
-impl ObjId {
+impl<T> Clone for ObjId<T> {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<T> ObjId<T> {
     /// Marker indicating start of an object section
     const START_OBJ_MARKER: &[u8] = b"obj";
 
@@ -43,6 +52,13 @@ impl ObjId {
             writer.write(b" 0 "),
             writer.write(Self::START_OBJ_MARKER),
         })
+    }
+
+    pub(crate) fn cast<U>(self) -> ObjId<U> {
+        ObjId {
+            id: self.id,
+            _marker: PhantomData,
+        }
     }
 }
 

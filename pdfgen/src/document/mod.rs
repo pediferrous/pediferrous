@@ -71,10 +71,11 @@ impl Document {
     }
 
     /// Creates a new font inside the document.
-    pub fn create_font(&mut self, subtype: Vec<u8>, base_type: Vec<u8>) -> ObjId {
+    pub fn create_font(&mut self, subtype: Vec<u8>, base_type: Vec<u8>) -> ObjId<Font> {
         let id = self.id_manager.create_id();
 
-        self.fonts.push(Font::new(id.clone(), subtype, base_type));
+        self.fonts
+            .push(Font::new(id.clone().cast(), subtype, base_type));
 
         id
     }

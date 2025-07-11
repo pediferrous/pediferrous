@@ -45,7 +45,7 @@ pub(crate) enum Operation<'a> {
 /// [`Page`]: crate::types::hierarchy::page::Page
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct ContentStream {
-    id: ObjId,
+    id: ObjId<Self>,
 
     /// Inner stream object containing the actual bytes of the content.
     stream: Stream,
@@ -53,7 +53,7 @@ pub struct ContentStream {
 
 impl ContentStream {
     /// Creates a new `ContentStream` with the given [`ObjId`].
-    pub fn new(id: ObjId) -> Self {
+    pub fn new(id: ObjId<Self>) -> Self {
         Self {
             id,
             stream: Stream::new(),
@@ -110,7 +110,7 @@ impl ContentStream {
         self.stream.is_empty()
     }
 
-    pub(crate) fn obj_ref(&self) -> &ObjId {
+    pub(crate) fn obj_ref(&self) -> &ObjId<Self> {
         &self.id
     }
 }

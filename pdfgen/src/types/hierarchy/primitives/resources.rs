@@ -4,14 +4,17 @@ use std::io::{Error, Write};
 
 use crate::{IdManager, ObjId, types::hierarchy::content::image::Image};
 
-use super::name::{Name, OwnedName};
+use super::{
+    font::Font,
+    name::{Name, OwnedName},
+};
 
 /// Represents a single entry in the [`Resources`] dictionary.
 #[derive(Debug)]
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
     Image { name: OwnedName, image: Image },
-    Font { name: OwnedName, id: ObjId },
+    Font { name: OwnedName, id: ObjId<Font> },
 }
 
 /// Resource dictionary enumerates the named resources needed by the operators in the content
@@ -61,7 +64,7 @@ impl Resources {
     /// Adds a reference to a [`Font`] to this `Resources` dictionary.
     ///
     /// [`Font`]: crate::types::hierarchy::primitives::font::Font
-    pub(crate) fn add_font(&mut self, font_id: ObjId) -> Name<&[u8]> {
+    pub(crate) fn add_font(&mut self, font_id: ObjId<Font>) -> Name<&[u8]> {
         let name = self.create_name("F");
         let fnt = ResourceEntry::Font { name, id: font_id };
 

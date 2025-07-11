@@ -6,17 +6,18 @@ use crate::{IdManager, ObjId, types::constants};
 
 use super::{
     content::{ContentStream, Operation, image::Image, text::Text},
-    primitives::{name::Name, rectangle::Rectangle, resources::Resources},
+    page_tree::PageTree,
+    primitives::{font::Font, name::Name, rectangle::Rectangle, resources::Resources},
 };
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
 /// attributes of a single page of the document.
 pub struct Page {
     /// ID of this Page object.
-    id: ObjId,
+    id: ObjId<Self>,
 
     /// The page tree node that is the immediate parent of this page object.
-    parent: ObjId,
+    parent: ObjId<PageTree>,
 
     /// A dictionary containing any resources required by the page contents. If the page requires
     /// no resources, the value of this entry shall be an empty dictionary.
@@ -40,7 +41,11 @@ impl Page {
     }
 
     /// Create a new blank page that belongs to the given parent and media box.
-    pub fn new(id: ObjId, contents_id: ObjId, parent: ObjId) -> Self {
+    pub fn new(
+        id: ObjId<Self>,
+        contents_id: ObjId<ContentStream>,
+        parent: ObjId<PageTree>,
+    ) -> Self {
         Self {
             id,
             parent,
@@ -55,7 +60,7 @@ impl Page {
     }
 
     /// Returns the object reference of this Page object.
-    pub fn obj_ref(&self) -> ObjId {
+    pub fn obj_ref(&self) -> ObjId<Self> {
         self.id.clone()
     }
 
@@ -83,7 +88,7 @@ impl Page {
     }
 
     /// Adds a text to the PDF page.
-    pub fn add_text(&mut self, text: Text, font_id: ObjId) {
+    pub fn add_text(&mut self, text: Text, font_id: ObjId<Font>) {
         let font_name = self.resources.add_font(font_id);
 
         self.contents

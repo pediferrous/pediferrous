@@ -5,7 +5,7 @@ use crate::{IdManager, ObjId};
 use super::{
     constants,
     hierarchy::{
-        cross_reference_table::CrossReferenceTable, primitives::object::Object,
+        catalog::Catalog, cross_reference_table::CrossReferenceTable, primitives::object::Object,
         trailer::WriteTrailer,
     },
     page::Page,
@@ -82,7 +82,7 @@ impl<W: Write> PdfWriter<W> {
     }
 
     /// Writes the trailer for the PdfWriter's CRT.
-    pub fn write_trailer(&mut self, root: ObjId) -> Result<(), io::Error> {
+    pub fn write_trailer(&mut self, root: ObjId<Catalog>) -> Result<(), io::Error> {
         self.cross_reference_table.write_trailer(
             &mut self.inner,
             self.current_offset,
