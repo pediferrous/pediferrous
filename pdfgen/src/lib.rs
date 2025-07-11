@@ -8,3 +8,4 @@ pub mod types;
 mod document;
 pub use document::Document;
 pub(crate) use document::{IdManager, ObjId};
+pub(crate) mod macros;
