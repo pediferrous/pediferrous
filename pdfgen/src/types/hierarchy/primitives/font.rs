@@ -2,11 +2,11 @@
 
 use std::io::{Error, Write};
 
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
 use crate::{ObjId, types::constants};
 
-use super::{name::Name, object::Object};
+use super::{identifier::Identifier, object::Object};
 
 /// Represents a font object in a PDF document.
 /// This struct represents a font object in a PDF document, encapsulating the info required to
@@ -19,14 +19,14 @@ pub struct Font {
     pub(crate) id: ObjId<Self>,
 
     /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
-    subtype: Name<Vec<u8>>,
+    subtype: Identifier<Vec<u8>>,
 
     /// Represents the base font type, identifying the general font family or format.
-    base_font: Name<Vec<u8>>,
+    base_font: Identifier<Vec<u8>>,
 }
 
 impl Font {
-    const_names! {
+    const_identifiers! {
         FONT,
         SUBTYPE,
         BASE_FONT,
@@ -38,8 +38,8 @@ impl Font {
         S: Into<Vec<u8>>,
         B: Into<Vec<u8>>,
     {
-        let subtype = Name::new(subtype.into());
-        let base_font = Name::new(base_font.into());
+        let subtype = Identifier::new(subtype.into());
+        let base_font = Identifier::new(base_font.into());
 
         Font {
             id,
@@ -62,7 +62,7 @@ impl Object for Font {
             writer.write(b"<< "),
 
             // /Type /Font
-            Name::TYPE.write(writer),
+            Identifier::TYPE.write(writer),
             Self::FONT.write(writer),
             writer.write(constants::NL_MARKER),
 

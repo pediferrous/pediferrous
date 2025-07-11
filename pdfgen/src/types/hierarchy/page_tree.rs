@@ -1,10 +1,10 @@
 use std::io::{Error, Write};
 
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
 use crate::{
     ObjId,
-    types::{constants, hierarchy::primitives::name::Name},
+    types::{constants, hierarchy::primitives::identifier::Identifier},
 };
 
 use super::{
@@ -51,7 +51,7 @@ pub struct PageTree {
 }
 
 impl PageTree {
-    const_names! {
+    const_identifiers! {
         PARENT,
         PAGES,
         MEDIA_BOX,
@@ -106,7 +106,7 @@ impl Object for PageTree {
 
         let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
-            Name::TYPE.write(writer),
+            Identifier::TYPE.write(writer),
             Self::PAGES.write(writer),
             writer.write(constants::NL_MARKER),
 

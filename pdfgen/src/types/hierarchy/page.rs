@@ -1,13 +1,13 @@
 use std::io::{Error, Write};
 
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
 use crate::{IdManager, ObjId, types::constants};
 
 use super::{
     content::{ContentStream, Operation, image::Image, text::Text},
     page_tree::PageTree,
-    primitives::{font::Font, name::Name, rectangle::Rectangle, resources::Resources},
+    primitives::{font::Font, identifier::Identifier, rectangle::Rectangle, resources::Resources},
 };
 
 /// Page objects are the leaves of the page tree, each of which is a dictionary specifying the
@@ -32,7 +32,7 @@ pub struct Page {
 }
 
 impl Page {
-    const_names! {
+    const_identifiers! {
         PAGE,
         PARENT,
         RESOURCES,
@@ -114,7 +114,7 @@ impl Page {
             writer.write(constants::NL_MARKER),
 
             writer.write(b"<< "),
-            Name::TYPE.write(writer),
+            Identifier::TYPE.write(writer),
             Self::PAGE.write(writer),
             writer.write(constants::NL_MARKER),
 

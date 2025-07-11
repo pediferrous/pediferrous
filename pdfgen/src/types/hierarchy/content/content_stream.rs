@@ -2,7 +2,7 @@ use crate::{
     ObjId,
     types::{
         constants,
-        hierarchy::primitives::{name::Name, object::Object, rectangle::Position},
+        hierarchy::primitives::{identifier::Identifier, object::Object, rectangle::Position},
     },
 };
 
@@ -17,7 +17,7 @@ pub(crate) enum Operation<'a> {
         /// [`Image`]: super::image::Image
         /// [`Resources`]: crate::types::hierarchy::primitives::resources::Resources
         /// [`Page`]: crate::types::hierarchy::page::Page
-        name: Name<&'a [u8]>,
+        name: Identifier<&'a [u8]>,
 
         /// Transformation that should be applied to the [`Image`] in Pdf.
         ///
@@ -35,7 +35,7 @@ pub(crate) enum Operation<'a> {
         /// [`Font`]: crate::types::hierarchy::primitives::font::Font
         /// [`Resources`]: crate::types::hierarchy::primitives::resources::Resources
         /// [`Page`]: crate::types::hierarchy::page::Page
-        font_name: Name<&'a [u8]>,
+        font_name: Identifier<&'a [u8]>,
     },
 }
 
@@ -70,7 +70,7 @@ impl ContentStream {
     }
 
     /// Encodes an image in this `ContentStream`.
-    fn draw_image(&mut self, name: Name<&[u8]>, transform: ImageTransform) {
+    fn draw_image(&mut self, name: Identifier<&[u8]>, transform: ImageTransform) {
         let Position {
             x: width,
             y: height,
@@ -98,7 +98,7 @@ impl ContentStream {
     }
 
     /// Encodes a text object in this `ContentStream`.
-    fn draw_text(&mut self, text: Text, font_name: Name<&[u8]>) {
+    fn draw_text(&mut self, text: Text, font_name: Identifier<&[u8]>) {
         self.stream.push_bytes(
             &text
                 .to_bytes(font_name)

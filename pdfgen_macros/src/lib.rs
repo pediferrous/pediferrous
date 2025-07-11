@@ -1,12 +1,12 @@
 use proc_macro::TokenStream;
 
-mod name;
+mod identifier;
 mod write_chain;
 
-/// Generate one or more `const Name<&'static [u8]>` values from the given identifiers. Identifiers
-/// should be specified in upper snake case and will be converted to pascal-cased PDF names. All
-/// leters will be replaced with their lowercase equivalents, except the first letter and any
-/// letter preceded by an underscore. For example:
+/// Generate one or more `const Identifier<&'static [u8]>` values from the given identifiers.
+/// Identifiers should be specified in upper snake case and will be converted to pascal-cased PDF
+/// names. All leters will be replaced with their lowercase equivalents, except the first letter
+/// and any letter preceded by an underscore. For example:
 ///
 /// * `IDENT` -> `Ident`
 /// * `SECOND_IDENT` -> `SecondIdent`
@@ -14,22 +14,22 @@ mod write_chain;
 /// # Example
 ///
 /// ```ignore
-/// use pdfgen_macros::const_names;
+/// use pdfgen_macros::const_identifiers;
 ///
 /// pub struct SomeStruct;
 ///
 /// impl SomeStruct {
-///     const_names!(TYPE, SUBTYPE, MEDIA_BOX);
+///     const_identifiers!(TYPE, SUBTYPE, MEDIA_BOX);
 ///
 ///     // expands to
-///     const TYPE: Name<&'static [u8]> = Name::from_static(b"Type");
-///     const SUBTYPE: Name<&'static [u8]> = Name::from_static(b"Subtype");
-///     const MEDIA_BOX: Name<&'static [u8]> = Name::from_static(b"MediaBox");
+///     const TYPE: Identifier<&'static [u8]> = Identifier::from_static(b"Type");
+///     const SUBTYPE: Identifier<&'static [u8]> = Identifier::from_static(b"Subtype");
+///     const MEDIA_BOX: Identifier<&'static [u8]> = Identifier::from_static(b"MediaBox");
 /// }
 /// ```
 #[proc_macro]
-pub fn const_names(token_stream: TokenStream) -> TokenStream {
-    name::const_names(token_stream)
+pub fn const_identifiers(token_stream: TokenStream) -> TokenStream {
+    identifier::const_identifiers(token_stream)
 }
 
 /// Helper macro for counting the number of written bytes in multiple consecutive writes, where

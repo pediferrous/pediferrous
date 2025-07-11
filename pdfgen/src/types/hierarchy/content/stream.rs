@@ -1,8 +1,8 @@
 use std::io::{Error, Write};
 
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
-use crate::types::{constants, hierarchy::primitives::name::Name};
+use crate::types::{constants, hierarchy::primitives::identifier::Identifier};
 
 /// A stream object, like a string object, is a sequence of bytes that may be of unlimited length.
 /// Streams should be used to represent objects with potentially large amounts of data, such as
@@ -20,7 +20,7 @@ pub(crate) struct Stream {
 impl Stream {
     const START_STREAM: &[u8] = b"stream";
     const END_STREAM: &[u8] = b"endstream";
-    const_names!(LENGTH);
+    const_identifiers!(LENGTH);
 
     /// Creates a new empty `Stream`, containing no bytes and with length 0.
     pub fn new() -> Self {

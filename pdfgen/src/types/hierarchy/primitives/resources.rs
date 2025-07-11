@@ -6,15 +6,21 @@ use crate::{IdManager, ObjId, types::hierarchy::content::image::Image};
 
 use super::{
     font::Font,
-    name::{Name, OwnedName},
+    identifier::{Identifier, OwnedIdentifier},
 };
 
 /// Represents a single entry in the [`Resources`] dictionary.
 #[derive(Debug)]
 #[non_exhaustive]
 pub(crate) enum ResourceEntry {
-    Image { name: OwnedName, image: Image },
-    Font { name: OwnedName, id: ObjId<Font> },
+    Image {
+        name: OwnedIdentifier,
+        image: Image,
+    },
+    Font {
+        name: OwnedIdentifier,
+        id: ObjId<Font>,
+    },
 }
 
 /// Resource dictionary enumerates the named resources needed by the operators in the content
@@ -31,7 +37,7 @@ pub struct Resources {
 }
 
 impl Resources {
-    /// Creates a new [`OwnedName`] with a given prefix and internally maintained index.
+    /// Creates a new [`OwnedIdentifier`] with a given prefix and internally maintained index.
     ///
     /// # Example
     ///
@@ -40,15 +46,15 @@ impl Resources {
     /// let name = res.create_name("Im");
     /// assert_eq!(name.as_bytes(), b"/Im1 ");
     /// ```
-    fn create_name(&mut self, prefix: &str) -> Name<Vec<u8>> {
+    fn create_name(&mut self, prefix: &str) -> Identifier<Vec<u8>> {
         self.counter += 1;
-        Name::new(format!("{prefix}{}", self.counter).into_bytes())
+        Identifier::new(format!("{prefix}{}", self.counter).into_bytes())
     }
 
     /// Adds a reference to an [`Image`] to this `Resources` dictionary.
     ///
     /// [`Image`]: crate::types::hierarchy::content::image::Image
-    pub(crate) fn add_image(&mut self, image: Image) -> Name<&[u8]> {
+    pub(crate) fn add_image(&mut self, image: Image) -> Identifier<&[u8]> {
         let name = self.create_name("Im");
         let img = ResourceEntry::Image { name, image };
 
@@ -64,7 +70,7 @@ impl Resources {
     /// Adds a reference to a [`Font`] to this `Resources` dictionary.
     ///
     /// [`Font`]: crate::types::hierarchy::primitives::font::Font
-    pub(crate) fn add_font(&mut self, font_id: ObjId<Font>) -> Name<&[u8]> {
+    pub(crate) fn add_font(&mut self, font_id: ObjId<Font>) -> Identifier<&[u8]> {
         let name = self.create_name("F");
         let fnt = ResourceEntry::Font { name, id: font_id };
 
@@ -123,7 +129,7 @@ impl Renderable<'_> {
     pub(crate) fn write_ref(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
         match self.entry {
             ResourceEntry::Image { name, .. } => Ok(pdfgen_macros::write_chain! {
-                Name::X_OBJECT.write(writer),
+                Identifier::X_OBJECT.write(writer),
 
                 writer.write(b"<< "),
                 name.write(writer),
@@ -133,7 +139,7 @@ impl Renderable<'_> {
             }),
 
             ResourceEntry::Font { name, id } => Ok(pdfgen_macros::write_chain! {
-                Name::FONT.write(writer),
+                Identifier::FONT.write(writer),
 
                 writer.write(b"<< "),
                 name.write(writer),
