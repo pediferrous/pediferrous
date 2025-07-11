@@ -161,7 +161,6 @@ mod tests {
             .unwrap();
 
         let output = String::from_utf8_lossy(&txt);
-        insta::assert_snapshot!(output);
         insta::assert_snapshot!(output, @r"
         BT
         /BiHDef 12 Tf
