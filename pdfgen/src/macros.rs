@@ -14,6 +14,16 @@ impl<W: std::io::Write> std::fmt::Write for WriteCounter<W> {
     }
 }
 
+/// Helper macro for writing formatted string content into PDF writer without allocating a string.
+/// Usage is very similar to [`std::write`] macro:
+///
+/// ```ignore
+/// let mut writer = Vec::new();
+/// let count = crate::write_fmt!(&mut writer, "{}", 42).unwrap();
+///
+/// assert_eq!(writer, b"42");
+/// assert_eq!(count, 2);
+/// ```
 #[macro_export]
 macro_rules! write_fmt {
     ($dst:expr, $($arg:tt)*) => {{
