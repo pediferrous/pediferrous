@@ -101,6 +101,13 @@ mod tests {
         let _ = font.write_end(&mut writer);
 
         let output = String::from_utf8_lossy(&writer);
-        insta::assert_snapshot!(output);
+        insta::assert_snapshot!(output, @r"
+        1 0 obj
+        << /Type /Font 
+        /Subtype /Type1 
+        /BaseFont /Helvetica 
+        >>
+        endobj
+        ");
     }
 }
