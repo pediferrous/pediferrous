@@ -20,7 +20,7 @@ use super::{
 #[derive(Debug)]
 pub struct Catalog {
     /// The object reference allocated to this `Catalog`.
-    id: ObjId,
+    id: ObjId<Self>,
 
     /// Reference to the root [`PageTree`] of the PDF Document.
     root_page_tree: PageTree,
@@ -33,7 +33,7 @@ impl Catalog {
     }
 
     /// Create a new `Catalog` with the given [`ObjId`] and [`PageTree`].
-    pub(crate) fn new(obj_ref: ObjId, root_page_tree: PageTree) -> Self {
+    pub(crate) fn new(obj_ref: ObjId<Self>, root_page_tree: PageTree) -> Self {
         Self {
             id: obj_ref,
             root_page_tree,
@@ -41,7 +41,7 @@ impl Catalog {
     }
 
     /// Returns the [`ObjId`] allocated to this `Catalog`.
-    pub(crate) fn obj_ref(&self) -> ObjId {
+    pub(crate) fn obj_ref(&self) -> ObjId<Self> {
         self.id.clone()
     }
 

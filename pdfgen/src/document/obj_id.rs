@@ -1,6 +1,9 @@
 //! Implementation of PDF object reference.
 
-use std::io::{Error, Write};
+use std::{
+    io::{Error, Write},
+    marker::PhantomData,
+};
 
 /// Any object in a PDF file may be labelled as an indirect object. This gives the object a unique
 /// object identifier by which other objects can refer to it. The object may be referred to from
@@ -8,13 +11,25 @@ use std::io::{Error, Write};
 /// object number, the generation number, and the keyword R (with whitespace separating each part).
 ///
 /// Example: `4 0 R`
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ObjId {
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ObjId<T = ()> {
     /// Identifier of referenced object.
     id: u64,
+
+    /// Marks the type of object this ObjId refers to.
+    _marker: PhantomData<T>,
 }
 
-impl ObjId {
+impl<T> Clone for ObjId<T> {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<T> ObjId<T> {
     /// Marker indicating start of an object section
     const START_OBJ_MARKER: &[u8] = b"obj";
 
@@ -38,6 +53,13 @@ impl ObjId {
             writer.write(Self::START_OBJ_MARKER),
         })
     }
+
+    pub(crate) fn cast<U>(self) -> ObjId<U> {
+        ObjId {
+            id: self.id,
+            _marker: PhantomData,
+        }
+    }
 }
 
 pub(crate) struct IdManager {
@@ -55,9 +77,12 @@ impl IdManager {
         Self { curr: self.curr }
     }
 
-    pub fn create_id(&mut self) -> ObjId {
+    pub fn create_id<T>(&mut self) -> ObjId<T> {
         let inner_id = self.curr;
         self.curr += 1;
-        ObjId { id: inner_id }
+        ObjId {
+            id: inner_id,
+            _marker: PhantomData,
+        }
     }
 }

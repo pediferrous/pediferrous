@@ -7,7 +7,10 @@ use crate::{
     types::{constants, hierarchy::primitives::name::Name},
 };
 
-use super::primitives::{array::WriteArray, object::Object, rectangle::Rectangle};
+use super::{
+    page::Page,
+    primitives::{array::WriteArray, object::Object, rectangle::Rectangle},
+};
 
 /// Page tree is a structure which defines the ordering of pages in the document. The tree contains
 /// nodes of two types:
@@ -23,11 +26,11 @@ use super::primitives::{array::WriteArray, object::Object, rectangle::Rectangle}
 #[derive(Debug, Clone)]
 pub struct PageTree {
     /// The object reference allocated for this `PageTree`.
-    id: ObjId,
+    id: ObjId<Self>,
 
     /// The page tree node that is the immediate parent of this one. Required for all nodes except
     /// the root node.
-    parent: Option<ObjId>,
+    parent: Option<ObjId<Self>>,
 
     /// An array of indirect references to the immediate children of this node. The children shall
     /// only be [`Page`] objects or other [`PageTree`] nodes.
@@ -56,7 +59,7 @@ impl PageTree {
         COUNT,
     }
 
-    pub fn new(obj_id: ObjId, parent: Option<&PageTree>) -> Self {
+    pub fn new(obj_id: ObjId<Self>, parent: Option<&PageTree>) -> Self {
         Self {
             id: obj_id,
             parent: parent.map(|parent| parent.obj_ref()),
@@ -67,7 +70,7 @@ impl PageTree {
     }
 
     pub fn with_mediabox(
-        obj_id: ObjId,
+        obj_id: ObjId<Self>,
         parent: Option<&PageTree>,
         mediabox: impl Into<Rectangle>,
     ) -> Self {
@@ -76,12 +79,12 @@ impl PageTree {
         page_tree
     }
 
-    pub fn add_page(&mut self, page: ObjId) {
-        self.kids.push(page);
+    pub fn add_page(&mut self, page: ObjId<Page>) {
+        self.kids.push(page.cast());
         self.count += 1;
     }
 
-    pub fn obj_ref(&self) -> ObjId {
+    pub fn obj_ref(&self) -> ObjId<Self> {
         self.id.clone()
     }
 
