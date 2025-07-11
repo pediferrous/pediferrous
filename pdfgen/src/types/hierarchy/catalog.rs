@@ -1,12 +1,12 @@
 use std::io::Error;
 
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
 use crate::{ObjId, types::constants};
 
 use super::{
     page_tree::PageTree,
-    primitives::{name::Name, object::Object},
+    primitives::{identifier::Identifier, object::Object},
 };
 
 /// The root of a document’s object hierarchy, located by means of the `Root` entry in the trailer
@@ -27,7 +27,7 @@ pub struct Catalog {
 }
 
 impl Catalog {
-    const_names! {
+    const_identifiers! {
         CATALOG,
         PAGES,
     }
@@ -68,7 +68,7 @@ impl Object for Catalog {
         let written = pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
-            Name::TYPE.write(writer),
+            Identifier::TYPE.write(writer),
             Self::CATALOG.write(writer),
             writer.write(constants::NL_MARKER),
 

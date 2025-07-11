@@ -4,7 +4,7 @@ use std::io::{self, Write};
 
 use crate::types::{
     constants,
-    hierarchy::primitives::{name::Name, rectangle::Position, string::PdfString},
+    hierarchy::primitives::{identifier::Identifier, rectangle::Position, string::PdfString},
 };
 
 /// Defines the transformation properties of a [`Text`] object, including its position and size on a [`Page`].
@@ -67,7 +67,7 @@ impl Text {
     }
 
     /// Returns a byte representation for drawing operations of this `Text` object in PDF syntax.
-    pub(crate) fn to_bytes(&self, font_name: Name<&[u8]>) -> io::Result<Vec<u8>> {
+    pub(crate) fn to_bytes(&self, font_name: Identifier<&[u8]>) -> io::Result<Vec<u8>> {
         let mut writer = Vec::new();
 
         // BT
@@ -148,7 +148,7 @@ impl TextBuilder<true> {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::hierarchy::{content::text::Name, primitives::rectangle::Position};
+    use crate::types::hierarchy::{content::text::Identifier, primitives::rectangle::Position};
 
     use super::Text;
 
@@ -157,7 +157,7 @@ mod tests {
         let txt = Text::builder()
             .at(Position::from_mm(0.0, 0.0))
             .build()
-            .to_bytes(Name::from_static(b"BiHDef"))
+            .to_bytes(Identifier::from_static(b"BiHDef"))
             .unwrap();
 
         let output = String::from_utf8_lossy(&txt);
@@ -178,7 +178,7 @@ mod tests {
             .with_size(14)
             .at(Position::from_mm(0.0, 0.0))
             .build()
-            .to_bytes(Name::from_static(b"CustomFnt"))
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
             .unwrap();
 
         let output = String::from_utf8_lossy(&txt);

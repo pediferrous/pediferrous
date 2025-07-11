@@ -3,7 +3,7 @@
 
 pub mod array;
 pub mod font;
-pub mod name;
+pub mod identifier;
 pub mod object;
 pub mod rectangle;
 pub mod resources;

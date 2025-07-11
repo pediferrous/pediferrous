@@ -3,13 +3,15 @@
 use std::io::{BufReader, Cursor, Error, Read, Write};
 
 use image::ImageReader;
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
 use crate::{
     ObjId,
     types::{
         constants,
-        hierarchy::primitives::{name::Name, object::Object, rectangle::Position, unit::Unit},
+        hierarchy::primitives::{
+            identifier::Identifier, object::Object, rectangle::Position, unit::Unit,
+        },
     },
 };
 
@@ -31,8 +33,8 @@ impl ColorSpace {
     /// Encode this `ColorSpace` into the given implementor of [`Write`].
     fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         match self {
-            ColorSpace::DeviceRgb => Name::new(b"DeviceRGB").write(writer),
-            ColorSpace::DeviceGray => Name::new(b"DeviceGray").write(writer),
+            ColorSpace::DeviceRgb => Identifier::new(b"DeviceRGB").write(writer),
+            ColorSpace::DeviceGray => Identifier::new(b"DeviceGray").write(writer),
         }
     }
 }
@@ -95,7 +97,7 @@ pub struct Image {
 }
 
 impl Image {
-    const_names! {
+    const_identifiers! {
         SUBTYPE,
         IMAGE,
         WIDTH,
@@ -201,8 +203,8 @@ impl Object for Image {
         Ok(pdfgen_macros::write_chain! {
             self.samples.write_with_dict(writer, |mut writer| {
                 Ok(pdfgen_macros::write_chain! {
-                    Name::TYPE.write(writer),
-                    Name::X_OBJECT.write(writer),
+                    Identifier::TYPE.write(writer),
+                    Identifier::X_OBJECT.write(writer),
                     writer.write(constants::NL_MARKER),
 
                     Self::SUBTYPE.write(writer),

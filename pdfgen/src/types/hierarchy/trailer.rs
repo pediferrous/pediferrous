@@ -2,14 +2,14 @@
 
 use std::io::Write;
 
-use pdfgen_macros::const_names;
+use pdfgen_macros::const_identifiers;
 
 use crate::{ObjId, types::constants};
 
 use super::{
     catalog::Catalog,
     cross_reference_table::CrossReferenceTable,
-    primitives::{array::WriteArray, name::Name},
+    primitives::{array::WriteArray, identifier::Identifier},
 };
 
 /// Extension trait for implementations of Trailer sections (currently only CRT).
@@ -35,7 +35,7 @@ impl WriteTrailer for CrossReferenceTable {
         root: ObjId<Catalog>,
         id: [u8; 16],
     ) -> Result<(), std::io::Error> {
-        const_names! {
+        const_identifiers! {
             SIZE,
             ROOT,
             ID: b"ID",
