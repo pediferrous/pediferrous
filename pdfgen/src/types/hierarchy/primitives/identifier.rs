@@ -1,6 +1,9 @@
 //! Implementation of PDF name.
 
-use std::io::{Error, Write};
+use std::{
+    io::{Error, Write},
+    str::FromStr,
+};
 
 use pdfgen_macros::const_identifiers;
 
@@ -18,8 +21,26 @@ use pdfgen_macros::const_identifiers;
 /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
+/// All characters except the white-space characters and delimiters are referred to as regular
+/// characters.
+///
+/// From Section 7.2.3, Table 2 delimiters are:
+///
+/// | Glyph | Decimal | Hexadecimal | Octal | Name                 |
+/// |-------|---------|-------------|-------|----------------------|
+/// |   (   |     40  |        28   |  050  | LEFT PARENTHESIS     |
+/// |   )   |     41  |        29   |  051  | RIGHT PARENTHESIS    |
+/// |   <   |     60  |        3C   |  074  | LESS-THAN SIGN       |
+/// |   >   |     62  |        3E   |  076  | GREATER-THAN SIGN    |
+/// |   [   |     91  |        5B   |  133  | LEFT SQUARE BRACKET  |
+/// |   ]   |     93  |        5D   |  135  | RIGHT SQUARE BRACKET |
+/// |   {   |    123  |        7B   |  173  | LEFT CURLY BRACKET   |
+/// |   }   |    125  |        7D   |  175  | RIGHT CURLY BRACKET  |
+/// |   /   |     47  |        2F   |  057  | SOLIDUS              |
+/// |   %   |     37  |        25   |  045  | PERCENT SIGN         |
+///
 #[derive(Debug, Clone)]
-pub(crate) struct Identifier<T: AsRef<[u8]>> {
+pub struct Identifier<T: AsRef<[u8]>> {
     inner: T,
 }
 
@@ -51,6 +72,8 @@ impl<T: AsRef<[u8]>> Identifier<T> {
 
     /// The number of bytes that this [`Identifier`] occupies when written into the PDF document. This does
     /// not include the whitespace written after the [`Identifier`].
+    // NOTE(nfejzic): empty `Identifier` is not valid, so we don't need `is_empty` method.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.inner.as_ref().len() + 1
     }
@@ -97,6 +120,57 @@ impl Identifier<&'static [u8]> {
     }
 }
 
+impl FromStr for Identifier<String> {
+    type Err = String;
+
+    /// * A NUMBER SIGN (23h) (#) in a name shall be written by using its 2-digit hexadecimal code
+    ///   (23), preceded by the NUMBER SIGN.
+    /// * Any character in a name that is a regular character (other than NUMBER SIGN) shall be written
+    ///   as itself or by using its 2-digit hexadecimal code, preceded by the NUMBER SIGN.
+    /// * Any character that is not a regular character shall be written using its 2-digit hexadecimal
+    ///   code, preceded by the NUMBER SIGN only.
+    ///
+    /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
+    /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
+    /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
+    /// All characters except the white-space characters and delimiters are referred to as regular
+    /// characters.
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        use std::fmt::Write;
+
+        let input = input.trim_start();
+        let mut output = String::with_capacity(input.len());
+
+        fn is_delimiter(byte: u8) -> bool {
+            byte == 40
+                || byte == 41
+                || byte == 60
+                || byte == 62
+                || byte == 91
+                || byte == 93
+                || byte == 123
+                || byte == 125
+                || byte == 47
+                || byte == 37
+        }
+
+        for ch in input.bytes() {
+            match ch {
+                b'#' => output.push_str("#23"),
+                to_encode if !(0x21..=0x7e).contains(&to_encode) || is_delimiter(to_encode) => {
+                    write!(&mut output, "#{to_encode:x}")
+                        .map_err(|_| String::from("Failed writing to string."))?;
+                }
+                inside_range => {
+                    output.push(inside_range as char);
+                }
+            };
+        }
+
+        Ok(Identifier::new(output))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Identifier;
@@ -131,5 +205,36 @@ mod tests {
         let mut out_buf = Vec::new();
         slice_key.write(&mut out_buf).unwrap();
         assert_eq!(&out_buf, b"/SliceKey ");
+    }
+
+    mod parsing {
+        macro_rules! identest {
+            ($name:expr, $expected:expr) => {{
+                use super::super::Identifier;
+                use std::str::FromStr;
+
+                let name = Identifier::from_str($name).expect("Could not parse name.");
+                let mut out_buf = Vec::new();
+                name.write(&mut out_buf)
+                    .expect("Could not write to output buffer.");
+                let out_string = String::from_utf8(out_buf).expect("output buffer not valid UTF8.");
+                assert_eq!(out_string, $expected);
+            }};
+        }
+
+        #[test]
+        fn parse_whitespace() {
+            identest!("This is Name.", "/This#20is#20Name. ");
+        }
+
+        #[test]
+        fn parse_regular_chars() {
+            identest!("ThisName", "/ThisName ");
+        }
+
+        #[test]
+        fn parse_parentheses() {
+            identest!("This()Name", "/This#28#29Name ");
+        }
     }
 }
