@@ -89,7 +89,7 @@ impl ContentStream {
         self.stream.push_bytes(constants::NL_MARKER);
 
         // /ImgName Do - Paint image
-        self.stream.push_bytes(&name.to_bytes());
+        self.stream.write_identifier(&name);
         self.stream.push_bytes(b"Do");
         self.stream.push_bytes(constants::NL_MARKER);
 

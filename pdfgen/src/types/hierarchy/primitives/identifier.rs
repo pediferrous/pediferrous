@@ -84,14 +84,6 @@ impl<T: AsRef<[u8]>> Identifier<T> {
             inner: self.inner.as_ref(),
         }
     }
-
-    /// Returns the inner byte slice
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut vec = Vec::with_capacity(self.inner.as_ref().len() + 2);
-        let _ = self.write(&mut vec);
-
-        vec
-    }
 }
 
 impl Identifier<&'static [u8]> {
