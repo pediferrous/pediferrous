@@ -111,8 +111,17 @@ impl Identifier<&'static [u8]> {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, thiserror::Error)]
+pub enum ParseIdentifierErr {
+    #[error("Identifier is not allowed to start with a solidus '/'.")]
+    StartsWithSolidus,
+
+    #[error("Identifier must not contain the NULL character.")]
+    ContainsNull,
+}
+
 impl FromStr for Identifier<String> {
-    type Err = String;
+    type Err = ParseIdentifierErr;
 
     /// * A NUMBER SIGN (23h) (#) in a name shall be written by using its 2-digit hexadecimal code
     ///   (23), preceded by the NUMBER SIGN.
@@ -130,6 +139,11 @@ impl FromStr for Identifier<String> {
         use std::fmt::Write;
 
         let input = input.trim_start();
+
+        if input.starts_with('/') {
+            return Err(ParseIdentifierErr::StartsWithSolidus);
+        }
+
         let mut output = String::with_capacity(input.len());
 
         fn is_delimiter(byte: u8) -> bool {
@@ -147,10 +161,11 @@ impl FromStr for Identifier<String> {
 
         for ch in input.bytes() {
             match ch {
+                b'\0' => return Err(ParseIdentifierErr::ContainsNull),
                 b'#' => output.push_str("#23"),
                 to_encode if !(0x21..=0x7e).contains(&to_encode) || is_delimiter(to_encode) => {
                     write!(&mut output, "#{to_encode:x}")
-                        .map_err(|_| String::from("Failed writing to string."))?;
+                        .expect("Writing to String should always succeed.");
                 }
                 inside_range => {
                     output.push(inside_range as char);
@@ -199,6 +214,8 @@ mod tests {
     }
 
     mod parsing {
+        use crate::types::hierarchy::primitives::identifier::ParseIdentifierErr;
+
         use super::super::Identifier;
         use std::str::FromStr;
         macro_rules! quoted_identest {
@@ -214,19 +231,36 @@ mod tests {
         }
 
         #[test]
-        fn parse_whitespace() {
-            quoted_identest!("This is Name.", @r"'/This#20is#20Name. '");
+        fn starts_with_solidus() {
+            let ident_res = Identifier::from_str("/InvalidIdent");
+
+            assert!(matches!(
+                ident_res,
+                Err(ParseIdentifierErr::StartsWithSolidus)
+            ));
         }
 
         #[test]
-        fn parse_regular_chars() {
+        fn contains_null() {
+            let ident_res = Identifier::from_str("Contains\0Null");
+            assert!(matches!(ident_res, Err(ParseIdentifierErr::ContainsNull)));
+        }
+
+        #[test]
+        fn whitespace() {
+            quoted_identest!("This is Name.", @r"'/This#20is#20Name. '");
+            quoted_identest!("Trailing   ", @r"'/Trailing#20#20#20 '");
+        }
+
+        #[test]
+        fn regular_chars() {
             quoted_identest!("ThisName", @r"'/ThisName '");
             quoted_identest!("AnotherName", @r"'/AnotherName '");
             quoted_identest!("Some-weird_cha'rs", @r"'/Some-weird_cha'rs '");
         }
 
         #[test]
-        fn parse_delimiters() {
+        fn delimiters() {
             quoted_identest!("This()Name", @r"'/This#28#29Name '");
             quoted_identest!("This<>Name", @r"'/This#3c#3eName '");
             quoted_identest!("This[]Name", @r"'/This#5b#5dName '");
