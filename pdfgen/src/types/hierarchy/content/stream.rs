@@ -59,11 +59,7 @@ impl Stream {
 
     /// Write the stream object into the given implementor of [`Write`] trait, with function that
     /// writes dictionary fields additional to the `Length` field.
-    pub fn write_with_dict<F>(
-        &self,
-        mut writer: &mut dyn Write,
-        write_dict: F,
-    ) -> Result<usize, Error>
+    pub fn write_with_dict<F>(&self, writer: &mut dyn Write, write_dict: F) -> Result<usize, Error>
     where
         F: FnOnce(&mut dyn Write) -> Result<usize, Error>,
     {
