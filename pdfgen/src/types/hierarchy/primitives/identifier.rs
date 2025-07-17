@@ -180,17 +180,12 @@ impl FromStr for Identifier<String> {
 
         let mut output = String::with_capacity(input.len());
 
+        #[inline(always)]
         fn is_delimiter(byte: u8) -> bool {
-            byte == 40
-                || byte == 41
-                || byte == 60
-                || byte == 62
-                || byte == 91
-                || byte == 93
-                || byte == 123
-                || byte == 125
-                || byte == 47
-                || byte == 37
+            matches!(
+                byte,
+                b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+            )
         }
 
         for ch in input.bytes() {
