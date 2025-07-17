@@ -199,40 +199,40 @@ mod tests {
     }
 
     mod parsing {
-        macro_rules! identest {
-            ($name:expr, $expected:expr) => {{
-                use super::super::Identifier;
-                use std::str::FromStr;
-
+        use super::super::Identifier;
+        use std::str::FromStr;
+        macro_rules! quoted_identest {
+            ($name:expr, @$expected:literal) => {
                 let name = Identifier::from_str($name).expect("Could not parse name.");
-                let mut out_buf = Vec::new();
+                let mut out_buf = vec![b'\''];
                 name.write(&mut out_buf)
                     .expect("Could not write to output buffer.");
+                out_buf.push(b'\'');
                 let out_string = String::from_utf8(out_buf).expect("output buffer not valid UTF8.");
-                assert_eq!(out_string, $expected);
-            }};
+                insta::assert_snapshot!(out_string, @$expected);
+            };
         }
 
         #[test]
         fn parse_whitespace() {
-            identest!("This is Name.", "/This#20is#20Name. ");
+            quoted_identest!("This is Name.", @r"'/This#20is#20Name. '");
         }
 
         #[test]
         fn parse_regular_chars() {
-            identest!("ThisName", "/ThisName ");
-            identest!("AnotherName", "/AnotherName ");
-            identest!("Some-weird_cha'rs", "/Some-weird_cha'rs ");
+            quoted_identest!("ThisName", @r"'/ThisName '");
+            quoted_identest!("AnotherName", @r"'/AnotherName '");
+            quoted_identest!("Some-weird_cha'rs", @r"'/Some-weird_cha'rs '");
         }
 
         #[test]
         fn parse_delimiters() {
-            identest!("This()Name", "/This#28#29Name ");
-            identest!("This<>Name", "/This#3c#3eName ");
-            identest!("This[]Name", "/This#5b#5dName ");
-            identest!("This{}Name", "/This#7b#7dName ");
-            identest!("This/Name", "/This#2fName ");
-            identest!("This%Name", "/This#25Name ");
+            quoted_identest!("This()Name", @r"'/This#28#29Name '");
+            quoted_identest!("This<>Name", @r"'/This#3c#3eName '");
+            quoted_identest!("This[]Name", @r"'/This#5b#5dName '");
+            quoted_identest!("This{}Name", @r"'/This#7b#7dName '");
+            quoted_identest!("This/Name", @r"'/This#2fName '");
+            quoted_identest!("This%Name", @r"'/This#25Name '");
         }
     }
 }
