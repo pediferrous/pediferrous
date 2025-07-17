@@ -38,6 +38,9 @@ use pdfgen_macros::const_identifiers;
 /// |   }   |    125  |        7D   |  175  | RIGHT CURLY BRACKET  |
 /// |   /   |     47  |        2F   |  057  | SOLIDUS              |
 /// |   %   |     37  |        25   |  045  | PERCENT SIGN         |
+///
+/// Identifiers can be parsed from strings with [`Identifier::from_str`] (or [`str::parse`])
+/// methods. See [`Identifier::from_str`] for information on parsing rules.
 #[derive(Debug, Clone)]
 pub struct Identifier<T: AsRef<[u8]>> {
     inner: T,
@@ -111,6 +114,7 @@ impl Identifier<&'static [u8]> {
     }
 }
 
+/// Error returned on failure when parsing an [`Identifier`] from a [`String`] or [`str`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug, thiserror::Error)]
 pub enum ParseIdentifierErr {
     #[error("Identifier is not allowed to start with a solidus '/'.")]
@@ -123,18 +127,48 @@ pub enum ParseIdentifierErr {
 impl FromStr for Identifier<String> {
     type Err = ParseIdentifierErr;
 
-    /// * A NUMBER SIGN (23h) (#) in a name shall be written by using its 2-digit hexadecimal code
-    ///   (23), preceded by the NUMBER SIGN.
-    /// * Any character in a name that is a regular character (other than NUMBER SIGN) shall be written
-    ///   as itself or by using its 2-digit hexadecimal code, preceded by the NUMBER SIGN.
-    /// * Any character that is not a regular character shall be written using its 2-digit hexadecimal
-    ///   code, preceded by the NUMBER SIGN only.
+    /// Parses an [`Identifier`] from the given [`str`] slice, which must conform to following
+    /// rules:
     ///
-    /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
-    /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
-    /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
-    /// All characters except the white-space characters and delimiters are referred to as regular
-    /// characters.
+    /// * Must not start with a SOLIDUS (`'/'`).
+    /// * Must not contain the NULL character (`'\0'`).
+    /// * SOLIDUS must not be followed by whitespace, so leading whitespace will be removed.
+    /// * NUMBER SIGN (`'#'`) will be encoded as `#` followed by its hexadecimal code (`'23'`).
+    /// * Any character in a name that is a regular character (neither a delimiter nor the NUMBER
+    ///   SIGN) will be written as itself.
+    /// * Any character outside the `0x21..=0x7e` range will be written using its 2-digit
+    ///   hexadecimal code, preceded by the NUMBER SIGN (`'#'`).
+    /// * All characters except the white-space characters and delimiters are referred to as
+    ///   regular characters.
+    /// * Delimiters are `(, ), <, >, [, ], {, }, /, %`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use pdfgen::types::hierarchy::primitives::identifier::{Identifier, ParseIdentifierErr};
+    /// # use std::str::FromStr;
+    /// #
+    /// let ident = Identifier::from_str("SomeName").unwrap();
+    /// let mut output = Vec::new();
+    /// ident.write(&mut output).unwrap();
+    /// assert_eq!(&output, b"/SomeName ");
+    ///
+    /// let ident = Identifier::from_str("With Whitespace").unwrap();
+    /// let mut output = Vec::new();
+    /// ident.write(&mut output).unwrap();
+    /// assert_eq!(&output, b"/With#20Whitespace ");
+    ///
+    /// let ident = Identifier::from_str("  Trimmed").unwrap();
+    /// let mut output = Vec::new();
+    /// ident.write(&mut output).unwrap();
+    /// assert_eq!(&output, b"/Trimmed ");
+    ///
+    /// let ident = Identifier::from_str("/Invalid");
+    /// assert!(matches!(ident, Err(ParseIdentifierErr::StartsWithSolidus)));
+    ///
+    /// let ident = Identifier::from_str("WithNull\0");
+    /// assert!(matches!(ident, Err(ParseIdentifierErr::ContainsNull)));
+    /// ```
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         use std::fmt::Write;
 
