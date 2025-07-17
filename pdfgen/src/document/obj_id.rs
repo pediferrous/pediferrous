@@ -36,7 +36,7 @@ impl<T> ObjId<T> {
     /// Write the encoded PDF object reference into the provided implementor of [`Write`].
     pub fn write_ref(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         Ok(pdfgen_macros::write_chain! {
-            writer.write(self.id.to_string().as_bytes()),
+            crate::write_fmt!(&mut *writer, "{}", self.id),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs
             writer.write(b" 0 R"),
@@ -46,7 +46,7 @@ impl<T> ObjId<T> {
     /// Write the encoded PDF object id into the provided implementor of [`Write`].
     pub fn write_def(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         Ok(pdfgen_macros::write_chain! {
-            writer.write(self.id.to_string().as_bytes()),
+            crate::write_fmt!(&mut *writer, "{}", self.id),
             // NOTE: generation is always 0 because we are genereting new PDFs and don't support
             //       updating existing PDFs
             writer.write(b" 0 "),
