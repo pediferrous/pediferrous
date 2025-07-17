@@ -43,7 +43,7 @@ impl Stream {
             .expect("Writing to Vec should never fail.");
     }
 
-    /// Writes and [`Identifier`] into this `Stream`, updating it's length.
+    /// Writes an [`Identifier`] into this `Stream`, updating it's length.
     pub fn write_identifier<T: AsRef<[u8]>>(&mut self, identifier: &Identifier<T>) {
         identifier
             .write(&mut self.inner)
