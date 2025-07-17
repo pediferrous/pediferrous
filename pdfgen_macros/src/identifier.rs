@@ -4,19 +4,19 @@ use syn::{
     punctuated::Punctuated,
 };
 
-/// Represents the input to the `const_names` macro.
-struct ConstName {
+/// Represents the input to the `const_identifiers` macro.
+struct ConstIdentifier {
     docs: Vec<Attribute>,
     visibility: Visibility,
-    name: Ident,
+    identifier: Ident,
     custom_lit: Option<LitByteStr>,
 }
 
-impl Parse for ConstName {
+impl Parse for ConstIdentifier {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let docs: Vec<Attribute> = input.call(Attribute::parse_outer)?;
         let visibility: Visibility = input.parse()?;
-        let name: Ident = input.parse()?;
+        let identifier: Ident = input.parse()?;
 
         let mut custom_lit = None;
 
@@ -24,32 +24,31 @@ impl Parse for ConstName {
             custom_lit = input.parse()?;
         }
 
-        Ok(ConstName {
+        Ok(ConstIdentifier {
             docs,
             visibility,
-            name,
+            identifier,
             custom_lit,
         })
     }
 }
 
-pub(crate) fn const_names(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let const_name =
-        parse_macro_input!(token_stream with Punctuated<ConstName, Token![,]>::parse_terminated);
+pub(crate) fn const_identifiers(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let const_name = parse_macro_input!(token_stream with Punctuated<ConstIdentifier, Token![,]>::parse_terminated);
 
     let mut ts = TokenStream::new();
     for cn in const_name {
         let docs = cn.docs;
         let visibility = cn.visibility;
-        let name = cn.name;
+        let identifier = cn.identifier;
 
         let name_byte_str = cn
             .custom_lit
-            .unwrap_or_else(|| create_pdf_style_byte_literal(&name));
+            .unwrap_or_else(|| create_pdf_style_byte_literal(&identifier));
 
         let expanded = quote::quote! {
             #(#docs)*
-            #visibility const #name: Name<&'static [u8]> = Name::from_static(#name_byte_str);
+            #visibility const #identifier: Identifier<&'static [u8]> = Identifier::from_static(#name_byte_str);
         };
 
         ts.extend(expanded);
@@ -59,12 +58,12 @@ pub(crate) fn const_names(token_stream: proc_macro::TokenStream) -> proc_macro::
 }
 
 /// Helper function converting uppercase literals to LitByteStr in PascalCase format
-fn create_pdf_style_byte_literal(name: &Ident) -> LitByteStr {
-    let name = name.to_string();
+fn create_pdf_style_byte_literal(identifier: &Ident) -> LitByteStr {
+    let identifier = identifier.to_string();
 
     let mut prev_was_underline = false;
-    let mut literal = String::with_capacity(name.len());
-    for (i, ch) in name.chars().enumerate() {
+    let mut literal = String::with_capacity(identifier.len());
+    for (i, ch) in identifier.chars().enumerate() {
         match (i, prev_was_underline) {
             (0, _) | (_, true) => {
                 for ch in ch.to_uppercase() {
@@ -99,9 +98,9 @@ mod tests {
         let span = Span::call_site();
         let ident = Ident::new("NAME", span);
 
-        let name = create_pdf_style_byte_literal(&ident);
+        let identifier = create_pdf_style_byte_literal(&ident);
 
-        assert_eq!(name, LitByteStr::new(b"Name", span));
+        assert_eq!(identifier, LitByteStr::new(b"Name", span));
     }
 
     #[test]
@@ -109,8 +108,8 @@ mod tests {
         let span = Span::call_site();
         let ident = Ident::new("NAME_TWO", span);
 
-        let name = create_pdf_style_byte_literal(&ident);
+        let identifier = create_pdf_style_byte_literal(&ident);
 
-        assert_eq!(name, LitByteStr::new(b"NameTwo", span));
+        assert_eq!(identifier, LitByteStr::new(b"NameTwo", span));
     }
 }
