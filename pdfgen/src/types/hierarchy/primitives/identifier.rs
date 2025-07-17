@@ -38,7 +38,6 @@ use pdfgen_macros::const_identifiers;
 /// |   }   |    125  |        7D   |  175  | RIGHT CURLY BRACKET  |
 /// |   /   |     47  |        2F   |  057  | SOLIDUS              |
 /// |   %   |     37  |        25   |  045  | PERCENT SIGN         |
-///
 #[derive(Debug, Clone)]
 pub struct Identifier<T: AsRef<[u8]>> {
     inner: T,
@@ -222,11 +221,18 @@ mod tests {
         #[test]
         fn parse_regular_chars() {
             identest!("ThisName", "/ThisName ");
+            identest!("AnotherName", "/AnotherName ");
+            identest!("Some-weird_cha'rs", "/Some-weird_cha'rs ");
         }
 
         #[test]
-        fn parse_parentheses() {
+        fn parse_delimiters() {
             identest!("This()Name", "/This#28#29Name ");
+            identest!("This<>Name", "/This#3c#3eName ");
+            identest!("This[]Name", "/This#5b#5dName ");
+            identest!("This{}Name", "/This#7b#7dName ");
+            identest!("This/Name", "/This#2fName ");
+            identest!("This%Name", "/This#25Name ");
         }
     }
 }
