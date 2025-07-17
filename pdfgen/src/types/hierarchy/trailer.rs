@@ -54,7 +54,7 @@ impl WriteTrailer for CrossReferenceTable {
             writer.write(b"<< "),
             // Size
             SIZE.write(writer),
-            writer.write(size.to_string().as_bytes()),
+            crate::write_fmt!(&mut *writer, "{size}"),
             writer.write(constants::NL_MARKER),
             // Root
             writer.write(indent),
@@ -72,7 +72,7 @@ impl WriteTrailer for CrossReferenceTable {
             writer.write(constants::NL_MARKER),
             // startxref
             writer.write(START_XREF_MARKER),
-            writer.write(offset.to_string().as_bytes()),
+            crate::write_fmt!(&mut *writer, "{offset}"),
             writer.write(constants::NL_MARKER),
         };
 

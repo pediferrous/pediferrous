@@ -1,6 +1,9 @@
 //! Implementation of PDF name.
 
-use std::io::{Error, Write};
+use std::{
+    io::{Error, Write},
+    str::FromStr,
+};
 
 use pdfgen_macros::const_identifiers;
 
@@ -18,8 +21,28 @@ use pdfgen_macros::const_identifiers;
 /// When writing a name in a PDF file, a SOLIDUS (2Fh) (/) shall be used to introduce a name.
 /// No token delimiter (such as white-space) occurs between the SOLIDUS and the encoded name.
 /// Whitespace used as part of a name shall always be coded using the 2-digit hexadecimal notation.
+/// All characters except the white-space characters and delimiters are referred to as regular
+/// characters.
+///
+/// From Section 7.2.3, Table 2 delimiters are:
+///
+/// | Glyph | Decimal | Hexadecimal | Octal | Name                 |
+/// |-------|---------|-------------|-------|----------------------|
+/// |   (   |     40  |        28   |  050  | LEFT PARENTHESIS     |
+/// |   )   |     41  |        29   |  051  | RIGHT PARENTHESIS    |
+/// |   <   |     60  |        3C   |  074  | LESS-THAN SIGN       |
+/// |   >   |     62  |        3E   |  076  | GREATER-THAN SIGN    |
+/// |   [   |     91  |        5B   |  133  | LEFT SQUARE BRACKET  |
+/// |   ]   |     93  |        5D   |  135  | RIGHT SQUARE BRACKET |
+/// |   {   |    123  |        7B   |  173  | LEFT CURLY BRACKET   |
+/// |   }   |    125  |        7D   |  175  | RIGHT CURLY BRACKET  |
+/// |   /   |     47  |        2F   |  057  | SOLIDUS              |
+/// |   %   |     37  |        25   |  045  | PERCENT SIGN         |
+///
+/// Identifiers can be parsed from strings with [`Identifier::from_str`] (or [`str::parse`])
+/// methods. See [`Identifier::from_str`] for information on parsing rules.
 #[derive(Debug, Clone)]
-pub(crate) struct Identifier<T: AsRef<[u8]>> {
+pub struct Identifier<T: AsRef<[u8]>> {
     inner: T,
 }
 
@@ -51,6 +74,8 @@ impl<T: AsRef<[u8]>> Identifier<T> {
 
     /// The number of bytes that this [`Identifier`] occupies when written into the PDF document. This does
     /// not include the whitespace written after the [`Identifier`].
+    // NOTE(nfejzic): empty `Identifier` is not valid, so we don't need `is_empty` method.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.inner.as_ref().len() + 1
     }
@@ -60,14 +85,6 @@ impl<T: AsRef<[u8]>> Identifier<T> {
         Identifier {
             inner: self.inner.as_ref(),
         }
-    }
-
-    /// Returns the inner byte slice
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut vec = Vec::with_capacity(self.inner.as_ref().len() + 2);
-        let _ = self.write(&mut vec);
-
-        vec
     }
 }
 
@@ -94,6 +111,98 @@ impl Identifier<&'static [u8]> {
         }
 
         Self { inner }
+    }
+}
+
+/// Error returned on failure when parsing an [`Identifier`] from a [`String`] or [`str`].
+#[derive(Clone, Copy, PartialEq, Eq, Debug, thiserror::Error)]
+pub enum ParseIdentifierErr {
+    #[error("Identifier is not allowed to start with a solidus '/'.")]
+    StartsWithSolidus,
+
+    #[error("Identifier must not contain the NULL character.")]
+    ContainsNull,
+}
+
+impl FromStr for Identifier<String> {
+    type Err = ParseIdentifierErr;
+
+    /// Parses an [`Identifier`] from the given [`str`] slice, which must conform to following
+    /// rules:
+    ///
+    /// * Must not start with a SOLIDUS (`'/'`).
+    /// * Must not contain the NULL character (`'\0'`).
+    /// * SOLIDUS must not be followed by whitespace, so leading whitespace will be removed.
+    /// * NUMBER SIGN (`'#'`) will be encoded as `#` followed by its hexadecimal code (`'23'`).
+    /// * Any character in a name that is a regular character (neither a delimiter nor the NUMBER
+    ///   SIGN) will be written as itself.
+    /// * Any character outside the `0x21..=0x7e` range will be written using its 2-digit
+    ///   hexadecimal code, preceded by the NUMBER SIGN (`'#'`).
+    /// * All characters except the white-space characters and delimiters are referred to as
+    ///   regular characters.
+    /// * Delimiters are `(, ), <, >, [, ], {, }, /, %`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use pdfgen::types::hierarchy::primitives::identifier::{Identifier, ParseIdentifierErr};
+    /// # use std::str::FromStr;
+    /// #
+    /// let ident = Identifier::from_str("SomeName").unwrap();
+    /// let mut output = Vec::new();
+    /// ident.write(&mut output).unwrap();
+    /// assert_eq!(&output, b"/SomeName ");
+    ///
+    /// let ident = Identifier::from_str("With Whitespace").unwrap();
+    /// let mut output = Vec::new();
+    /// ident.write(&mut output).unwrap();
+    /// assert_eq!(&output, b"/With#20Whitespace ");
+    ///
+    /// let ident = Identifier::from_str("  Trimmed").unwrap();
+    /// let mut output = Vec::new();
+    /// ident.write(&mut output).unwrap();
+    /// assert_eq!(&output, b"/Trimmed ");
+    ///
+    /// let ident = Identifier::from_str("/Invalid");
+    /// assert!(matches!(ident, Err(ParseIdentifierErr::StartsWithSolidus)));
+    ///
+    /// let ident = Identifier::from_str("WithNull\0");
+    /// assert!(matches!(ident, Err(ParseIdentifierErr::ContainsNull)));
+    /// ```
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        use std::fmt::Write;
+
+        let input = input.trim_start();
+
+        if input.starts_with('/') {
+            return Err(ParseIdentifierErr::StartsWithSolidus);
+        }
+
+        let mut output = String::with_capacity(input.len());
+
+        #[inline(always)]
+        fn is_delimiter(byte: u8) -> bool {
+            matches!(
+                byte,
+                b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+            )
+        }
+
+        for ch in input.bytes() {
+            match ch {
+                b'\0' => return Err(ParseIdentifierErr::ContainsNull),
+                b'#' => output.push_str("#23"),
+                to_encode if !(0x21..=0x7e).contains(&to_encode) || is_delimiter(to_encode) => {
+                    write!(&mut output, "#{to_encode:x}")
+                        .expect("Writing to String should always succeed.");
+                }
+                inside_range => {
+                    output.push(inside_range as char);
+                }
+            };
+        }
+
+        Ok(Identifier::new(output))
     }
 }
 
@@ -131,5 +240,62 @@ mod tests {
         let mut out_buf = Vec::new();
         slice_key.write(&mut out_buf).unwrap();
         assert_eq!(&out_buf, b"/SliceKey ");
+    }
+
+    mod parsing {
+        use crate::types::hierarchy::primitives::identifier::ParseIdentifierErr;
+
+        use super::super::Identifier;
+        use std::str::FromStr;
+        macro_rules! quoted_identest {
+            ($name:expr, @$expected:literal) => {
+                let name = Identifier::from_str($name).expect("Could not parse name.");
+                let mut out_buf = vec![b'\''];
+                name.write(&mut out_buf)
+                    .expect("Could not write to output buffer.");
+                out_buf.push(b'\'');
+                let out_string = String::from_utf8(out_buf).expect("output buffer not valid UTF8.");
+                insta::assert_snapshot!(out_string, @$expected);
+            };
+        }
+
+        #[test]
+        fn starts_with_solidus() {
+            let ident_res = Identifier::from_str("/InvalidIdent");
+
+            assert!(matches!(
+                ident_res,
+                Err(ParseIdentifierErr::StartsWithSolidus)
+            ));
+        }
+
+        #[test]
+        fn contains_null() {
+            let ident_res = Identifier::from_str("Contains\0Null");
+            assert!(matches!(ident_res, Err(ParseIdentifierErr::ContainsNull)));
+        }
+
+        #[test]
+        fn whitespace() {
+            quoted_identest!("This is Name.", @r"'/This#20is#20Name. '");
+            quoted_identest!("Trailing   ", @r"'/Trailing#20#20#20 '");
+        }
+
+        #[test]
+        fn regular_chars() {
+            quoted_identest!("ThisName", @r"'/ThisName '");
+            quoted_identest!("AnotherName", @r"'/AnotherName '");
+            quoted_identest!("Some-weird_cha'rs", @r"'/Some-weird_cha'rs '");
+        }
+
+        #[test]
+        fn delimiters() {
+            quoted_identest!("This()Name", @r"'/This#28#29Name '");
+            quoted_identest!("This<>Name", @r"'/This#3c#3eName '");
+            quoted_identest!("This[]Name", @r"'/This#5b#5dName '");
+            quoted_identest!("This{}Name", @r"'/This#7b#7dName '");
+            quoted_identest!("This/Name", @r"'/This#2fName '");
+            quoted_identest!("This%Name", @r"'/This#25Name '");
+        }
     }
 }

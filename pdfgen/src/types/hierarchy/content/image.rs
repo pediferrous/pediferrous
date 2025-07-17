@@ -201,7 +201,7 @@ impl Object for Image {
         //       colour space specified in the dictionary.
 
         Ok(pdfgen_macros::write_chain! {
-            self.samples.write_with_dict(writer, |mut writer| {
+            self.samples.write_with_dict(writer, |writer| {
                 Ok(pdfgen_macros::write_chain! {
                     Identifier::TYPE.write(writer),
                     Identifier::X_OBJECT.write(writer),
@@ -212,11 +212,11 @@ impl Object for Image {
                     writer.write(constants::NL_MARKER),
 
                     Self::WIDTH.write(writer),
-                    crate::write_fmt!(&mut writer, "{}", self.dict.width),
+                    crate::write_fmt!(&mut *writer, "{}", self.dict.width),
                     writer.write(constants::NL_MARKER),
 
                     Self::HEIGHT.write(writer),
-                    crate::write_fmt!(&mut writer, "{}", self.dict.height),
+                    crate::write_fmt!(&mut *writer, "{}", self.dict.height),
                     writer.write(constants::NL_MARKER),
 
                     Self::COLOR_SPACE.write(writer),
@@ -224,7 +224,7 @@ impl Object for Image {
                     writer.write(constants::NL_MARKER),
 
                     Self::BITS_PER_COMPONENT.write(writer),
-                    crate::write_fmt!(&mut writer, "{}", self.dict.bits_per_comp),
+                    crate::write_fmt!(&mut *writer, "{}", self.dict.bits_per_comp),
                     writer.write(constants::NL_MARKER),
                 })
             }),
