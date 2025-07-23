@@ -7,6 +7,8 @@ use crate::types::{
     hierarchy::primitives::{identifier::Identifier, rectangle::Position, string::PdfString},
 };
 
+use super::color::Color;
+
 /// Defines the transformation properties of a [`Text`] object, including its position and size on a [`Page`].
 ///
 /// [`Page`]: crate::types::hierarchy::page::Page
@@ -32,6 +34,9 @@ pub struct Text {
 
     /// Represents the [`Text`] objects rendering position and scale.
     transform: TextTransform,
+
+    /// Represents the color information used to render the given text.
+    color: Color,
 }
 
 impl Text {
@@ -56,6 +61,11 @@ impl Text {
                 position: Position::from_mm(0.0, 0.0),
                 size: 12,
             },
+            color: Color::Rgb {
+                red: 0,
+                green: 0,
+                blue: 0,
+            },
         };
 
         TextBuilder { inner: txt }
@@ -69,6 +79,8 @@ impl Text {
     /// Returns a byte representation for drawing operations of this `Text` object in PDF syntax.
     pub(crate) fn to_bytes(&self, font_name: Identifier<&[u8]>) -> io::Result<Vec<u8>> {
         let mut writer = Vec::new();
+
+        self.color.write_non_stroke(&mut writer)?;
 
         // BT
         writer.write_all(Self::BT_MARKER)?;
@@ -137,6 +149,12 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
         self.inner.transform.size = size;
         self
     }
+
+    /// Sets the color of the [`Text`].
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.inner.color = color;
+        self
+    }
 }
 
 impl TextBuilder<true> {
@@ -162,6 +180,8 @@ mod tests {
 
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output, @r"
+        /DeviceRGB cs
+        0 0 0 sc
         BT
         /BiHDef 12 Tf
         0 0 Td
@@ -183,6 +203,8 @@ mod tests {
 
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output, @r"
+        /DeviceRGB cs
+        0 0 0 sc
         BT
         /CustomFnt 14 Tf
         0 0 Td
