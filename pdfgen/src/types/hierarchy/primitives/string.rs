@@ -3,7 +3,7 @@ use std::io::{Error, Write};
 use pdfgen_macros::write_chain;
 
 /// Represents a PDF String with UTF-8 encoding.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PdfString {
     /// Inner [`String`] is the object that actually stores the bytes of a `PdfString`.
     inner: String,

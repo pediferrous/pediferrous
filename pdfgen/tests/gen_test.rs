@@ -4,7 +4,10 @@ use pdfgen::{
     Document,
     types::hierarchy::{
         content::{color::Color, image::Image, text::Text},
-        primitives::rectangle::{Position, Rectangle},
+        primitives::{
+            rectangle::{Position, Rectangle},
+            unit::Unit,
+        },
     },
 };
 
@@ -134,7 +137,11 @@ fn page_colored_text() {
     let font_id = document.create_font("Type1".into(), "Helvetica".into());
     let page = document.create_page();
 
-    let txt = Text::builder()
+    let pos = Position::from_units(
+        Rectangle::A4.width().into_user_unit() / 2.,
+        Rectangle::A4.height().into_user_unit() / 2.,
+    );
+    let builder = Text::builder()
         .with_content("Hello from pdfgen!")
         .with_size(14)
         .with_color(Color::Rgb {
@@ -142,13 +149,66 @@ fn page_colored_text() {
             green: 0,
             blue: 0,
         })
-        .at(Position::from_units(
-            Rectangle::A4.width().into_user_unit() / 2.,
-            Rectangle::A4.height().into_user_unit() / 2.,
-        ))
-        .build();
+        .at(pos);
 
-    page.add_text(txt, font_id);
+    let red_text = builder.clone().build();
+    page.add_text(red_text, font_id.clone());
+
+    let green_text = builder
+        .clone()
+        .with_color(Color::Rgb {
+            red: 0,
+            green: 255,
+            blue: 0,
+        })
+        .at(Position {
+            x: pos.x,
+            y: pos.y + Unit::from_mm(20.),
+        })
+        .build();
+    page.add_text(green_text, font_id.clone());
+
+    let blue_text = builder
+        .clone()
+        .with_color(Color::Rgb {
+            red: 0,
+            green: 0,
+            blue: 255,
+        })
+        .at(Position {
+            x: pos.x,
+            y: pos.y + Unit::from_mm(40.),
+        })
+        .build();
+    page.add_text(blue_text, font_id.clone());
+
+    let yellow_text = builder
+        .clone()
+        .with_color(Color::Rgb {
+            red: 255,
+            green: 255,
+            blue: 0,
+        })
+        .at(Position {
+            x: pos.x,
+            y: pos.y + Unit::from_mm(60.),
+        })
+        .build();
+    page.add_text(yellow_text, font_id.clone());
+
+    let magenta_text = builder
+        .clone()
+        .with_color(Color::Rgb {
+            red: 255,
+            green: 0,
+            blue: 255,
+        })
+        .at(Position {
+            x: pos.x,
+            y: pos.y + Unit::from_mm(80.),
+        })
+        .build();
+    page.add_text(magenta_text, font_id);
 
     macros::snap_test!(document);
 }

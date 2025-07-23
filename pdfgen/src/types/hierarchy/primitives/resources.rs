@@ -89,12 +89,37 @@ impl Resources {
         writer: &mut dyn Write,
         renderables: &[Renderable],
     ) -> Result<usize, Error> {
+        let mut font_renderables = Vec::new();
+        let write_fonts_dict = |writer: &mut dyn Write, font_renderables: Vec<&Renderable<'_>>| {
+            if font_renderables.is_empty() {
+                return std::io::Result::Ok(0);
+            }
+
+            Ok(pdfgen_macros::write_chain! {
+                Identifier::FONT.write(writer),
+                writer.write(b"<< "),
+
+                for fr in font_renderables.into_iter() {
+                     fr.write_ref(writer),
+                },
+
+                writer.write(b" >>"),
+            })
+        };
+
         Ok(pdfgen_macros::write_chain! {
             writer.write(b"<< "),
 
             for renderable in renderables.iter() {
-                renderable.write_ref(writer),
+                if matches!(renderable.entry, ResourceEntry::Font { .. }) {
+                    font_renderables.push(renderable);
+                    Ok(0)
+                } else {
+                    renderable.write_ref(writer)
+                },
             },
+
+            write_fonts_dict(writer, font_renderables),
 
             writer.write(b" >>"),
         })
@@ -139,12 +164,9 @@ impl Renderable<'_> {
             }),
 
             ResourceEntry::Font { name, id } => Ok(pdfgen_macros::write_chain! {
-                Identifier::FONT.write(writer),
-
-                writer.write(b"<< "),
                 name.write(writer),
                 id.write_ref(writer),
-                writer.write(b" >>"),
+                writer.write(b" "),
             }),
         }
     }

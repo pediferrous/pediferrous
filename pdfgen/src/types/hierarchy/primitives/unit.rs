@@ -1,6 +1,9 @@
 //! Default user space unit primitive used for positioning and sizing elements on the page.
 
-use std::{fmt::Display, ops::Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Sub},
+};
 
 /// Internal representation options for the [`Unit`] type. By default, the default user space unit
 /// is 1/72th of an inch. `Inner` allows us to use other measurement units for the value and to
@@ -61,6 +64,18 @@ impl Display for Inner {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Unit {
     inner: Inner,
+}
+
+impl Add for Unit {
+    type Output = Unit;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let this = self.into_user_unit();
+        let other = rhs.into_user_unit();
+        let result = this + other;
+
+        Unit::from_unit(result)
+    }
 }
 
 impl Sub for Unit {

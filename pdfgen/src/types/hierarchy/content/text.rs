@@ -12,7 +12,7 @@ use super::color::Color;
 /// Defines the transformation properties of a [`Text`] object, including its position and size on a [`Page`].
 ///
 /// [`Page`]: crate::types::hierarchy::page::Page
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct TextTransform {
     /// The position of the [`Text`] on the [`Page`].
     ///
@@ -27,7 +27,7 @@ pub(crate) struct TextTransform {
 /// text on a [`Page`].
 ///
 /// [`Page`]: crate::types::hierarchy::page::Page
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Text {
     /// Represents the content (literal) to be rendered.
     content: PdfString,
@@ -80,11 +80,11 @@ impl Text {
     pub(crate) fn to_bytes(&self, font_name: Identifier<&[u8]>) -> io::Result<Vec<u8>> {
         let mut writer = Vec::new();
 
-        self.color.write_non_stroke(&mut writer)?;
-
         // BT
         writer.write_all(Self::BT_MARKER)?;
         writer.write_all(constants::NL_MARKER)?;
+
+        self.color.write_non_stroke(&mut writer)?;
 
         // /FName Size Tf
         font_name.write(&mut writer)?;
@@ -111,6 +111,7 @@ impl Text {
 
         // ET
         writer.write_all(Self::ET_MARKER)?;
+        writer.write_all(constants::NL_MARKER)?;
 
         Ok(writer)
     }
@@ -119,6 +120,7 @@ impl Text {
 /// A builder for constructing a [`Text`] object, allowing incremental modifications.
 /// The `IS_INIT` const generic tracks whether initialization has been completed (if position has
 /// been set).
+#[derive(Debug, Clone)]
 pub struct TextBuilder<const IS_INIT: bool> {
     /// The underlying [`Text`] object being built.
     inner: Text,
@@ -180,9 +182,9 @@ mod tests {
 
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output, @r"
+        BT
         /DeviceRGB cs
         0 0 0 sc
-        BT
         /BiHDef 12 Tf
         0 0 Td
         () Tj
@@ -203,9 +205,9 @@ mod tests {
 
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output, @r"
+        BT
         /DeviceRGB cs
         0 0 0 sc
-        BT
         /CustomFnt 14 Tf
         0 0 Td
         (This is a custom text content.) Tj
