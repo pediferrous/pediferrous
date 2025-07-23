@@ -127,7 +127,7 @@ impl Object for PageTree {
             writer.write(constants::NL_MARKER),
 
             Self::COUNT.write(writer),
-            writer.write(self.count.to_string().as_bytes()),
+            crate::write_fmt!(&mut *writer, "{}", self.count),
             writer.write(b" >>"),
             writer.write(constants::NL_MARKER),
         };

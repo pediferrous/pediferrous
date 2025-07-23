@@ -43,6 +43,13 @@ impl Stream {
             .expect("Writing to Vec should never fail.");
     }
 
+    /// Writes an [`Identifier`] into this `Stream`, updating it's length.
+    pub fn write_identifier<T: AsRef<[u8]>>(&mut self, identifier: &Identifier<T>) {
+        identifier
+            .write(&mut self.inner)
+            .expect("Writing to Vec should never fail.");
+    }
+
     /// Write the stream object into the given implementor of [`Write`] trait, with dictionary
     /// containing only the required `Length` field.
     #[inline(always)]
@@ -56,7 +63,7 @@ impl Stream {
     where
         F: FnOnce(&mut dyn Write) -> Result<usize, Error>,
     {
-        let mut written = pdfgen_macros::write_chain! {
+        let written = pdfgen_macros::write_chain! {
             // BEGIN_DICTIONARY:
             writer.write(b"<< "),
             // write the additional dictionary fields
@@ -64,7 +71,7 @@ impl Stream {
 
             // write the length
             Self::LENGTH.write(writer),
-            writer.write(self.inner.len().to_string().as_bytes()),
+            crate::write_fmt!(&mut *writer, "{}", self.inner.len()),
             writer.write(b" >>"),
             writer.write(constants::NL_MARKER),
             // END_DICTIONARY
@@ -72,12 +79,9 @@ impl Stream {
             // stream
             writer.write(Self::START_STREAM),
             writer.write(constants::NL_MARKER),
-        };
 
-        writer.write_all(&self.inner)?;
-        written += self.inner.len();
+            writer.write_all(&self.inner).map(|_| self.inner.len()),
 
-        written += pdfgen_macros::write_chain! {
             writer.write(constants::NL_MARKER),
             writer.write(Self::END_STREAM),
         };
