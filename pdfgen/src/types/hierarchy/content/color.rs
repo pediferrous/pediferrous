@@ -142,24 +142,61 @@ impl Color {
 mod tests {
     use super::Color;
 
-    #[test]
-    fn device_rgb() {
-        let mut writer = Vec::new();
-        let color = Color::Rgb {
-            red: 255,
-            green: 128,
-            blue: 55,
+    // TODO(nfejzic): generalize this macro and use it for all inline snap tests.
+    macro_rules! color_tests {
+        ($($test:ident = { $color:expr, expected: $expected:literal }),*) => {
+            $(
+            #[test]
+            fn $test() {
+                let mut writer = Vec::new();
+                let color = $color;
+                color.write_stroke(&mut writer).unwrap();
+                color.write_non_stroke(&mut writer).unwrap();
+                let output = String::from_utf8(writer).unwrap();
+                insta::assert_snapshot!(output, @$expected);
+            }
+            )*
         };
+    }
 
-        color.write_stroke(&mut writer).unwrap();
-        color.write_non_stroke(&mut writer).unwrap();
+    color_tests! {
+         device_rgb = {
+            Color::Rgb {
+                red: 255,
+                green: 128,
+                blue: 55,
+            },
+            expected: r"
+                /DeviceRGB CS
+                1 0.5019608 0.21568628 SC
+                /DeviceRGB cs
+                1 0.5019608 0.21568628 sc
+                "
+        },
 
-        let output = String::from_utf8(writer).unwrap();
-        insta::assert_snapshot!(output, @r"
-        /DeviceRGB CS
-        1 0.5019608 0.21568628 SC
-        /DeviceRGB cs
-        1 0.5019608 0.21568628 sc
-        ");
+        device_gray = {
+            Color::Gray(128),
+            expected: r"
+                /DeviceGray CS
+                0.5019608 SC
+                /DeviceGray cs
+                0.5019608 sc
+                "
+        },
+
+        device_cmyk = {
+            Color::CMYK {
+                cyan: 128,
+                magenta: 10,
+                yellow: 255,
+                black: 42,
+            },
+            expected: r"
+                /DeviceCMYK CS
+                0.5019608 0.039215688 1 0.16470589 SC
+                /DeviceCMYK cs
+                0.5019608 0.039215688 1 0.16470589 sc
+                "
+        }
     }
 }
