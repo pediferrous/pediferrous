@@ -106,6 +106,7 @@ impl Color {
         self.inner_write(writer, "cs", "sc", ValuesIter::from(*self))
     }
 
+    /// Returns the [`Identifier`] corresponding to the color space.
     fn identifier(&self) -> Identifier<&'static [u8]> {
         match self {
             Color::Rgb { .. } => Identifier::from_static(b"DeviceRGB"),
@@ -114,6 +115,7 @@ impl Color {
         }
     }
 
+    /// Encodes and writes color space and set color operations into PDF writer.
     fn inner_write(
         &self,
         writer: &mut impl Write,
