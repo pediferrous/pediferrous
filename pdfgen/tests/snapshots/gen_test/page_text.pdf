@@ -14,20 +14,23 @@ endobj
 4 0 obj
 << /Type /Page 
 /Parent 2 0 R
-/Resources << /Font << /F1 3 0 R >> >>
+/Resources << /Font << /F1 3 0 R  >> >>
 /Contents 5 0 R
 >>
 endobj
 
 
 5 0 obj
-<< /Length 61 >>
+<< /Length 85 >>
 stream
 BT
+/DeviceRGB cs
+0 0 0 sc
 /F1 14 Tf
 296.2205 419.52756 Td
 (Hello from pdfgen!) Tj
 ET
+
 endstream
 endobj
 
@@ -43,16 +46,16 @@ xref
 0000000010 00000 n 
 0000000061 00000 n 
 0000000153 00000 n 
-0000000257 00000 n 
 0000000258 00000 n 
-0000000370 00000 n 
+0000000259 00000 n 
+0000000395 00000 n 
 trailer
        << /Size 6
        /Root 1 0 R
-       /ID [<280d551eb5e3862ae7b8982348d19ba7>
-          <280d551eb5e3862ae7b8982348d19ba7>
+       /ID [<0246c367ef511d69f1b753d9b481b68a>
+          <0246c367ef511d69f1b753d9b481b68a>
           ]
        >>
 startxref
-444
+469
 %%EOF
