@@ -136,6 +136,76 @@ impl Color {
             writer.write(constants::NL_MARKER),
         })
     }
+
+    /// Converts the current color to gray color space.
+    pub fn to_gray(self) -> Self {
+        match self {
+            Color::Rgb { red, green, blue } => {
+                // 0.299 R + 0.587 G + 0.114 B
+                let gray = 0.299 * red as f32 + 0.587 * green as f32 + 0.114 * blue as f32;
+                Self::Gray(gray as u8)
+            }
+            Color::Gray(_) | Color::CMYK { .. } => self.to_rgb().to_gray(),
+        }
+    }
+
+    /// Converts the current color to RGB color space.
+    pub fn to_rgb(self) -> Self {
+        match self {
+            Color::Rgb { .. } => self,
+            Color::Gray(gray) => Self::Rgb {
+                red: gray,
+                green: gray,
+                blue: gray,
+            },
+            Color::CMYK { .. } => {
+                let mut iter = ValuesIter::from(self);
+                let cyan = iter.next().expect("cyan is present in CMYK");
+                let magenta = iter.next().expect("magenta is present in CMYK");
+                let yellow = iter.next().expect("yellow is present in CMYK");
+                let black = iter.next().expect("black is present in CMYK");
+
+                let red = (1. - dbg!(cyan)) * (1. - black) * 255.;
+                let green = 255. * (1. - magenta) * (1. - black);
+                let blue = 255. * (1. - yellow) * (1. - black);
+
+                dbg!(cyan * 255.);
+
+                Self::Rgb {
+                    red: dbg!(red) as u8,
+                    green: dbg!(green) as u8,
+                    blue: dbg!(blue) as u8,
+                }
+            }
+        }
+    }
+
+    /// Converts the current color to CMYK color space.
+    pub fn to_cmyk(self) -> Self {
+        match self {
+            Color::Rgb { .. } => {
+                let mut iter = ValuesIter::from(self);
+                // convert to [0.0, 1.0] range
+                let red = iter.next().expect("red is present in RGB");
+                let green = iter.next().expect("green is present in RGB");
+                let blue = iter.next().expect("blue is present in RGB");
+
+                let black = 1. - red.max(green.max(blue));
+                let cyan = (1. - red - black) / (1. - black);
+                let magenta = (1. - green - black) / (1. - black);
+                let yellow = (1. - blue - black) / (1. - black);
+
+                Self::CMYK {
+                    cyan: (cyan * 255.) as u8,
+                    magenta: (magenta * 255.) as u8,
+                    yellow: (yellow * 255.) as u8,
+                    black: (black * 255.) as u8,
+                }
+            }
+            Color::Gray(_) => self.to_rgb().to_cmyk(),
+            Color::CMYK { .. } => self,
+        }
+    }
 }
 
 #[cfg(test)]
