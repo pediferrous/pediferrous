@@ -3,7 +3,11 @@ use std::{fs::File, path::PathBuf};
 use pdfgen::{
     Document,
     types::hierarchy::{
-        content::{color::Color, image::Image, text::Text},
+        content::{
+            color::{CmykValue, Color},
+            image::Image,
+            text::Text,
+        },
         primitives::{
             rectangle::{Position, Rectangle},
             unit::Unit,
@@ -209,6 +213,61 @@ fn page_colored_text() {
         })
         .build();
     page.add_text(magenta_text, font_id);
+
+    macros::snap_test!(document);
+}
+
+#[test]
+fn multi_color_space_text() {
+    let mut document = Document::builder().with_page_size(Rectangle::A4).build();
+
+    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let page = document.create_page();
+
+    let pos = Position::from_units(
+        Rectangle::A4.width().into_user_unit() / 2.,
+        Rectangle::A4.height().into_user_unit() / 2.,
+    );
+
+    let color = Color::Rgb {
+        red: 255,
+        green: 0,
+        blue: 0,
+    };
+
+    let builder = Text::builder()
+        .with_content("Hello from pdfgen!")
+        .with_size(14)
+        .at(pos);
+
+    let mut with_col_and_offs = |color: Color, offset_in_mm: f32| {
+        let text = builder
+            .clone()
+            .with_color(color)
+            .at(Position {
+                x: pos.x,
+                y: pos.y + Unit::from_mm(offset_in_mm),
+            })
+            .build();
+        page.add_text(text, font_id.clone());
+    };
+
+    with_col_and_offs(color, 0.);
+    with_col_and_offs(color.to_cmyk(), 5.);
+
+    let gray = Color::Gray(120);
+    with_col_and_offs(gray, 15.);
+    with_col_and_offs(gray.to_rgb(), 20.);
+    with_col_and_offs(gray.to_cmyk(), 25.);
+
+    let pediferrous_blue = Color::CMYK {
+        cyan: CmykValue::from_const::<36>(),
+        magenta: CmykValue::from_const::<9>(),
+        yellow: CmykValue::from_const::<0>(),
+        black: CmykValue::from_const::<21>(),
+    };
+    with_col_and_offs(pediferrous_blue, 45.);
+    with_col_and_offs(pediferrous_blue.to_rgb(), 50.);
 
     macros::snap_test!(document);
 }

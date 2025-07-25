@@ -2,6 +2,9 @@ use std::io::Write;
 
 use crate::types::{constants, hierarchy::primitives::identifier::Identifier};
 
+mod cmyk_value;
+pub use cmyk_value::CmykValue;
+
 /// A PDF file may specify abstract colours in a device-independent way. Colours may be described
 /// in any of a variety of colour systems, or colour spaces. Some colour spaces are related to
 /// device colour representation (grayscale, RGB, CMYK), others to human visual perception
@@ -42,13 +45,13 @@ pub enum Color {
     /// Note that these values will be mapped to range [0.0, 1.0] when encoding in PDF file.
     CMYK {
         /// Cyan component of the color space in range [0, 255].
-        cyan: u8,
+        cyan: CmykValue,
         /// Magenta component of the color space in range [0, 255].
-        magenta: u8,
+        magenta: CmykValue,
         /// Yellow component of the color space in range [0, 255].
-        yellow: u8,
+        yellow: CmykValue,
         /// Black component of the color space in range [0, 255].
-        black: u8,
+        black: CmykValue,
     },
 }
 
@@ -57,22 +60,38 @@ struct ValuesIter {
     /// least 1 value for Gray color space. Unavailable values are marked with [`None`].
     values: [Option<u8>; 4],
     idx: usize,
+    max_value: u8,
 }
 
 impl From<Color> for ValuesIter {
     fn from(color: Color) -> Self {
-        let values = match color {
-            Color::Rgb { red, green, blue } => [Some(red), Some(green), Some(blue), None],
-            Color::Gray(gray) => [Some(gray), None, None, None],
+        match color {
+            Color::Rgb { red, green, blue } => Self {
+                values: [Some(red), Some(green), Some(blue), None],
+                idx: 0,
+                max_value: 255,
+            },
+            Color::Gray(gray) => Self {
+                values: [Some(gray), None, None, None],
+                idx: 0,
+                max_value: 255,
+            },
             Color::CMYK {
                 cyan,
                 magenta,
                 yellow,
                 black,
-            } => [Some(cyan), Some(magenta), Some(yellow), Some(black)],
-        };
-
-        Self { values, idx: 0 }
+            } => Self {
+                values: [
+                    Some(cyan.into()),
+                    Some(magenta.into()),
+                    Some(yellow.into()),
+                    Some(black.into()),
+                ],
+                idx: 0,
+                max_value: 100,
+            },
+        }
     }
 }
 
@@ -85,7 +104,7 @@ impl Iterator for ValuesIter {
 
         match value {
             Some(value) => {
-                let value = f32::from(*value) / f32::from(u8::MAX);
+                let value = f32::from(*value) / f32::from(self.max_value);
                 Some(value)
             }
             None => None,
@@ -196,10 +215,10 @@ impl Color {
                 let yellow = (1. - blue - black) / (1. - black);
 
                 Self::CMYK {
-                    cyan: (cyan * 255.) as u8,
-                    magenta: (magenta * 255.) as u8,
-                    yellow: (yellow * 255.) as u8,
-                    black: (black * 255.) as u8,
+                    cyan: CmykValue::try_from(cyan).expect("we checked correct range"),
+                    magenta: CmykValue::try_from(magenta).expect("we checked correct range"),
+                    yellow: CmykValue::try_from(yellow).expect("we checked correct range"),
+                    black: CmykValue::try_from(black).expect("we checked correct range"),
                 }
             }
             Color::Gray(_) => self.to_rgb().to_cmyk(),
@@ -210,14 +229,15 @@ impl Color {
 
 #[cfg(test)]
 mod tests {
+    use crate::types::hierarchy::content::color::CmykValue;
+
     use super::Color;
 
-    // TODO(nfejzic): generalize this macro and use it for all inline snap tests.
     macro_rules! color_tests {
-        ($($test:ident = { $color:expr, expected: $expected:literal }),*) => {
+        ($($test_fn:ident, $color:expr, @$expected:literal ),*) => {
             $(
             #[test]
-            fn $test() {
+            fn $test_fn() {
                 let mut writer = Vec::new();
                 let color = $color;
                 color.write_stroke(&mut writer).unwrap();
@@ -230,43 +250,40 @@ mod tests {
     }
 
     color_tests! {
-         device_rgb = {
-            Color::Rgb {
-                red: 255,
-                green: 128,
-                blue: 55,
-            },
-            expected: r"
-                /DeviceRGB CS
-                1 0.5019608 0.21568628 SC
-                /DeviceRGB cs
-                1 0.5019608 0.21568628 sc
-                "
+        device_rgb,
+        Color::Rgb {
+            red: 255,
+            green: 128,
+            blue: 55,
         },
+        @r"
+            /DeviceRGB C
+            1 0.5019608 0.21568628 SC
+            /DeviceRGB cs
+            1 0.5019608 0.21568628 sc
+            ",
 
-        device_gray = {
-            Color::Gray(128),
-            expected: r"
-                /DeviceGray CS
-                0.5019608 SC
-                /DeviceGray cs
-                0.5019608 sc
-                "
+        device_gray,
+        Color::Gray(128),
+        @r"
+            /DeviceGray CS
+            0.5019608 SC
+            /DeviceGray cs
+            0.5019608 sc
+            ",
+
+        device_cmyk,
+        Color::CMYK {
+            cyan: CmykValue::from_const::<50>(),
+            magenta: CmykValue::from_const::<10>(),
+            yellow:  CmykValue::from_const::<100>(),
+            black:   CmykValue::from_const::<42>(),
         },
-
-        device_cmyk = {
-            Color::CMYK {
-                cyan: 128,
-                magenta: 10,
-                yellow: 255,
-                black: 42,
-            },
-            expected: r"
-                /DeviceCMYK CS
-                0.5019608 0.039215688 1 0.16470589 SC
-                /DeviceCMYK cs
-                0.5019608 0.039215688 1 0.16470589 sc
-                "
-        }
+        @r"
+    /DeviceRGB CS
+    1 0.5019608 0.21568628 SC
+    /DeviceRGB cs
+    1 0.5019608 0.21568628 sc
+    "
     }
 }
