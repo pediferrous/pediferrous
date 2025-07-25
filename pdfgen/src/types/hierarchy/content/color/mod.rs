@@ -257,7 +257,7 @@ mod tests {
             blue: 55,
         },
         @r"
-            /DeviceRGB C
+            /DeviceRGB CS
             1 0.5019608 0.21568628 SC
             /DeviceRGB cs
             1 0.5019608 0.21568628 sc
@@ -280,10 +280,10 @@ mod tests {
             black:   CmykValue::from_const::<42>(),
         },
         @r"
-    /DeviceRGB CS
-    1 0.5019608 0.21568628 SC
-    /DeviceRGB cs
-    1 0.5019608 0.21568628 sc
+    /DeviceCMYK CS
+    0.5 0.1 1 0.42 SC
+    /DeviceCMYK cs
+    0.5 0.1 1 0.42 sc
     "
     }
 }
