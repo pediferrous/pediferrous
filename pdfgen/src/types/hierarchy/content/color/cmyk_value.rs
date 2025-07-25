@@ -58,3 +58,37 @@ impl From<CmykValue> for u8 {
         value.0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::CmykValue;
+
+    #[test]
+    fn out_of_range_u8() {
+        let res = CmykValue::try_from(101);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn out_of_range_f32() {
+        let res = CmykValue::try_from(1.01);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn in_range() {
+        let res = CmykValue::try_from(0.1);
+        assert!(res.is_ok());
+        let res = CmykValue::try_from(0.0);
+        assert!(res.is_ok());
+        let res = CmykValue::try_from(0.99);
+        assert!(res.is_ok());
+
+        let res = CmykValue::try_from(0);
+        assert!(res.is_ok());
+        let res = CmykValue::try_from(10);
+        assert!(res.is_ok());
+        let res = CmykValue::try_from(99);
+        assert!(res.is_ok());
+    }
+}
