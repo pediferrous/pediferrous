@@ -184,16 +184,14 @@ impl Color {
                 let yellow = iter.next().expect("yellow is present in CMYK");
                 let black = iter.next().expect("black is present in CMYK");
 
-                let red = (1. - dbg!(cyan)) * (1. - black) * 255.;
+                let red = (1. - cyan) * (1. - black) * 255.;
                 let green = 255. * (1. - magenta) * (1. - black);
                 let blue = 255. * (1. - yellow) * (1. - black);
 
-                dbg!(cyan * 255.);
-
                 Self::Rgb {
-                    red: dbg!(red) as u8,
-                    green: dbg!(green) as u8,
-                    blue: dbg!(blue) as u8,
+                    red: red as u8,
+                    green: green as u8,
+                    blue: blue as u8,
                 }
             }
         }
