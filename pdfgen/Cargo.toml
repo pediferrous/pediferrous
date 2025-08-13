@@ -1,6 +1,6 @@
 [package]
 name = "pdfgen"
-version = "0.2.0"
+version = "0.3.0"
 description = "PDF rendering library."
 edition.workspace = true 
 authors.workspace = true
