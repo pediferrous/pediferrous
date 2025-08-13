@@ -7,10 +7,12 @@ use crate::types::{
     hierarchy::primitives::{identifier::Identifier, rectangle::Position, string::PdfString},
 };
 
+use super::color::Color;
+
 /// Defines the transformation properties of a [`Text`] object, including its position and size on a [`Page`].
 ///
 /// [`Page`]: crate::types::hierarchy::page::Page
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct TextTransform {
     /// The position of the [`Text`] on the [`Page`].
     ///
@@ -25,13 +27,16 @@ pub(crate) struct TextTransform {
 /// text on a [`Page`].
 ///
 /// [`Page`]: crate::types::hierarchy::page::Page
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Text {
     /// Represents the content (literal) to be rendered.
     content: PdfString,
 
     /// Represents the [`Text`] objects rendering position and scale.
     transform: TextTransform,
+
+    /// Represents the color information used to render the given text.
+    color: Color,
 }
 
 impl Text {
@@ -56,6 +61,11 @@ impl Text {
                 position: Position::from_mm(0.0, 0.0),
                 size: 12,
             },
+            color: Color::Rgb {
+                red: 0,
+                green: 0,
+                blue: 0,
+            },
         };
 
         TextBuilder { inner: txt }
@@ -73,6 +83,8 @@ impl Text {
         // BT
         writer.write_all(Self::BT_MARKER)?;
         writer.write_all(constants::NL_MARKER)?;
+
+        self.color.write_non_stroke(&mut writer)?;
 
         // /FName Size Tf
         font_name.write(&mut writer)?;
@@ -99,6 +111,7 @@ impl Text {
 
         // ET
         writer.write_all(Self::ET_MARKER)?;
+        writer.write_all(constants::NL_MARKER)?;
 
         Ok(writer)
     }
@@ -107,6 +120,7 @@ impl Text {
 /// A builder for constructing a [`Text`] object, allowing incremental modifications.
 /// The `IS_INIT` const generic tracks whether initialization has been completed (if position has
 /// been set).
+#[derive(Debug, Clone)]
 pub struct TextBuilder<const IS_INIT: bool> {
     /// The underlying [`Text`] object being built.
     inner: Text,
@@ -137,6 +151,12 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
         self.inner.transform.size = size;
         self
     }
+
+    /// Sets the color of the [`Text`].
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.inner.color = color;
+        self
+    }
 }
 
 impl TextBuilder<true> {
@@ -163,6 +183,8 @@ mod tests {
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output, @r"
         BT
+        /DeviceRGB cs
+        0 0 0 sc
         /BiHDef 12 Tf
         0 0 Td
         () Tj
@@ -184,6 +206,8 @@ mod tests {
         let output = String::from_utf8_lossy(&txt);
         insta::assert_snapshot!(output, @r"
         BT
+        /DeviceRGB cs
+        0 0 0 sc
         /CustomFnt 14 Tf
         0 0 Td
         (This is a custom text content.) Tj

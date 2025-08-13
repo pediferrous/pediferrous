@@ -1,0 +1,93 @@
+%PDF-2.0
+1 0 obj
+<< /Type /Catalog 
+/Pages 2 0 R >>
+endobj
+
+2 0 obj
+<< /Type /Pages 
+/MediaBox [0 0 592.441 839.0551]
+/Kids [4 0 R]
+/Count 1 >>
+endobj
+
+4 0 obj
+<< /Type /Page 
+/Parent 2 0 R
+/Resources << /Font << /F1 3 0 R /F2 3 0 R /F3 3 0 R /F4 3 0 R /F5 3 0 R  >> >>
+/Contents 5 0 R
+>>
+endobj
+
+
+5 0 obj
+<< /Length 422 >>
+stream
+BT
+/DeviceRGB cs
+1 0 0 sc
+/F1 14 Tf
+296.2205 419.52756 Td
+(Hello from pdfgen!) Tj
+ET
+BT
+/DeviceRGB cs
+0 1 0 sc
+/F2 14 Tf
+296.2205 476.22046 Td
+(Hello from pdfgen!) Tj
+ET
+BT
+/DeviceRGB cs
+0 0 1 sc
+/F3 14 Tf
+296.2205 532.9134 Td
+(Hello from pdfgen!) Tj
+ET
+BT
+/DeviceRGB cs
+1 1 0 sc
+/F4 14 Tf
+296.2205 589.6063 Td
+(Hello from pdfgen!) Tj
+ET
+BT
+/DeviceRGB cs
+1 0 1 sc
+/F5 14 Tf
+296.2205 646.2992 Td
+(Hello from pdfgen!) Tj
+ET
+
+endstream
+endobj
+
+3 0 obj
+<< /Type /Font 
+/Subtype /Type1 
+/BaseFont /Helvetica 
+>>
+endobj
+
+xref
+0 10
+0000000010 00000 n 
+0000000061 00000 n 
+0000000153 00000 n 
+0000000298 00000 n 
+0000000298 00000 n 
+0000000298 00000 n 
+0000000298 00000 n 
+0000000298 00000 n 
+0000000299 00000 n 
+0000000773 00000 n 
+trailer
+       << /Size 10
+       /Root 1 0 R
+       /ID [<2f357849d96f671e07d3750f0b3529d9>
+          <2f357849d96f671e07d3750f0b3529d9>
+          ]
+       >>
+startxref
+847
+%%EOF
