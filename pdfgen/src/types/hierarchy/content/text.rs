@@ -168,38 +168,28 @@ impl TextBuilder<true> {
     }
 
     /// Comment
-    fn build_with_shift(&self, shift: f32, scale: f32) -> Text {
+    fn build_with_shift(mut self, shift: f32, scale: f32) -> Text {
         // yposition is shifted by a percentage (shift multiplier) of the user unit font size
-        let ypos = Unit::from_unit(
+        self.inner.transform.position.y = Unit::from_unit(
             self.inner.transform.position.y.into_user_unit()
                 + (self.inner.transform.size as f32 * shift),
         );
 
-        let transform = TextTransform {
-            position: Position {
-                x: self.inner.transform.position.x,
-                y: ypos,
-            },
-            // size is scaled down by the [scale] multiplier of it's original value
-            size: (self.inner.transform.size as f32 * scale).round() as u32,
-        };
+        // size is scaled down by the [scale] multiplier of it's original value
+        self.inner.transform.size = (self.inner.transform.size as f32 * scale).round() as u32;
 
-        Text {
-            content: self.inner.content.clone(),
-            transform,
-            color: self.inner.color,
-        }
+        self.inner
     }
 
     /// Comment
-    pub fn build_superscript(&self) -> Text {
+    pub fn build_superscript(self) -> Text {
         // yposition is shifted up ~35% of the user space unit font size
         // size is scaled down to ~65% of it's original value
         self.build_with_shift(0.35, 0.65)
     }
 
     /// Comment
-    pub fn build_subscript(&self) -> Text {
+    pub fn build_subscript(self) -> Text {
         // yposition is shifted down ~35% of the user space unit font size
         // size is scaled down to ~65% of it's original value
         self.build_with_shift(-0.35, 0.65)
@@ -257,24 +247,17 @@ mod tests {
 
     #[test]
     pub fn superscript_text() {
-        let txt_builder = Text::builder()
+        let superscript_text = Text::builder()
             .with_content("This is")
             .with_expanded_content(" a superscript text content.")
             .with_size(14)
-            .at(Position::from_mm(0.0, 0.0));
-
-        let superscript_text1 = txt_builder
-            .build_subscript()
+            .at(Position::from_mm(0.0, 0.0))
+            .build_superscript()
             .to_bytes(Identifier::from_static(b"CustomFnt"))
             .unwrap();
 
-        let superscript_text2 = txt_builder
-            .build_subscript()
-            .to_bytes(Identifier::from_static(b"CustomFnt"))
-            .unwrap();
-
-        let output1 = String::from_utf8_lossy(&superscript_text1);
-        insta::assert_snapshot!(output1, @r"
+        let output = String::from_utf8_lossy(&superscript_text);
+        insta::assert_snapshot!(output, @r"
         BT
         /DeviceRGB cs
         0 0 0 sc
@@ -283,61 +266,28 @@ mod tests {
         (This is a superscript text content.) Tj
         ET
         ");
-
-        let output2 = String::from_utf8_lossy(&superscript_text2);
-        insta::assert_snapshot!(output2, @r"
-        BT
-        /DeviceRGB cs
-        0 0 0 sc
-        /CustomFnt 9 Tf
-        0 -4.9 Td
-        (This is a superscript text content.) Tj
-        ET
-        ");
-
-        assert_eq!(output1, output2);
     }
 
     #[test]
     pub fn subscript_text() {
-        let txt_builder = Text::builder()
+        let subscript_text = Text::builder()
             .with_content("This is")
-            .with_expanded_content(" a subscript text content.")
+            .with_expanded_content(" a superscript text content.")
             .with_size(14)
-            .at(Position::from_mm(0.0, 0.0));
-
-        let subscript_text1 = txt_builder
+            .at(Position::from_mm(0.0, 0.0))
             .build_subscript()
             .to_bytes(Identifier::from_static(b"CustomFnt"))
             .unwrap();
 
-        let subscript_text2 = txt_builder
-            .build_subscript()
-            .to_bytes(Identifier::from_static(b"CustomFnt"))
-            .unwrap();
-
-        let output1 = String::from_utf8_lossy(&subscript_text1);
-        insta::assert_snapshot!(output1, @r"
+        let output = String::from_utf8_lossy(&subscript_text);
+        insta::assert_snapshot!(output, @r"
         BT
         /DeviceRGB cs
         0 0 0 sc
         /CustomFnt 9 Tf
         0 -4.9 Td
-        (This is a subscript text content.) Tj
+        (This is a superscript text content.) Tj
         ET
         ");
-
-        let output2 = String::from_utf8_lossy(&subscript_text2);
-        insta::assert_snapshot!(output2, @r"
-        BT
-        /DeviceRGB cs
-        0 0 0 sc
-        /CustomFnt 9 Tf
-        0 -4.9 Td
-        (This is a subscript text content.) Tj
-        ET
-        ");
-
-        assert_eq!(output1, output2);
     }
 }
