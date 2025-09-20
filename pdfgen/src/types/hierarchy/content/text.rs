@@ -262,7 +262,7 @@ mod tests {
         /DeviceRGB cs
         0 0 0 sc
         /CustomFnt 9 Tf
-        0 -4.9 Td
+        0 4.9 Td
         (This is a superscript text content.) Tj
         ET
         ");
