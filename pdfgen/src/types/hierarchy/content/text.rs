@@ -167,8 +167,9 @@ impl TextBuilder<true> {
         self.inner
     }
 
-    /// Comment
-    fn build_with_shift(mut self, shift: f32, scale: f32) -> Text {
+    /// Creates the shifted/scaled [`Text`] object from the already provided configurations,
+    /// transforming the text to either superscript or subscript.
+    fn build_transformed(mut self, shift: f32, scale: f32) -> Text {
         // yposition is shifted by a percentage (shift multiplier) of the user unit font size
         self.inner.transform.position.y = Unit::from_unit(
             self.inner.transform.position.y.into_user_unit()
@@ -181,18 +182,18 @@ impl TextBuilder<true> {
         self.inner
     }
 
-    /// Comment
+    /// Creates the superscript [`Text`] object from the already provided configurations.
     pub fn build_superscript(self) -> Text {
         // yposition is shifted up ~35% of the user space unit font size
         // size is scaled down to ~65% of it's original value
-        self.build_with_shift(0.35, 0.65)
+        self.build_transformed(0.35, 0.65)
     }
 
-    /// Comment
+    /// Creates the subscript [`Text`] object from the already provided configurations.
     pub fn build_subscript(self) -> Text {
         // yposition is shifted down ~35% of the user space unit font size
         // size is scaled down to ~65% of it's original value
-        self.build_with_shift(-0.35, 0.65)
+        self.build_transformed(-0.35, 0.65)
     }
 }
 
