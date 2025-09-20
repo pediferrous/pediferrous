@@ -4,7 +4,9 @@ use std::io::{self, Write};
 
 use crate::types::{
     constants,
-    hierarchy::primitives::{identifier::Identifier, rectangle::Position, string::PdfString},
+    hierarchy::primitives::{
+        identifier::Identifier, rectangle::Position, string::PdfString, unit::Unit,
+    },
 };
 
 use super::color::Color;
@@ -163,6 +165,44 @@ impl TextBuilder<true> {
     /// Creates the [`Text`] object from the already provided configurations.
     pub fn build(self) -> Text {
         self.inner
+    }
+
+    /// Comment
+    fn build_with_shift(&self, shift: f32, scale: f32) -> Text {
+        // yposition is shifted by a percentage (shift multiplier) of the user unit font size
+        let ypos = Unit::from_unit(
+            self.inner.transform.position.y.into_user_unit()
+                + (self.inner.transform.size as f32 * shift),
+        );
+
+        let transform = TextTransform {
+            position: Position {
+                x: self.inner.transform.position.x,
+                y: ypos,
+            },
+            // size is scaled down by the [scale] multiplier of it's original value
+            size: (self.inner.transform.size as f32 * scale).round() as u32,
+        };
+
+        Text {
+            content: self.inner.content.clone(),
+            transform,
+            color: self.inner.color,
+        }
+    }
+
+    /// Comment
+    pub fn build_superscript(&self) -> Text {
+        // yposition is shifted up ~35% of the user space unit font size
+        // size is scaled down to ~65% of it's original value
+        self.build_with_shift(0.35, 0.65)
+    }
+
+    /// Comment
+    pub fn build_subscript(self) -> Text {
+        // yposition is shifted down ~35% of the user space unit font size
+        // size is scaled down to ~65% of it's original value
+        self.build_with_shift(-0.35, 0.65)
     }
 }
 
