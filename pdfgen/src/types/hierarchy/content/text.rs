@@ -199,7 +199,7 @@ impl TextBuilder<true> {
     }
 
     /// Comment
-    pub fn build_subscript(self) -> Text {
+    pub fn build_subscript(&self) -> Text {
         // yposition is shifted down ~35% of the user space unit font size
         // size is scaled down to ~65% of it's original value
         self.build_with_shift(-0.35, 0.65)
@@ -253,5 +253,91 @@ mod tests {
         (This is a custom text content.) Tj
         ET
         ");
+    }
+
+    #[test]
+    pub fn superscript_text() {
+        let txt_builder = Text::builder()
+            .with_content("This is")
+            .with_expanded_content(" a superscript text content.")
+            .with_size(14)
+            .at(Position::from_mm(0.0, 0.0));
+
+        let superscript_text1 = txt_builder
+            .build_subscript()
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
+            .unwrap();
+
+        let superscript_text2 = txt_builder
+            .build_subscript()
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
+            .unwrap();
+
+        let output1 = String::from_utf8_lossy(&superscript_text1);
+        insta::assert_snapshot!(output1, @r"
+        BT
+        /DeviceRGB cs
+        0 0 0 sc
+        /CustomFnt 9 Tf
+        0 -4.9 Td
+        (This is a superscript text content.) Tj
+        ET
+        ");
+
+        let output2 = String::from_utf8_lossy(&superscript_text2);
+        insta::assert_snapshot!(output2, @r"
+        BT
+        /DeviceRGB cs
+        0 0 0 sc
+        /CustomFnt 9 Tf
+        0 -4.9 Td
+        (This is a superscript text content.) Tj
+        ET
+        ");
+
+        assert_eq!(output1, output2);
+    }
+
+    #[test]
+    pub fn subscript_text() {
+        let txt_builder = Text::builder()
+            .with_content("This is")
+            .with_expanded_content(" a subscript text content.")
+            .with_size(14)
+            .at(Position::from_mm(0.0, 0.0));
+
+        let subscript_text1 = txt_builder
+            .build_subscript()
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
+            .unwrap();
+
+        let subscript_text2 = txt_builder
+            .build_subscript()
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
+            .unwrap();
+
+        let output1 = String::from_utf8_lossy(&subscript_text1);
+        insta::assert_snapshot!(output1, @r"
+        BT
+        /DeviceRGB cs
+        0 0 0 sc
+        /CustomFnt 9 Tf
+        0 -4.9 Td
+        (This is a subscript text content.) Tj
+        ET
+        ");
+
+        let output2 = String::from_utf8_lossy(&subscript_text2);
+        insta::assert_snapshot!(output2, @r"
+        BT
+        /DeviceRGB cs
+        0 0 0 sc
+        /CustomFnt 9 Tf
+        0 -4.9 Td
+        (This is a subscript text content.) Tj
+        ET
+        ");
+
+        assert_eq!(output1, output2);
     }
 }
