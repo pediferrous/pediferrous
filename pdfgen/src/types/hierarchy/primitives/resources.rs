@@ -125,7 +125,7 @@ impl Resources {
         })
     }
 
-    pub(crate) fn renderables(&self, id_manager: &mut IdManager) -> Vec<Renderable> {
+    pub(crate) fn renderables(&self, id_manager: &mut IdManager) -> Vec<Renderable<'_>> {
         self.entries
             .iter()
             .map(|entry| Renderable {

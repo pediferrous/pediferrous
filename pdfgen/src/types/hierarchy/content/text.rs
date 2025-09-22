@@ -4,7 +4,9 @@ use std::io::{self, Write};
 
 use crate::types::{
     constants,
-    hierarchy::primitives::{identifier::Identifier, rectangle::Position, string::PdfString},
+    hierarchy::primitives::{
+        identifier::Identifier, rectangle::Position, string::PdfString, unit::Unit,
+    },
 };
 
 use super::color::Color;
@@ -68,7 +70,10 @@ impl Text {
             },
         };
 
-        TextBuilder { inner: txt }
+        TextBuilder {
+            inner: txt,
+            script: Script::Normal,
+        }
     }
 
     /// Expands the inner content with the provided one.
@@ -117,6 +122,19 @@ impl Text {
     }
 }
 
+/// Represents the script mode of text in a PDF object.
+#[derive(Debug, Clone)]
+enum Script {
+    /// Standard text, rendered at the baseline.
+    Normal,
+
+    /// Superscript text, raised above the baseline.
+    Super,
+
+    /// Subscript text, lowered below the baseline.
+    Sub,
+}
+
 /// A builder for constructing a [`Text`] object, allowing incremental modifications.
 /// The `IS_INIT` const generic tracks whether initialization has been completed (if position has
 /// been set).
@@ -124,6 +142,9 @@ impl Text {
 pub struct TextBuilder<const IS_INIT: bool> {
     /// The underlying [`Text`] object being built.
     inner: Text,
+
+    /// Represents the script type of the [`Text`] object being built.
+    script: Script,
 }
 
 impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
@@ -131,7 +152,10 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
     /// object is allowed.
     pub fn at(mut self, pos: Position) -> TextBuilder<true> {
         self.inner.transform.position = pos;
-        TextBuilder { inner: self.inner }
+        TextBuilder {
+            inner: self.inner,
+            script: Script::Normal,
+        }
     }
 
     /// Sets the content of the [`Text`].
@@ -157,12 +181,43 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
         self.inner.color = color;
         self
     }
+
+    /// Sets the script mode of the [`Text`] to superscript.
+    pub fn superscript(mut self) -> Self {
+        self.script = Script::Super;
+        self
+    }
+
+    /// Sets the script mode of the [`Text`] to subscript.
+    pub fn subscript(mut self) -> Self {
+        self.script = Script::Sub;
+        self
+    }
 }
 
 impl TextBuilder<true> {
+    /// Creates the shifted/scaled [`Text`] object from the already provided configurations,
+    /// transforming the text to either superscript or subscript.
+    fn build_transformed(mut self, shift: f32, scale: f32) -> Text {
+        // yposition is shifted by a percentage (shift multiplier) of the user unit font size
+        self.inner.transform.position.y = Unit::from_unit(
+            self.inner.transform.position.y.into_user_unit()
+                + (self.inner.transform.size as f32 * shift),
+        );
+
+        // size is scaled down by the [scale] multiplier of it's original value
+        self.inner.transform.size = (self.inner.transform.size as f32 * scale).round() as u32;
+
+        self.inner
+    }
+
     /// Creates the [`Text`] object from the already provided configurations.
     pub fn build(self) -> Text {
-        self.inner
+        match self.script {
+            Script::Normal => self.inner,
+            Script::Super => self.build_transformed(0.35, 0.65),
+            Script::Sub => self.build_transformed(-0.35, 0.65),
+        }
     }
 }
 
@@ -211,6 +266,54 @@ mod tests {
         /CustomFnt 14 Tf
         0 0 Td
         (This is a custom text content.) Tj
+        ET
+        ");
+    }
+
+    #[test]
+    pub fn superscript_text() {
+        let superscript_text = Text::builder()
+            .with_content("This is")
+            .with_expanded_content(" a superscript text content.")
+            .with_size(14)
+            .at(Position::from_mm(0.0, 0.0))
+            .superscript()
+            .build()
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
+            .unwrap();
+
+        let output = String::from_utf8_lossy(&superscript_text);
+        insta::assert_snapshot!(output, @r"
+        BT
+        /DeviceRGB cs
+        0 0 0 sc
+        /CustomFnt 9 Tf
+        0 4.9 Td
+        (This is a superscript text content.) Tj
+        ET
+        ");
+    }
+
+    #[test]
+    pub fn subscript_text() {
+        let subscript_text = Text::builder()
+            .with_content("This is")
+            .with_expanded_content(" a superscript text content.")
+            .with_size(14)
+            .at(Position::from_mm(0.0, 0.0))
+            .subscript()
+            .build()
+            .to_bytes(Identifier::from_static(b"CustomFnt"))
+            .unwrap();
+
+        let output = String::from_utf8_lossy(&subscript_text);
+        insta::assert_snapshot!(output, @r"
+        BT
+        /DeviceRGB cs
+        0 0 0 sc
+        /CustomFnt 9 Tf
+        0 -4.9 Td
+        (This is a superscript text content.) Tj
         ET
         ");
     }

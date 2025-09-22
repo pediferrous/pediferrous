@@ -271,3 +271,60 @@ fn multi_color_space_text() {
 
     macros::snap_test!(document);
 }
+
+#[test]
+fn page_superscript_subscript_text() {
+    let mut document = Document::builder().with_page_size(Rectangle::A4).build();
+
+    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let page = document.create_page();
+
+    let first_text = Text::builder()
+        .with_content("Hello, ")
+        .with_expanded_content("here's a fun formula for you: E=m*c")
+        .with_size(14)
+        .at(Position::from_units(
+            Rectangle::A4.width().into_user_unit() / 2. - 260.,
+            Rectangle::A4.height().into_user_unit() / 2.,
+        ))
+        .build();
+
+    page.add_text(first_text, font_id.clone());
+
+    let superscript_text = Text::builder()
+        .with_content("2")
+        .with_size(14)
+        .at(Position::from_units(
+            Rectangle::A4.width().into_user_unit() / 2.,
+            Rectangle::A4.height().into_user_unit() / 2.,
+        ))
+        .superscript()
+        .build();
+
+    page.add_text(superscript_text, font_id.clone());
+
+    let second_text = Text::builder()
+        .with_content("How about chemical notation for carbon dioxide, ykyk: CO")
+        .with_size(14)
+        .at(Position::from_units(
+            Rectangle::A4.width().into_user_unit() / 2. - 260.,
+            Rectangle::A4.height().into_user_unit() / 2. - 200.,
+        ))
+        .build();
+
+    page.add_text(second_text, font_id.clone());
+
+    let subcript_text = Text::builder()
+        .with_content("2")
+        .with_size(14)
+        .at(Position::from_units(
+            Rectangle::A4.width().into_user_unit() / 2. + 100.,
+            Rectangle::A4.height().into_user_unit() / 2. - 200.,
+        ))
+        .subscript()
+        .build();
+
+    page.add_text(subcript_text, font_id.clone());
+
+    macros::snap_test!(document);
+}
