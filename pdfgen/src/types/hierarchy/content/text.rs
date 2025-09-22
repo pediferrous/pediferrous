@@ -122,16 +122,16 @@ impl Text {
     }
 }
 
-/// Comment
+/// Represents the script mode of text in a PDF object.
 #[derive(Debug, Clone)]
 enum Script {
-    /// Comment
+    /// Standard text, rendered at the baseline.
     Normal,
 
-    /// Comment
+    /// Superscript text, raised above the baseline.
     Super,
 
-    /// Comment
+    /// Subscript text, lowered below the baseline.
     Sub,
 }
 
@@ -143,7 +143,7 @@ pub struct TextBuilder<const IS_INIT: bool> {
     /// The underlying [`Text`] object being built.
     inner: Text,
 
-    /// Comment
+    /// Represents the script type of the [`Text`] object being built.
     script: Script,
 }
 
@@ -182,13 +182,13 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
         self
     }
 
-    /// Comment
+    /// Sets the script mode of the [`Text`] to superscript.
     pub fn superscript(mut self) -> Self {
         self.script = Script::Super;
         self
     }
 
-    /// Comment
+    /// Sets the script mode of the [`Text`] to subscript.
     pub fn subscript(mut self) -> Self {
         self.script = Script::Sub;
         self
