@@ -119,6 +119,18 @@ impl Text {
     }
 }
 
+/// Comment
+enum Script {
+    /// Comment
+    Normal,
+
+    /// Comment
+    Super,
+
+    /// Comment
+    Sub,
+}
+
 /// A builder for constructing a [`Text`] object, allowing incremental modifications.
 /// The `IS_INIT` const generic tracks whether initialization has been completed (if position has
 /// been set).
@@ -126,6 +138,9 @@ impl Text {
 pub struct TextBuilder<const IS_INIT: bool> {
     /// The underlying [`Text`] object being built.
     inner: Text,
+
+    /// Comment
+    script: Script,
 }
 
 impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
@@ -133,7 +148,10 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
     /// object is allowed.
     pub fn at(mut self, pos: Position) -> TextBuilder<true> {
         self.inner.transform.position = pos;
-        TextBuilder { inner: self.inner }
+        TextBuilder {
+            inner: self.inner,
+            script: Script::Normal,
+        }
     }
 
     /// Sets the content of the [`Text`].
@@ -159,14 +177,21 @@ impl<const IS_INIT: bool> TextBuilder<IS_INIT> {
         self.inner.color = color;
         self
     }
+
+    /// Comment
+    pub fn superscript(mut self) -> Self {
+        self.script = Script::Super;
+        self
+    }
+
+    /// Comment
+    pub fn subscript(mut self) -> Self {
+        self.script = Script::Sub;
+        self
+    }
 }
 
 impl TextBuilder<true> {
-    /// Creates the [`Text`] object from the already provided configurations.
-    pub fn build(self) -> Text {
-        self.inner
-    }
-
     /// Creates the shifted/scaled [`Text`] object from the already provided configurations,
     /// transforming the text to either superscript or subscript.
     fn build_transformed(mut self, shift: f32, scale: f32) -> Text {
@@ -182,18 +207,13 @@ impl TextBuilder<true> {
         self.inner
     }
 
-    /// Creates the superscript [`Text`] object from the already provided configurations.
-    pub fn build_superscript(self) -> Text {
-        // yposition is shifted up ~35% of the user space unit font size
-        // size is scaled down to ~65% of it's original value
-        self.build_transformed(0.35, 0.65)
-    }
-
-    /// Creates the subscript [`Text`] object from the already provided configurations.
-    pub fn build_subscript(self) -> Text {
-        // yposition is shifted down ~35% of the user space unit font size
-        // size is scaled down to ~65% of it's original value
-        self.build_transformed(-0.35, 0.65)
+    /// Creates the [`Text`] object from the already provided configurations.
+    pub fn build(self) -> Text {
+        match self.script {
+            Script::Normal => self.inner,
+            Script::Super => self.build_transformed(0.35, 0.65),
+            Script::Sub => self.build_transformed(-0.35, 0.65),
+        }
     }
 }
 
