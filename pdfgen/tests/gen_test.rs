@@ -298,7 +298,8 @@ fn page_superscript_subscript_text() {
             Rectangle::A4.width().into_user_unit() / 2.,
             Rectangle::A4.height().into_user_unit() / 2.,
         ))
-        .build_superscript();
+        .superscript()
+        .build();
 
     page.add_text(superscript_text, font_id.clone());
 
@@ -320,7 +321,8 @@ fn page_superscript_subscript_text() {
             Rectangle::A4.width().into_user_unit() / 2. + 100.,
             Rectangle::A4.height().into_user_unit() / 2. - 200.,
         ))
-        .build_subscript();
+        .subscript()
+        .build();
 
     page.add_text(subcript_text, font_id.clone());
 

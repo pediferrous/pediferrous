@@ -70,7 +70,10 @@ impl Text {
             },
         };
 
-        TextBuilder { inner: txt }
+        TextBuilder {
+            inner: txt,
+            script: Script::Normal,
+        }
     }
 
     /// Expands the inner content with the provided one.
@@ -120,6 +123,7 @@ impl Text {
 }
 
 /// Comment
+#[derive(Debug, Clone)]
 enum Script {
     /// Comment
     Normal,
@@ -273,7 +277,8 @@ mod tests {
             .with_expanded_content(" a superscript text content.")
             .with_size(14)
             .at(Position::from_mm(0.0, 0.0))
-            .build_superscript()
+            .superscript()
+            .build()
             .to_bytes(Identifier::from_static(b"CustomFnt"))
             .unwrap();
 
@@ -296,7 +301,8 @@ mod tests {
             .with_expanded_content(" a superscript text content.")
             .with_size(14)
             .at(Position::from_mm(0.0, 0.0))
-            .build_subscript()
+            .subscript()
+            .build()
             .to_bytes(Identifier::from_static(b"CustomFnt"))
             .unwrap();
 
