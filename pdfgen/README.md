@@ -34,7 +34,7 @@ Add `pdfgen` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pdfgen = "0.3.0"
+pdfgen = "0.3.1"
 ```
 
 ---
