@@ -66,22 +66,23 @@ use pdfgen::{
 };
 
 fn main() -> Result<()> {
-        // Create document with A4 page size
+    // Create document with A4 page size
     let mut document = Document::builder().with_page_size(Rectangle::A4).build();
 
     // Register a standard font
     let font_id = document.create_font("Type1".into(), "Helvetica".into());
 
-    // Create first page
+    // Create a page
     let page = document.create_page();
 
-    // --- Add colored text ---
+    // --- Create a color ---
     let red = Color::Rgb {
         red: 255,
         green: 0,
         blue: 0,
     };
 
+    // --- Add a colored text ---
     let colored_text = Text::builder()
         .with_content("Hello ")
         .with_expanded_content("from colorful pdfgen!")
@@ -95,7 +96,7 @@ fn main() -> Result<()> {
 
     page.add_text(colored_text, font_id.clone());
 
-    // --- Add superscript & subscript ---
+    // --- Add superscript & subscript texts ---
     let presuperscript_text = Text::builder()
         .with_content("Hello, here's a fun formula for you: E=m*c")
         .with_size(14)
