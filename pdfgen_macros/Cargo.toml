@@ -2,18 +2,16 @@
 name = "pdfgen_macros"
 version = "0.1.0"
 description = "Holding macros used across PDFGen."
-edition.workspace = true 
+edition.workspace = true
 authors.workspace = true
 repository.workspace = true
 license.workspace = true
+readme = "../README.md"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2.0", features = ["parsing"] }
-quote = "1.0"
-proc-macro2 = "1.0"
-
-[dev-dependencies]
-syn = { version = "2.0", features = ["parsing", "extra-traits"] }
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
