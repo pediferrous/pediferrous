@@ -16,3 +16,4 @@ readme = "README.md"
 license = "Apache-2.0"
 
 [workspace.dependencies]
+pdfgen_macros = { path = "pdfgen_macros" }
