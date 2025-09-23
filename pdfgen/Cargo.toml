@@ -12,7 +12,7 @@ readme = "README.md"
 md5 = "0.7.0"
 hex = "0.4.3"
 image = "0.25.5"
-pdfgen_macros = { workspace = true }
+pdfgen_macros = { version = "0.1.0", path = "../pdfgen_macros" }
 thiserror = "2.0.12"
 
 [dev-dependencies]
