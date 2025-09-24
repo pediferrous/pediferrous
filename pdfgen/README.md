@@ -1,13 +1,7 @@
-# Project Structure
-
-This project is organized as a multirepo, consisting of two separate crates:
-
-1. **pdfgen** — a low-level PDF rendering crate that handles the core structure and internals of PDF generation. It focuses on providing precise control over catalogs, page trees, objects, references, and other essential components of PDF files.  
-2. **pediferrous** — a planned high-level PDF generation crate that will build on top of `pdfgen`, offering an intuitive and lightweight API for developers who want to create PDFs without dealing with low-level details.
-
 ## pdfgen
 
-**pdfgen** is the foundation crate: it provides precise control over PDF structure, as well as content authoring (text, fonts, colors, images). It manages catalogs, page trees, cross-reference tables, trailers, and object references — all the building blocks for generating PDF files programmatically.
+**pdfgen** is a low-level PDF rendering crate that handles the core structure and internals of PDF generation. It focuses on providing precise control over catalogs, page trees, objects, references, and other essential components of PDF files.  
+**pdfgen** is the foundation crate for our higher-level pediferrous crate: it provides precise control over PDF structure, as well as content authoring (text, fonts, colors, images). It manages catalogs, page trees, cross-reference tables, trailers, and object references — all the building blocks for generating PDF files programmatically.
 
 This crate is ideal for developers who need fine-grained control or want to build higher-level abstractions like the upcoming **pediferrous** crate.
 
