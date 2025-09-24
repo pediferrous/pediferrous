@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1](https://github.com/pediferrous/pediferrous/compare/pdfgen-v0.3.0...pdfgen-v0.3.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* correct publishing issues ([#76](https://github.com/pediferrous/pediferrous/issues/76)) ([8493c19](https://github.com/pediferrous/pediferrous/commit/8493c194a555739552729c75fbe2d98d034b9384)), closes [#75](https://github.com/pediferrous/pediferrous/issues/75)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * pdfgen_macros bumped from 0.1.0 to 0.1.1
+
 ## [0.3.0](https://github.com/pediferrous/pediferrous/compare/pdfgen-v0.2.0...pdfgen-v0.3.0) (2025-09-22)
 
 
