@@ -2,6 +2,7 @@
 members = [
     "pdfgen", "pdfgen_macros",
     "pediferrous",
+    "typometry"
 ]
 resolver = "2"
 

@@ -1,0 +1,12 @@
+[package]
+name = "typometry"
+description = "Crate for calculation and manipulation of text metrics"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+license.workspace = true
+
+[dependencies]
