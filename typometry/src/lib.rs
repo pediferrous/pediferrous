@@ -1,7 +1,10 @@
 //! Typometry is crate for working with text metrics. In particular, calculating text metrics based
 //! on provided font definitions.
 
-use rustybuzz::{Face, GlyphBuffer, UnicodeBuffer};
+use rustybuzz::{Face, UnicodeBuffer};
+
+pub mod layout;
+pub use layout::{FitResult, LayoutError, LayoutParams, Line, Size, layout_text};
 
 pub struct RawMetrics {
     width: f64,
