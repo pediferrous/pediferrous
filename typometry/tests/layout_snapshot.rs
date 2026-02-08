@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use typometry::{FitResult, LayoutParams};
+use typometry::{LayoutParams, TextLayout};
 
 const SNAPSHOT_FONT_PATH: &str = concat!(
     std::env!("CARGO_MANIFEST_DIR"),
@@ -20,7 +20,7 @@ fn layout_breaks_text_into_expected_lines() {
         line_height: None,
     };
 
-    let layout = typometry::layout_text(text, &params).expect("layout parameters are valid");
+    let layout = typometry::text(text, &params).expect("layout parameters are valid");
 
     let snapshot = render_layout_lines(&layout);
     insta::assert_snapshot!("layout_breaks_text_into_expected_lines", snapshot);
@@ -35,25 +35,24 @@ fn load_font_bytes(path: &str) -> Vec<u8> {
     font_ttf
 }
 
-fn render_layout_lines(layout: &FitResult<'_>) -> String {
+fn render_layout_lines(layout: &TextLayout<'_>) -> String {
     match layout {
-        FitResult::Fits { lines, .. } => {
+        TextLayout::Contained(contained) => {
             let mut out = String::new();
-            out.push_str("status: fits\n");
+            out.push_str("status: contained\n");
             out.push_str("non-empty lines:\n");
-            write_non_empty_lines(&mut out, lines);
+            write_non_empty_lines(&mut out, &contained.lines);
             out
         }
-        FitResult::Overflow {
-            lines,
-            remaining_text,
-            ..
+        TextLayout::Overflow {
+            contained,
+            remaining,
         } => {
             let mut out = String::new();
             out.push_str("status: overflow\n");
             out.push_str("non-empty lines:\n");
-            write_non_empty_lines(&mut out, lines);
-            out.push_str(&format!("remaining: {:?}\n", remaining_text));
+            write_non_empty_lines(&mut out, &contained.lines);
+            out.push_str(&format!("remaining: {:?}\n", remaining));
             out
         }
     }

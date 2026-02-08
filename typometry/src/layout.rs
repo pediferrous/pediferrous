@@ -18,7 +18,7 @@ pub struct LayoutParams<'font> {
 
 /// Final dimensions occupied by the laid out lines.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Size {
+pub struct Metrics {
     pub width: f32,
     pub height: f32,
 }
@@ -30,18 +30,20 @@ pub struct Line<'text> {
     pub width: f32,
 }
 
-/// Result of fitting text into the provided bounds.
+/// Text that fits within the requested bounds.
 #[derive(Debug, Clone, PartialEq)]
-pub enum FitResult<'text> {
-    Fits {
-        lines: Vec<Line<'text>>,
-        size: Size,
-    },
+pub struct ContainedText<'text> {
+    pub lines: Vec<Line<'text>>,
+    pub metrics: Metrics,
+}
+
+/// Result of laying out text into the provided bounds.
+#[derive(Debug, Clone, PartialEq)]
+pub enum TextLayout<'text> {
+    Contained(ContainedText<'text>),
     Overflow {
-        lines: Vec<Line<'text>>,
-        remaining_text: &'text str,
-        overflow_width: f32,
-        overflow_height: f32,
+        contained: ContainedText<'text>,
+        remaining: &'text str,
     },
 }
 
@@ -71,10 +73,10 @@ pub enum LayoutError {
 /// contextual shaping would reduce total advance when graphemes are shaped together.
 ///
 // TODO(nfejzic): Integrate paragraph bidi reordering with `unicode-bidi` for mixed-direction lines.
-pub fn layout_text<'text>(
+pub fn text<'text>(
     text: &'text str,
     params: &LayoutParams<'_>,
-) -> Result<FitResult<'text>, LayoutError> {
+) -> Result<TextLayout<'text>, LayoutError> {
     if params.font_size <= 0.0 {
         return Err(LayoutError::InvalidFontSize);
     }
@@ -84,13 +86,13 @@ pub fn layout_text<'text>(
     }
 
     if text.is_empty() {
-        return Ok(FitResult::Fits {
+        return Ok(TextLayout::Contained(ContainedText {
             lines: Vec::new(),
-            size: Size {
+            metrics: Metrics {
                 width: 0.0,
                 height: 0.0,
             },
-        });
+        }));
     }
 
     let mut face = Face::from_slice(params.font_ttf, 0).ok_or(LayoutError::InvalidFont)?;
@@ -122,16 +124,20 @@ pub fn layout_text<'text>(
         let paragraph = &text[cursor..paragraph_end];
 
         if paragraph.is_empty() {
-            // empty line, so push an empty line
             if used_height + line_height > params.max_height {
-                return Ok(FitResult::Overflow {
-                    lines,
-                    remaining_text: &text[cursor..],
-                    overflow_width: 0.0,
-                    overflow_height: used_height + line_height - params.max_height,
+                return Ok(TextLayout::Overflow {
+                    contained: ContainedText {
+                        lines,
+                        metrics: Metrics {
+                            width: used_width,
+                            height: used_height,
+                        },
+                    },
+                    remaining: &text[cursor..],
                 });
             }
 
+            // empty line, so push an empty line
             lines.push(Line {
                 text: &text[cursor..cursor],
                 width: 0.0,
@@ -150,11 +156,15 @@ pub fn layout_text<'text>(
                 let line_text = &paragraph[line_start..line_end_in_paragraph];
 
                 if used_height + line_height > params.max_height {
-                    return Ok(FitResult::Overflow {
-                        lines,
-                        remaining_text: &text[cursor + line_start..],
-                        overflow_width: (line_width - params.max_width).max(0.0),
-                        overflow_height: used_height + line_height - params.max_height,
+                    return Ok(TextLayout::Overflow {
+                        contained: ContainedText {
+                            lines,
+                            metrics: Metrics {
+                                width: used_width,
+                                height: used_height,
+                            },
+                        },
+                        remaining: &text[cursor + line_start..],
                     });
                 }
 
@@ -172,13 +182,13 @@ pub fn layout_text<'text>(
         cursor = paragraph_end + usize::from(next_newline.is_some());
     }
 
-    Ok(FitResult::Fits {
+    Ok(TextLayout::Contained(ContainedText {
         lines,
-        size: Size {
+        metrics: Metrics {
             width: used_width,
             height: used_height,
         },
-    })
+    }))
 }
 
 fn longest_fitting_prefix(
@@ -264,7 +274,7 @@ fn shaped_width(face: &Face<'_>, text: &str, font_size: f32) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{FitResult, LayoutError, LayoutParams, Size, layout_text};
+    use super::{ContainedText, LayoutError, LayoutParams, Metrics, TextLayout, text};
 
     #[test]
     fn invalid_font_data() {
@@ -276,7 +286,7 @@ mod tests {
             line_height: None,
         };
 
-        let result = layout_text("hello", &params);
+        let result = text("hello", &params);
         assert_eq!(result, Err(LayoutError::InvalidFont));
     }
 
@@ -290,16 +300,16 @@ mod tests {
             line_height: None,
         };
 
-        let result = layout_text("", &params);
+        let result = text("", &params);
         assert_eq!(
             result,
-            Ok(FitResult::Fits {
+            Ok(TextLayout::Contained(ContainedText {
                 lines: Vec::new(),
-                size: Size {
+                metrics: Metrics {
                     width: 0.0,
                     height: 0.0,
                 },
-            })
+            }))
         );
     }
 
@@ -313,7 +323,7 @@ mod tests {
             line_height: None,
         };
 
-        let result = layout_text("hello", &params);
+        let result = text("hello", &params);
         assert_eq!(result, Err(LayoutError::InvalidFontSize));
     }
 
@@ -327,7 +337,7 @@ mod tests {
             line_height: None,
         };
 
-        let result = layout_text("hello", &params);
+        let result = text("hello", &params);
         assert_eq!(result, Err(LayoutError::InvalidBounds));
     }
 }
