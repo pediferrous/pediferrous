@@ -108,7 +108,7 @@ impl Font {
     }
 
     /// Create a new [`Font`] object with the provided id, subtype and base_font.
-    pub fn new<B>(id: ObjId<Self>, subtype: FontSubtype, base_font: B) -> Self
+    pub fn base<B>(id: ObjId<Self>, subtype: FontSubtype, base_font: B) -> Self
     where
         B: Into<Vec<u8>>,
     {
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     pub fn font_object() {
         let mut id_manager = IdManager::new();
-        let font = Font::new(id_manager.create_id(), FontSubtype::Type1, "Helvetica");
+        let font = Font::base(id_manager.create_id(), FontSubtype::Type1, "Helvetica");
 
         let mut writer = Vec::default();
         let _ = font.write_def(&mut writer);
