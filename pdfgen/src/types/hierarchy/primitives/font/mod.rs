@@ -1,12 +1,17 @@
 //! Implementation of PDF Font object.
 
-use std::io::{Error, Write};
+use std::{
+    io::{Error, Write},
+    path::Path,
+};
 
 use pdfgen_macros::const_identifiers;
 
 use crate::{ObjId, types::constants};
 
 use super::{identifier::Identifier, object::Object};
+
+pub mod program;
 
 /// Enumerates the font subtypes defined by ISO 32000 for use in a PDF font dictionary.
 ///
@@ -64,22 +69,76 @@ impl From<FontSubtype> for Identifier<&'static [u8]> {
         pdfgen_macros::const_identifiers! {
             TYPE0,
             TYPE1,
-            M_M_TYPE,
+            MM_TYPE: b"MMType",
             TYPE3,
             TRUE_TYPE,
-            C_I_D_FONT_TYPE0,
-            C_I_D_FONT_TYPE2,
+            CID_FONT_TYPE0: b"CIDFontType0",
+            CID_FONT_TYPE2: b"CIDFontType2",
         };
 
         match val {
             FontSubtype::Type0 => TYPE0,
             FontSubtype::Type1 => TYPE1,
-            FontSubtype::MMType => M_M_TYPE,
+            FontSubtype::MMType => MM_TYPE,
             FontSubtype::Type3 => TYPE3,
             FontSubtype::TrueType => TRUE_TYPE,
-            FontSubtype::CidFontType0 => C_I_D_FONT_TYPE0,
-            FontSubtype::CidFontType2 => C_I_D_FONT_TYPE2,
+            FontSubtype::CidFontType0 => CID_FONT_TYPE0,
+            FontSubtype::CidFontType2 => CID_FONT_TYPE2,
         }
+    }
+}
+
+#[derive(Debug)]
+enum FontVariant {
+    Base {
+        /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
+        subtype: FontSubtype,
+
+        /// Represents the base font type, identifying the general font family or format.
+        base_font: Identifier<Vec<u8>>,
+    },
+
+    Program {
+        font_file: String,
+    },
+}
+
+impl FontVariant {
+    const_identifiers! {
+        SUBTYPE,
+        BASE_FONT,
+    }
+
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        match self {
+            FontVariant::Base { subtype, base_font } => {
+                Self::write_base(*subtype, base_font, writer)
+            }
+            FontVariant::Program { .. } => Self::write_program(writer),
+        }
+    }
+
+    fn write_base(
+        subtype: FontSubtype,
+        base_font: &Identifier<Vec<u8>>,
+        writer: &mut dyn Write,
+    ) -> Result<usize, std::io::Error> {
+        let written = pdfgen_macros::write_chain! {
+            // /Subtype /xyz
+            Self::SUBTYPE.write(writer),
+            subtype.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            // /BaseFont /xyz
+            Self::BASE_FONT.write(writer),
+            base_font.write(writer),
+        };
+
+        Ok(written)
+    }
+
+    fn write_program(_writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        todo!()
     }
 }
 
@@ -93,11 +152,7 @@ pub struct Font {
     /// ID of this [`Font`] object.
     pub(crate) id: ObjId<Self>,
 
-    /// Specifies the subtype of the font, defining its role or characteristics within the PDF.
-    subtype: FontSubtype,
-
-    /// Represents the base font type, identifying the general font family or format.
-    base_font: Identifier<Vec<u8>>,
+    variant: FontVariant,
 }
 
 impl Font {
@@ -116,9 +171,18 @@ impl Font {
 
         Font {
             id,
-            subtype,
-            base_font,
+            variant: FontVariant::Base { subtype, base_font },
         }
+    }
+
+    /// Create a new [`Font`] object with the provided id, subtype and base_font.
+    pub fn ttf<P>(id: ObjId<Self>, font_file_path: P) -> std::io::Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let face = program::FontMeta::load_from_path(font_file_path.as_ref())?;
+
+        todo!()
     }
 }
 
@@ -139,14 +203,7 @@ impl Object for Font {
             Self::FONT.write(writer),
             writer.write(constants::NL_MARKER),
 
-            // /Subtype /xyz
-            Self::SUBTYPE.write(writer),
-            self.subtype.write(writer),
-            writer.write(constants::NL_MARKER),
-
-            // /BaseFont /xyz
-            Self::BASE_FONT.write(writer),
-            self.base_font.write(writer),
+            self.variant.write(writer),
             writer.write(constants::NL_MARKER),
 
             writer.write(b">>"),
