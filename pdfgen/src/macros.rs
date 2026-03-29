@@ -26,6 +26,10 @@ impl<W: std::io::Write> std::fmt::Write for WriteCounter<W> {
 /// ```
 #[macro_export]
 macro_rules! write_fmt {
+    ($dst:expr, $val:expr) => {
+        $crate::write_fmt!($dst, "{}", $val)
+    };
+
     ($dst:expr, $($arg:tt)*) => {{
         let mut writer = $crate::macros::WriteCounter { writer: $dst, counter: 0 };
 
