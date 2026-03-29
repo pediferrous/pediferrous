@@ -5,10 +5,14 @@ use std::{io::Write, path::Path};
 
 use crate::{
     ObjId,
-    types::hierarchy::primitives::{
-        array::WriteArray as _,
-        font::{Font, FontSubtype},
-        identifier::Identifier,
+    types::{
+        constants,
+        hierarchy::primitives::{
+            array::WriteArray as _,
+            font::{Font, FontSubtype},
+            identifier::Identifier,
+            rectangle::Rectangle,
+        },
     },
 };
 
@@ -66,26 +70,101 @@ impl FontType0 {
         let written = pdfgen_macros::write_chain! {
             Identifier::TYPE.write(writer),
             Identifier::FONT.write(writer),
-            writer.write(crate::types::constants::NL_MARKER),
+            writer.write(constants::NL_MARKER),
 
             Font::SUBTYPE.write(writer),
             FontSubtype::Type0.write(writer),
-            writer.write(crate::types::constants::NL_MARKER),
+            writer.write(constants::NL_MARKER),
 
             Font::BASE_FONT.write(writer),
             self.post_script_name.write(writer),
-            writer.write(crate::types::constants::NL_MARKER),
+            writer.write(constants::NL_MARKER),
 
             Self::ENCODING.write(writer),
             Self::IDENTITY_H.write(writer),
-            writer.write(crate::types::constants::NL_MARKER),
+            writer.write(constants::NL_MARKER),
 
             Self::DESCENDANT_FONTS.write(writer),
             self.descendant_fonts.write_array(writer, None),
-            writer.write(crate::types::constants::NL_MARKER),
+            writer.write(constants::NL_MARKER),
         };
 
         Ok(written)
+    }
+}
+
+/// The value of the Flags entry in a font descriptor shall be an unsigned 32-bit integer
+/// containing flags specifying various characteristics of the font. Bit positions within the flag
+/// word are numbered from 1 (low-order) to 32 (high-order).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct FontFlags {
+    /// All glyphs have the same width (as opposed to proportional or variable-pitch fonts, which
+    /// have different widths).
+    ///
+    /// Bit position: 1
+    fixed_pitch: bool,
+
+    /// Glyphs have serifs, which are short strokes drawn at an angle on the top and bottom of
+    /// glyph stems. (Sans serif fonts do not have serifs.)
+    serif: bool,
+
+    /// Font contains glyphs outside the Standard Latin character set. This flag and the
+    /// Nonsymbolic flag shall not both be set or both be clear.
+    symbolic: bool,
+
+    /// Glyphs resemble cursive handwriting.
+    script: bool,
+
+    /// Font uses the Standard Latin character set or a subset of it. This flag and the Symbolic
+    /// flag shall not both be set or both be clear.
+    non_symbolic: bool,
+
+    /// Glyphs have dominant vertical strokes that are slanted.
+    italic: bool,
+
+    /// Font contains no lowercase letters; typically used for display purposes, such as for titles
+    /// or headlines.
+    all_cap: bool,
+
+    /// Font contains both uppercase and lowercase letters. The uppercase letters are similar to
+    /// those in the regular version of the same typeface family. The glyphs for the lowercase
+    /// letters have the same shapes as the corresponding uppercase letters, but they are sized and
+    /// their proportions adjusted so that they have the same size and stroke weight as lowercase
+    /// glyphs in the same typeface family.
+    small_cap: bool,
+
+    /// Determines whether bold glyphs shall be painted with extra pixels even at very small text
+    /// sizes by a PDF processor. If the flag is set, features of bold glyphs may be thickened at
+    /// small text sizes.
+    force_bold: bool,
+}
+
+impl From<FontFlags> for u32 {
+    fn from(ff: FontFlags) -> Self {
+        debug_assert!(
+            ff.symbolic != ff.non_symbolic,
+            "Symbolic and NonSymbolic flag shall not both be set or both be clear"
+        );
+
+        let mut res = 0u32;
+
+        fn to_u32(val: bool, at: usize) -> u32 {
+            let offs = at.saturating_sub(1);
+            let bit = if val { 1 } else { 0 };
+            bit << offs
+        }
+
+        res |= to_u32(ff.fixed_pitch, 1);
+        res |= to_u32(ff.serif, 2);
+        res |= to_u32(ff.symbolic, 3);
+        res |= to_u32(ff.script, 4);
+        res |= to_u32(ff.non_symbolic, 6);
+        res |= to_u32(ff.italic, 7);
+        res |= to_u32(ff.all_cap, 17);
+        res |= to_u32(ff.small_cap, 18);
+        res |= to_u32(ff.force_bold, 19);
+
+        res
     }
 }
 
@@ -95,10 +174,104 @@ impl FontType0 {
 // /Encoding /Identity-H
 // /DescendantFonts [11 0 R]
 
-pub(crate) struct CidFontType2 {}
+/// A font descriptor specifies metrics and other attributes of a simple font or a CIDFont as a
+/// whole, as distinct from the metrics of individual glyphs. These font metrics provide
+/// information that enables a PDF processor to synthesise a substitute font or select a similar
+/// font when the font program is unavailable. The font descriptor may also be used to embed the
+/// font program in the PDF file.
+// WARN(nfejzic): Font descriptors shall not be used with Type 0 fonts. Beginning with PDF 1.5,
+// font descriptors may be used with Type 3 fonts.
+pub(crate) struct FontDescriptor {
+    // The PostScript name of the font.
+    font_name: Identifier<String>,
 
-impl CidFontType2 {
+    // A collection of flags defining various characteristics of the font.
+    flags: FontFlags,
+
+    // A [`Rectangle`] expressed in the glyph coordinate system, that shall specify the font
+    // bounding box. This should be the smallest rectangle enclosing the shape that would result if
+    // all of the glyphs of the font were placed with their origins coincident and then filled.
+    font_bounding_box: Rectangle,
+
+    /// The angle, expressed in degrees counterclockwise from the vertical, of the dominant
+    /// vertical strokes of the font. For example, 9-o'clock position is 90 degrees, and the
+    /// 3-o'clock position is -90 degrees.
+    ///
+    /// The value shall be negative for fonts that slope to the right, as almost all italic fonts
+    /// do.
+    italic_angle: f64,
+
+    /// The maximum height above the
+    /// baseline reached by glyphs in this font. The height of glyphs for accented
+    /// characters shall be excluded.
+    ascent: f64,
+
+    /// The maximum depth below the baseline reached by glyphs in this font. The value shall be a
+    /// negative number.
+    descent: f64,
+
+    /// The vertical coordinate of the top of flat capital letters, measured from the baseline.
+    cap_height: f64,
+
+    /// The thickness measured horizontally, of the dominant vertical stems of glyphs in the font.
+    /// Values shall be positive. A value of 0 indicates an unknown stem thickness.
+    stem_v: f64,
+}
+
+impl FontDescriptor {
     const_identifiers! {
-        FONT_DESCRIPTOR
+        FONT_DESCRIPTOR,
+        FONT_NAME,
+        FLAGS,
+        FONT_BBOX: b"FontBBox",
+        ITALIC_ANGLE,
+        ASCENT,
+        DESCENT,
+        CAP_HEIGHT,
+        STEM_V,
+    }
+
+    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        let written = pdfgen_macros::write_chain! {
+            Identifier::TYPE.write(writer),
+            Self::FONT_DESCRIPTOR.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            Self::FONT_NAME.write(writer),
+            self.font_name.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            Self::FLAGS.write(writer),
+            crate::write_fmt!(&mut *writer, u32::from(self.flags)),
+            writer.write(constants::NL_MARKER),
+
+            Self::FONT_BBOX.write(writer),
+            self.font_bounding_box.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            Self::ITALIC_ANGLE.write(writer),
+            crate::write_fmt!(&mut *writer, self.italic_angle),
+            writer.write(constants::NL_MARKER),
+
+            Self::ASCENT.write(writer),
+            crate::write_fmt!(&mut *writer, self.ascent),
+            writer.write(constants::NL_MARKER),
+
+            Self::DESCENT.write(writer),
+            crate::write_fmt!(&mut *writer, self.descent),
+            writer.write(constants::NL_MARKER),
+
+            Self::CAP_HEIGHT.write(writer),
+            crate::write_fmt!(&mut *writer, self.cap_height),
+            writer.write(constants::NL_MARKER),
+
+            Self::STEM_V.write(writer),
+            crate::write_fmt!(&mut *writer, self.stem_v),
+            writer.write(constants::NL_MARKER),
+        };
+
+        Ok(written)
     }
 }
+
+pub(crate) struct CidFontType2 {}
