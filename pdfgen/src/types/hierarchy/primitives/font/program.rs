@@ -7,11 +7,14 @@ use crate::{
     ObjId,
     types::{
         constants,
-        hierarchy::primitives::{
-            array::WriteArray as _,
-            font::{Font, FontSubtype},
-            identifier::Identifier,
-            rectangle::Rectangle,
+        hierarchy::{
+            content::stream::Stream,
+            primitives::{
+                array::WriteArray as _,
+                font::{Font, FontSubtype},
+                identifier::Identifier,
+                rectangle::Rectangle,
+            },
         },
     },
 };
@@ -45,17 +48,14 @@ impl FontMeta {
     }
 }
 
+pub(crate) trait FontOptions {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error>;
+
+    fn subtype(&self) -> FontSubtype;
+}
+
 pub(crate) struct FontType0 {
-    /// The name of the font. If the descendant is a Type 0 CIDFont, this name should be the
-    /// concatenation of the CIDFont’s BaseFont name, a hyphen, and the CMap name given in the
-    /// Encoding entry (or the CMapName entry in the CMap). If the descendant is a Type 2 CIDFont,
-    /// this name should be the same as the CIDFont’s BaseFont name.
-    ///
-    /// NOTE(nfejzic): In principle, this is an arbitrary name, since there is no font program
-    /// associated directly with a Type 0 font dictionary. The conventions described here ensure
-    /// maximum compatibility with existing PDF processors.
-    post_script_name: Identifier<String>,
-    encoding: Identifier<String>, // Identity-H
+    encoding: Identifier<String>,
     descendant_fonts: [ObjId<CidFontType2>; 1],
 }
 
@@ -65,7 +65,44 @@ impl FontType0 {
         IDENTITY_H: b"Identity-H",
         DESCENDANT_FONTS,
     }
+}
 
+impl FontOptions for FontType0 {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        let written = pdfgen_macros::write_chain! {
+            Self::ENCODING.write(writer),
+            Self::IDENTITY_H.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            Self::DESCENDANT_FONTS.write(writer),
+            self.descendant_fonts.write_array(writer, None),
+        };
+
+        Ok(written)
+    }
+
+    fn subtype(&self) -> FontSubtype {
+        FontSubtype::Type0
+    }
+}
+
+pub(crate) struct EmbeddedFont<T> {
+    /// The name of the font. If the descendant is a Type 0 CIDFont, this name should be the
+    /// concatenation of the CIDFont’s BaseFont name, a hyphen, and the CMap name given in the
+    /// Encoding entry (or the CMapName entry in the CMap). If the descendant is a Type 2 CIDFont,
+    /// this name should be the same as the CIDFont’s BaseFont name.
+    ///
+    /// NOTE(nfejzic): In principle, this is an arbitrary name, since there is no font program
+    /// associated directly with a Type 0 font dictionary. The conventions described here ensure
+    /// maximum compatibility with existing PDF processors.
+    base_font: Identifier<String>,
+    font_options: T,
+}
+
+impl<T> EmbeddedFont<T>
+where
+    T: FontOptions,
+{
     pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
         let written = pdfgen_macros::write_chain! {
             Identifier::TYPE.write(writer),
@@ -73,19 +110,14 @@ impl FontType0 {
             writer.write(constants::NL_MARKER),
 
             Font::SUBTYPE.write(writer),
-            FontSubtype::Type0.write(writer),
+            self.font_options.subtype().write(writer),
             writer.write(constants::NL_MARKER),
 
             Font::BASE_FONT.write(writer),
-            self.post_script_name.write(writer),
+            self.base_font.write(writer),
             writer.write(constants::NL_MARKER),
 
-            Self::ENCODING.write(writer),
-            Self::IDENTITY_H.write(writer),
-            writer.write(constants::NL_MARKER),
-
-            Self::DESCENDANT_FONTS.write(writer),
-            self.descendant_fonts.write_array(writer, None),
+            self.font_options.write(writer),
             writer.write(constants::NL_MARKER),
         };
 
@@ -168,12 +200,6 @@ impl From<FontFlags> for u32 {
     }
 }
 
-// /Type /Font
-// /Subtype /Type0
-// /BaseFont /JetBrainsMono
-// /Encoding /Identity-H
-// /DescendantFonts [11 0 R]
-
 /// A font descriptor specifies metrics and other attributes of a simple font or a CIDFont as a
 /// whole, as distinct from the metrics of individual glyphs. These font metrics provide
 /// information that enables a PDF processor to synthesise a substitute font or select a similar
@@ -216,6 +242,9 @@ pub(crate) struct FontDescriptor {
     /// The thickness measured horizontally, of the dominant vertical stems of glyphs in the font.
     /// Values shall be positive. A value of 0 indicates an unknown stem thickness.
     stem_v: f64,
+
+    /// A (reference to a) stream containing a TrueType font program.
+    font_file2: ObjId<Stream>,
 }
 
 impl FontDescriptor {
@@ -274,4 +303,82 @@ impl FontDescriptor {
     }
 }
 
-pub(crate) struct CidFontType2 {}
+/// The CIDSystemInfo entry in a [`CidFontType2`] is a dictionary that shall specify the
+/// [`CidFontType2`]’s character collection. The [`CidFontType2`] need not contain glyph
+/// descriptions for all the CIDs in a collection; it may contain a subset. The [`CidSystemInfo`]
+/// entry in a CMap file shall be either a single dictionary or an array of dictionaries, depending
+/// on whether it associates codes with a single character collection or with multiple character
+/// collections
+pub(crate) struct CidSystemInfo {
+    /// A string identifying the issuer of the character collection. The string shall begin with
+    /// the 4 or 5 characters of a registered developer prefix followed by a LOW LINE (5Fh)
+    /// followed by any other identifying characters chosen by the issuer. See Annex E, "Extending
+    /// PDF", for how to obtain a unique developer prefix.
+    registry: String,
+
+    /// A string that uniquely names the character collection within the specified registry.
+    ordering: String,
+
+    /// The supplement number of the character collection. An original character collection has a
+    /// supplement number of 0. Whenever additional CIDs are assigned in a character collection,
+    /// the supplement number shall be increased. Supplements shall not alter the ordering of
+    /// existing CIDs in the character collection. This value shall not be used in determining
+    /// compatibility between character collections.
+    supplementer: usize,
+}
+
+impl CidSystemInfo {
+    const_identifiers! {
+        REGISTRY,
+        ORDERING,
+        SUPPLEMENTER,
+    }
+
+    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        let written = pdfgen_macros::write_chain! {
+            Self::REGISTRY.write(writer),
+            crate::write_fmt!(&mut *writer, self.registry),
+            writer.write(constants::NL_MARKER),
+
+            Self::ORDERING.write(writer),
+            crate::write_fmt!(&mut *writer, self.ordering),
+            writer.write(constants::NL_MARKER),
+
+            Self::SUPPLEMENTER.write(writer),
+            crate::write_fmt!(&mut *writer, self.supplementer),
+        };
+
+        Ok(written)
+    }
+}
+
+pub(crate) struct CidFontType2 {
+    cid_system_info: CidSystemInfo,
+    font_descriptor: ObjId<FontDescriptor>,
+    widths: Vec<f64>,
+}
+
+impl CidFontType2 {
+    const_identifiers! {
+        CID_SYSTEM_INFO: b"CIDSystemInfo",
+    }
+}
+
+impl FontOptions for CidFontType2 {
+    fn write(&self, writer: &mut dyn Write) -> Result<usize, std::io::Error> {
+        let written = pdfgen_macros::write_chain! {
+            Self::CID_SYSTEM_INFO.write(writer),
+            self.cid_system_info.write(writer),
+            writer.write(constants::NL_MARKER),
+
+            FontDescriptor::FONT_DESCRIPTOR.write(writer),
+            self.font_descriptor.write_ref(writer),
+        };
+
+        Ok(written)
+    }
+
+    fn subtype(&self) -> FontSubtype {
+        FontSubtype::CidFontType2
+    }
+}
