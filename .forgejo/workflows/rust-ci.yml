@@ -1,0 +1,81 @@
+name: Rust CI Workflow
+
+on:
+  push:
+    branches: [ main, feature ]
+  pull_request:
+    branches: [ main, feature ]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_BUILD_JOBS: 2
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  format:
+    name: Check Formatting
+    runs-on: codeberg-tiny
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: https://codeberg.org/wackbyte/rust-toolchain@trunk
+      with:
+        toolchain: stable
+        components: "cargo, rustfmt"
+    - uses: https://github.com/Swatinem/rust-cache@v2
+      with:
+        shared-key: "cargo-deps"
+    - name: Run cargo fmt
+      run: cargo fmt -- --check
+
+  lint:
+    name: Run Linter (clippy)
+    runs-on: codeberg-tiny
+    needs: format
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: https://codeberg.org/wackbyte/rust-toolchain@trunk
+      with:
+        toolchain: stable
+        components: "cargo, clippy"
+    - uses: https://github.com/Swatinem/rust-cache@v2
+      with:
+        shared-key: "cargo-deps"
+    - name: Run linter
+      run: cargo clippy --locked --no-deps -- -D warnings
+  
+  test:
+    name: Run Tests
+    runs-on: codeberg-small
+    needs: lint
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: https://codeberg.org/wackbyte/rust-toolchain@trunk
+      with:
+        toolchain: stable
+        components: "cargo"
+    - uses: https://github.com/Swatinem/rust-cache@v2
+      with:
+        shared-key: "cargo-deps"
+    - name: Run tests
+      run: cargo test --locked --workspace
+
+  build:
+    name: Build
+    runs-on: codeberg-small
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: https://codeberg.org/wackbyte/rust-toolchain@trunk
+      with:
+        toolchain: stable
+        components: "cargo"
+    - uses: https://github.com/Swatinem/rust-cache@v2
+      with:
+        shared-key: "cargo-deps"
+
+    - name: Build the workspace
+      run: cargo build --locked --verbose
