@@ -2,6 +2,7 @@
 members = [
     "pdfgen", "pdfgen_macros",
     "pediferrous",
+    "typometry"
 ]
 resolver = "2"
 
@@ -16,3 +17,4 @@ readme = "README.md"
 license = "Apache-2.0"
 
 [workspace.dependencies]
+thiserror = "2.0.12"

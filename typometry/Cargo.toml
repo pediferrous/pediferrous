@@ -1,0 +1,20 @@
+[package]
+name = "typometry"
+description = "Crate for calculation and manipulation of text metrics"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+license.workspace = true
+
+[dependencies]
+rustybuzz = "0.20.1"
+unicode-bidi = "0.3.18"
+unicode-linebreak = "0.1.5"
+unicode-segmentation = "1.12.0"
+thiserror.workspace = true
+
+[dev-dependencies]
+insta = "1.46.3"

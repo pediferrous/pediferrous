@@ -1,0 +1,11 @@
+---
+source: typometry/tests/layout_snapshot.rs
+expression: snapshot
+---
+status: overflow
+non-empty lines:
+00: "This snapshot verifies that " (w=165.592)
+01: "typometry layout breaks " (w=154.210)
+02: "text into lines in a stable " (w=151.774)
+03: "and inspectable way." (w=132.300)
+remaining: ""
