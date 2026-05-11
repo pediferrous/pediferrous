@@ -9,7 +9,19 @@ pub trait WriteArray {
     fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error>;
 }
 
-impl WriteArray for Vec<ObjId> {
+impl<T> WriteArray for Vec<ObjId<T>> {
+    fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error> {
+        self.as_slice().write_array(writer, indent)
+    }
+}
+
+impl<T, const N: usize> WriteArray for [ObjId<T>; N] {
+    fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error> {
+        self.as_slice().write_array(writer, indent)
+    }
+}
+
+impl<T> WriteArray for &[ObjId<T>] {
     fn write_array(&self, writer: &mut dyn Write, indent: Option<usize>) -> Result<usize, Error> {
         let opening = b"[";
 
