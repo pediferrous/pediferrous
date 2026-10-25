@@ -71,12 +71,6 @@ impl IdManager {
         Self { curr: 1 }
     }
 
-    /// Creates a clone of this [`IdManager`]. Take great care when doing this, otherwise the
-    /// document might get into an invalid state.
-    pub(in crate::document) fn clone(&self) -> Self {
-        Self { curr: self.curr }
-    }
-
     pub fn create_id<T>(&mut self) -> ObjId<T> {
         let inner_id = self.curr;
         self.curr += 1;

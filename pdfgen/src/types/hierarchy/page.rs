@@ -2,10 +2,14 @@ use std::io::{Error, Write};
 
 use pdfgen_macros::const_identifiers;
 
-use crate::{IdManager, ObjId, types::constants};
+use crate::{ObjId, types::constants};
 
 use super::{
-    content::{ContentStream, Operation, image::Image, text::Text},
+    content::{
+        ContentStream, Operation,
+        image::{Image, ImageTransform},
+        text::Text,
+    },
     page_tree::PageTree,
     primitives::{font::Font, identifier::Identifier, rectangle::Rectangle, resources::Resources},
 };
@@ -71,17 +75,14 @@ impl Page {
         })
     }
 
-    // ids = vec[17, 18]
-    // add_image -> id = ids.len() = 0; ids.push(0);
-    // add_image -> id = ids.len() = 1; ids.push(0);
-    //
-    // when rendering:
-    // for each id in ids.iter_mut() { *id = id_manager.create_id() }
-    pub fn add_image(&mut self, image: Image) {
-        // /Im1 <-> ids[0] -> /Im1 17
-        // ids[0] obj    -> 17 0 obj
-        let transform = image.transform();
-        let name = self.resources.add_image(image);
+    /// Draws the [`Image`] with the given id on this page, applying the given [`ImageTransform`].
+    ///
+    /// The image has to be registered in the [`Document`] first via [`Document::add_image`].
+    ///
+    /// [`Document`]: crate::Document
+    /// [`Document::add_image`]: crate::Document::add_image
+    pub fn draw_image(&mut self, image_id: ObjId<Image>, transform: ImageTransform) {
+        let name = self.resources.add_image(image_id);
 
         self.contents
             .add_content(Operation::DrawImage { name, transform });
@@ -100,15 +101,7 @@ impl Page {
     }
 
     /// Encode the PDF Page into the given implementor of [`Write`].
-    pub(crate) fn write(
-        &self,
-        writer: &mut dyn Write,
-        id_manager: &mut IdManager,
-    ) -> Result<(usize, Vec<usize>), Error> {
-        let mut offsets = Vec::with_capacity(self.resources.entries.len());
-
-        let mut renderable_resources = self.resources.renderables(id_manager);
-
+    pub(crate) fn write(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         let written = pdfgen_macros::write_chain! {
             self.id.write_def(writer),
             writer.write(constants::NL_MARKER),
@@ -123,7 +116,7 @@ impl Page {
             writer.write(constants::NL_MARKER),
 
             Self::RESOURCES.write(writer),
-            self.resources.write_dict(writer, &renderable_resources),
+            self.resources.write_dict(writer),
             writer.write(constants::NL_MARKER),
 
             if let Some(media_box) = self.media_box {
@@ -144,17 +137,10 @@ impl Page {
             writer.write(constants::NL_MARKER),
             writer.write(constants::NL_MARKER),
 
-            for renderable_entry in renderable_resources.iter_mut() {
-                {
-                    offsets.push(written);
-                    renderable_entry.write_def(writer)
-                }
-            },
-
             writer.write(constants::NL_MARKER),
         };
 
-        Ok((written, offsets))
+        Ok(written)
     }
 }
 
@@ -174,7 +160,7 @@ mod tests {
         page.set_mediabox(Rectangle::from_units(0.0, 0.0, 100.0, 100.0));
 
         let mut writer = Vec::new();
-        page.write(&mut writer, &mut id_manager).unwrap();
+        page.write(&mut writer).unwrap();
 
         let output = String::from_utf8(writer).unwrap();
 

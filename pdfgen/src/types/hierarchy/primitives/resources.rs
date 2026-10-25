@@ -2,7 +2,7 @@
 
 use std::io::{Error, Write};
 
-use crate::{IdManager, ObjId, types::hierarchy::content::image::Image};
+use crate::{ObjId, types::hierarchy::content::image::Image};
 
 use super::{
     font::Font,
@@ -15,7 +15,7 @@ use super::{
 pub(crate) enum ResourceEntry {
     Image {
         name: OwnedIdentifier,
-        image: Image,
+        id: ObjId<Image>,
     },
     Font {
         name: OwnedIdentifier,
@@ -33,7 +33,7 @@ pub(crate) enum ResourceEntry {
 #[derive(Default, Debug)]
 pub struct Resources {
     counter: usize,
-    pub(crate) entries: Vec<ResourceEntry>,
+    entries: Vec<ResourceEntry>,
 }
 
 impl Resources {
@@ -54,9 +54,9 @@ impl Resources {
     /// Adds a reference to an [`Image`] to this `Resources` dictionary.
     ///
     /// [`Image`]: crate::types::hierarchy::content::image::Image
-    pub(crate) fn add_image(&mut self, image: Image) -> Identifier<&[u8]> {
+    pub(crate) fn add_image(&mut self, image_id: ObjId<Image>) -> Identifier<&[u8]> {
         let name = self.create_name("Im");
-        let img = ResourceEntry::Image { name, image };
+        let img = ResourceEntry::Image { name, id: image_id };
 
         self.entries.push(img);
 
@@ -84,90 +84,55 @@ impl Resources {
     }
 
     /// Encode and write this resource dictionary into the provided implementor of [`Write`].
-    pub(crate) fn write_dict(
-        &self,
-        writer: &mut dyn Write,
-        renderables: &[Renderable],
-    ) -> Result<usize, Error> {
-        let mut font_renderables = Vec::new();
-        let write_fonts_dict = |writer: &mut dyn Write, font_renderables: Vec<&Renderable<'_>>| {
-            if font_renderables.is_empty() {
-                return std::io::Result::Ok(0);
+    pub(crate) fn write_dict(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+        let mut written = writer.write(b"<< ")?;
+
+        let mut images = self
+            .entries
+            .iter()
+            .filter_map(|entry| match entry {
+                ResourceEntry::Image { name, id } => Some((name, id)),
+                ResourceEntry::Font { .. } => None,
+            })
+            .peekable();
+
+        if images.peek().is_some() {
+            written += Identifier::X_OBJECT.write(writer)?;
+            written += writer.write(b"<< ")?;
+
+            for (name, id) in &mut images {
+                written += name.write(writer)?;
+                written += id.write_ref(writer)?;
+                written += writer.write(b" ")?;
             }
 
-            Ok(pdfgen_macros::write_chain! {
-                Identifier::FONT.write(writer),
-                writer.write(b"<< "),
+            written += writer.write(b">> ")?;
+        }
 
-                for fr in font_renderables.into_iter() {
-                     fr.write_ref(writer),
-                },
-
-                writer.write(b" >>"),
-            })
-        };
-
-        Ok(pdfgen_macros::write_chain! {
-            writer.write(b"<< "),
-
-            for renderable in renderables.iter() {
-                if matches!(renderable.entry, ResourceEntry::Font { .. }) {
-                    font_renderables.push(renderable);
-                    Ok(0)
-                } else {
-                    renderable.write_ref(writer)
-                },
-            },
-
-            write_fonts_dict(writer, font_renderables),
-
-            writer.write(b" >>"),
-        })
-    }
-
-    pub(crate) fn renderables(&self, id_manager: &mut IdManager) -> Vec<Renderable<'_>> {
-        self.entries
+        let mut fonts = self
+            .entries
             .iter()
-            .map(|entry| Renderable {
-                // TODO: skip creating ids for Fonts (global objects).
-                id: id_manager.create_id(),
-                entry,
+            .filter_map(|entry| match entry {
+                ResourceEntry::Font { name, id } => Some((name, id)),
+                ResourceEntry::Image { .. } => None,
             })
-            .collect()
-    }
-}
+            .peekable();
 
-#[derive(Debug)]
-pub(crate) struct Renderable<'entry> {
-    id: ObjId,
-    entry: &'entry ResourceEntry,
-}
+        if fonts.peek().is_some() {
+            written += Identifier::FONT.write(writer)?;
+            written += writer.write(b"<< ")?;
 
-impl Renderable<'_> {
-    pub(crate) fn write_def(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
-        match self.entry {
-            ResourceEntry::Image { image, .. } => image.write(writer, &self.id),
-            ResourceEntry::Font { .. } => Ok(0),
+            for (name, id) in &mut fonts {
+                written += name.write(writer)?;
+                written += id.write_ref(writer)?;
+                written += writer.write(b" ")?;
+            }
+
+            written += writer.write(b">>")?;
         }
-    }
 
-    pub(crate) fn write_ref(&self, writer: &mut dyn Write) -> std::io::Result<usize> {
-        match self.entry {
-            ResourceEntry::Image { name, .. } => Ok(pdfgen_macros::write_chain! {
-                Identifier::X_OBJECT.write(writer),
+        written += writer.write(b" >>")?;
 
-                writer.write(b"<< "),
-                name.write(writer),
-                self.id
-                    .write_ref(writer),
-                writer.write(b" >>"),
-            }),
-
-            ResourceEntry::Font { name, id } => Ok(pdfgen_macros::write_chain! {
-                name.write(writer),
-                id.write_ref(writer),
-                writer.write(b" "),
-            }),
-        }
+        Ok(written)
     }
 }

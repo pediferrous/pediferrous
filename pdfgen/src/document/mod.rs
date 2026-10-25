@@ -1,7 +1,12 @@
 use std::io::{Error, Write};
 
 use crate::types::{
-    hierarchy::{catalog::Catalog, page_tree::PageTree, primitives::font::Font},
+    hierarchy::{
+        catalog::Catalog,
+        content::image::{Image, RegisteredImage},
+        page_tree::PageTree,
+        primitives::font::Font,
+    },
     page::Page,
     pdf_writer::PdfWriter,
 };
@@ -28,6 +33,9 @@ pub struct Document {
 
     /// Collection of all fonts in this PDF document.
     fonts: Vec<Font>,
+
+    /// Collection of all images in this PDF document.
+    images: Vec<RegisteredImage>,
 }
 
 impl Default for Document {
@@ -43,6 +51,7 @@ impl Default for Document {
             id_manager,
             pages: Vec::new(),
             fonts: Vec::new(),
+            images: Vec::new(),
         }
     }
 }
@@ -79,6 +88,16 @@ impl Document {
         id
     }
 
+    /// Adds an [`Image`] to the document, returning its [`ObjId`] that can be used to draw the
+    /// image on any page via [`Page::draw_image`].
+    pub fn add_image(&mut self, image: Image) -> ObjId<Image> {
+        let id = self.id_manager.create_id();
+
+        self.images.push(RegisteredImage::new(id.clone(), image));
+
+        id
+    }
+
     /// Returns a mutable reference to the current page in document.
     pub fn current_page(&mut self) -> Option<&mut Page> {
         self.pages.last_mut()
@@ -87,7 +106,6 @@ impl Document {
     /// Write the PDF contents into the provided writer.
     pub fn write(&self, writer: &mut impl Write) -> Result<(), Error> {
         let mut pdf_writer = PdfWriter::new(writer);
-        let mut id_manager = self.id_manager.clone();
         pdf_writer.write_header()?;
 
         pdf_writer.write_object(&self.catalog)?;
@@ -96,12 +114,16 @@ impl Document {
         let mut content_streams = Vec::new();
 
         for page in &self.pages {
-            pdf_writer.write_page(page, &mut id_manager)?;
+            pdf_writer.write_page(page)?;
             content_streams.push(page.content_stream());
         }
 
         for cs in content_streams.into_iter().filter(|cs| !cs.is_empty()) {
             pdf_writer.write_object(cs)?;
+        }
+
+        for image in &self.images {
+            pdf_writer.write_object(image)?;
         }
 
         for font in &self.fonts {

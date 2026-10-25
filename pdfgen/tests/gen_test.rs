@@ -5,7 +5,7 @@ use pdfgen::{
     types::hierarchy::{
         content::{
             color::{CmykValue, Color},
-            image::Image,
+            image::{Image, ImageTransform},
             text::Text,
         },
         primitives::{
@@ -54,17 +54,18 @@ fn page_with_image() {
         .with_page_size(Rectangle::from_units(0., 0., page_size, page_size))
         .build();
 
-    let page = document.create_page();
+    document.create_page();
 
     let img = Image::from_file(
         &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
-    )
-    .at(Position::from_units(0., 0.))
-    .build();
+    );
 
-    page.add_image(img);
+    let img_id = document.add_image(img);
 
-    document.current_page();
+    document.current_page().unwrap().draw_image(
+        img_id,
+        ImageTransform::new(Position::from_units(0., 0.), Position::from_units(64., 64.)),
+    );
 
     macros::snap_test!(document);
 }
@@ -76,17 +77,21 @@ fn page_image_moved() {
         .with_page_size(Rectangle::from_units(0., 0., page_size, page_size))
         .build();
 
-    let page = document.create_page();
+    document.create_page();
 
     let img = Image::from_file(
         &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
-    )
-    .at(Position::from_units(64. - 88. / 2., 13.))
-    .build();
+    );
 
-    page.add_image(img);
+    let img_id = document.add_image(img);
 
-    document.current_page();
+    document.current_page().unwrap().draw_image(
+        img_id,
+        ImageTransform::new(
+            Position::from_units(64. - 88. / 2., 13.),
+            Position::from_units(64., 64.),
+        ),
+    );
 
     macros::snap_test!(document);
 }
@@ -98,16 +103,21 @@ fn page_image_moved_and_scaled() {
         .with_page_size(Rectangle::from_units(0., 0., page_size, page_size))
         .build();
 
-    let page = document.create_page();
+    document.create_page();
 
     let img = Image::from_file(
         &File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sample_image.jpg")).unwrap(),
-    )
-    .at(Position::from_units(64. - 88. / 2., 13.))
-    .scaled(Position::from_units(88., 88.))
-    .build();
+    );
 
-    page.add_image(img);
+    let img_id = document.add_image(img);
+
+    document.current_page().unwrap().draw_image(
+        img_id,
+        ImageTransform::new(
+            Position::from_units(64. - 88. / 2., 13.),
+            Position::from_units(88., 88.),
+        ),
+    );
 
     macros::snap_test!(document);
 }

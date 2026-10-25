@@ -1,6 +1,6 @@
 //! Implementation of the [`PdfWriter`] wrapper.
 
-use crate::{IdManager, ObjId};
+use crate::ObjId;
 
 use super::{
     constants,
@@ -101,21 +101,10 @@ impl<W: Write> PdfWriter<W> {
     }
 
     /// Writes the page contents into the PDF document.
-    pub(crate) fn write_page(
-        &mut self,
-        page: &Page,
-        id_manager: &mut IdManager,
-    ) -> Result<(), io::Error> {
+    pub(crate) fn write_page(&mut self, page: &Page) -> Result<(), io::Error> {
         self.cross_reference_table.add_object(self.current_offset);
 
-        let (bytes_written, offsets) = page.write(&mut self.inner, id_manager)?;
-
-        for offset in offsets {
-            self.cross_reference_table
-                .add_object(self.current_offset + offset);
-        }
-
-        self.current_offset += bytes_written;
+        self.current_offset += page.write(&mut self.inner)?;
 
         Ok(())
     }

@@ -9,9 +9,7 @@ use crate::{
     ObjId,
     types::{
         constants,
-        hierarchy::primitives::{
-            identifier::Identifier, object::Object, rectangle::Position, unit::Unit,
-        },
+        hierarchy::primitives::{identifier::Identifier, object::Object, rectangle::Position},
     },
 };
 
@@ -58,22 +56,58 @@ struct ImageDict {
     bits_per_comp: u8,
 }
 
-/// Represents transformations that should be applied to the encoded [`Image`] such as position and
-/// scaling.
+/// Represents transformations that should be applied when drawing an [`Image`] on a
+/// [`Page`], such as position and scaling.
+///
+/// [`Page`]: crate::types::hierarchy::page::Page
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct ImageTransform {
     /// Represents the position of an [`Image`] on the [`Page`].
     ///
     /// [`Page`]: crate::types::hierarchy::page::Page
     pub position: Position,
+
     /// Represents the scaling of an [`Image`] on the [`Page`].
     ///
     /// [`Page`]: crate::types::hierarchy::page::Page
     pub scale: Position,
 }
 
+impl ImageTransform {
+    /// Creates a new [`ImageTransform`] with the given position and scale.
+    pub fn new(position: Position, scale: Position) -> Self {
+        Self { position, scale }
+    }
+
+    /// Sets the position of the image on the page.
+    pub fn at(mut self, position: Position) -> Self {
+        self.position = position;
+        self
+    }
+
+    /// Sets the scaling of the image to the given width and height.
+    pub fn scaled(mut self, scale: Position) -> Self {
+        self.scale = scale;
+        self
+    }
+
+    /// This is not yet implemented and is a no-op for now.
+    pub fn rotated(self, _degree: usize) -> Self {
+        // TODO: implement rotation
+        self
+    }
+}
+
 /// A sampled image (or just image for short) is a rectangular array of sample values, each
 /// representing a colour.
+///
+/// An `Image` holds only the image data itself. It is registered in a [`Document`] via
+/// [`Document::add_image`], and placed on pages with [`Page::draw_image`], which applies an
+/// [`ImageTransform`] at draw time.
+///
+/// [`Document`]: crate::Document
+/// [`Document::add_image`]: crate::Document::add_image
+/// [`Page::draw_image`]: crate::types::hierarchy::page::Page::draw_image
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Image {
     /// Raw bytes of the image containing the samples. For an RGB image, each sample is represented
@@ -88,12 +122,6 @@ pub struct Image {
     /// Contains the dictionary for the image encoding the specific information of this image such
     /// as width and height in number of samples.
     dict: ImageDict,
-
-    /// Transformations that should be applied to this image when encoding it into a
-    /// [`ContentStream`].
-    ///
-    /// [`ContentStream`]: super::ContentStream
-    transform: ImageTransform,
 }
 
 impl Image {
@@ -106,23 +134,22 @@ impl Image {
         BITS_PER_COMPONENT,
     }
 
-    /// Creates a new [`Image`] by reading the bytes from the `reader` with default width and
-    /// height of 100 mm and position 0, 0 (lower left corner of a page).
-    pub fn from_reader(reader: impl Read) -> ImageBuilder<false> {
+    /// Creates a new [`Image`] by reading the bytes from the `reader`.
+    pub fn from_reader(reader: impl Read) -> Image {
         let mut bytes = Vec::new();
         BufReader::new(reader).read_to_end(&mut bytes).unwrap();
         Self::from_bytes(bytes)
     }
 
-    pub fn from_file(file: &std::fs::File) -> ImageBuilder<false> {
+    /// Creates a new [`Image`] by reading the bytes from the given file.
+    pub fn from_file(file: &std::fs::File) -> Image {
         let mut bytes = Vec::new();
         BufReader::new(file).read_to_end(&mut bytes).unwrap();
         Self::from_bytes(bytes)
     }
 
-    /// Creates a new [`Image`] from the given bytes with default width and height of 100 mm and
-    /// position 0, 0 (lower left corner of a page).
-    pub fn from_bytes(bytes: impl Into<Vec<u8>>) -> ImageBuilder<false> {
+    /// Creates a new [`Image`] from the given bytes.
+    pub fn from_bytes(bytes: impl Into<Vec<u8>>) -> Image {
         let bufreader = Cursor::new(bytes.into());
 
         let decoded_image = ImageReader::new(bufreader)
@@ -135,7 +162,7 @@ impl Image {
         let (width, height) = img.dimensions();
         let pixels = img.into_raw();
 
-        let img = Self {
+        Self {
             samples: Stream::with_bytes(pixels),
             dict: ImageDict {
                 width,
@@ -143,59 +170,11 @@ impl Image {
                 color_space: ColorSpace::DeviceRgb,
                 bits_per_comp: 8,
             },
-            transform: ImageTransform {
-                position: Position::from_mm(0.0, 0.0),
-                scale: Position::from_units(width as f32, height as f32),
-            },
-        };
-
-        ImageBuilder { inner: img }
+        }
     }
 
-    /// Sets the width and height of this [`Image`].
-    pub fn set_dimensions(&mut self, width: Unit, height: Unit) {
-        self.set_width(width);
-        self.set_height(height);
-    }
-
-    /// Sets the width of this [`Image`]
-    pub fn set_width(&mut self, width: Unit) {
-        self.transform.scale.x = width;
-    }
-
-    /// Sets the height of this [`Image`]
-    pub fn set_height(&mut self, height: Unit) {
-        self.transform.scale.y = height;
-    }
-
-    /// Sets the position of this [`Image`].
-    pub fn set_pos(&mut self, position: Position) {
-        self.transform.position = position;
-    }
-
-    /// Returns the width, height and position tuple of this [`Image`].
-    // TODO: should this be exposed in public API?
-    pub fn transform(&self) -> ImageTransform {
-        self.transform
-    }
-
-    pub fn write(&self, writer: &mut dyn Write, id: &ObjId) -> Result<usize, Error> {
-        Ok(pdfgen_macros::write_chain! {
-            id.write_def(writer),
-            writer.write(constants::NL_MARKER),
-
-            self.write_content(writer),
-            self.write_end(writer),
-        })
-    }
-}
-
-impl Object for Image {
-    fn write_def(&self, _writer: &mut dyn Write) -> Result<usize, Error> {
-        panic!("Image does not fully implement the Object trait.")
-    }
-
-    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+    /// Encode the image stream along with its dictionary into the given implementor of [`Write`].
+    pub(crate) fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
         // NOTE: The image dictionary shall specify the width, height, and number of bits per
         //       component explicitly. The number of colour components shall be inferred from the
         //       colour space specified in the dictionary.
@@ -233,33 +212,35 @@ impl Object for Image {
     }
 }
 
-pub struct ImageBuilder<const IS_INIT: bool> {
-    inner: Image,
+/// An [`Image`] that has been registered in a [`Document`] and assigned an [`ObjId`].
+///
+/// [`Document`]: crate::Document
+#[derive(Debug)]
+pub(crate) struct RegisteredImage {
+    /// ID of the registered [`Image`] object.
+    id: ObjId<Image>,
+
+    /// The registered image.
+    image: Image,
 }
 
-impl<const IS_INIT: bool> ImageBuilder<IS_INIT> {
-    /// Sets the position of an [`Image`] on a page.
-    pub fn at(mut self, pos: Position) -> ImageBuilder<true> {
-        self.inner.transform.position = pos;
-        ImageBuilder { inner: self.inner }
-    }
-
-    /// Sets the scaling of the image to the given width and height.
-    pub fn scaled(mut self, scale: Position) -> Self {
-        self.inner.transform.scale = scale;
-        self
-    }
-
-    /// This is not yet implemented and is a no-op for now.
-    pub fn rotated(self, _degree: usize) -> Self {
-        // TODO: implement rotation
-        self
+impl RegisteredImage {
+    /// Creates a new [`RegisteredImage`] from the given [`ObjId`] and [`Image`].
+    pub(crate) fn new(id: ObjId<Image>, image: Image) -> Self {
+        Self { id, image }
     }
 }
 
-impl ImageBuilder<true> {
-    pub fn build(self) -> Image {
-        self.inner
+impl Object for RegisteredImage {
+    fn write_def(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+        Ok(pdfgen_macros::write_chain! {
+            self.id.write_def(writer),
+            writer.write(constants::NL_MARKER),
+        })
+    }
+
+    fn write_content(&self, writer: &mut dyn Write) -> Result<usize, Error> {
+        self.image.write_content(writer)
     }
 }
 
@@ -267,9 +248,9 @@ impl ImageBuilder<true> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::{IdManager, types::hierarchy::primitives::rectangle::Position};
+    use crate::{IdManager, types::hierarchy::primitives::object::Object};
 
-    use super::Image;
+    use super::{Image, RegisteredImage};
 
     #[test]
     fn sample_image() {
@@ -278,14 +259,13 @@ mod tests {
 
         let mut id_mngr = IdManager::new();
 
-        let img = Image::from_reader(img_file)
-            .scaled(Position::from_mm(100., 100.))
-            .at(Position::from_mm(10.0, 42.0))
-            .build();
+        let img = Image::from_reader(img_file);
+        let registered = RegisteredImage::new(id_mngr.create_id(), img);
 
         let mut writer = Vec::default();
-        // NOTE: same function defined on Image directly, so call using qualified syntax
-        img.write(&mut writer, &id_mngr.create_id()).unwrap();
+        registered.write_def(&mut writer).unwrap();
+        registered.write_content(&mut writer).unwrap();
+        registered.write_end(&mut writer).unwrap();
         let output = String::from_utf8_lossy(&writer);
 
         insta::assert_snapshot!(output);
