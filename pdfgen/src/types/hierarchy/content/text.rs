@@ -2,11 +2,14 @@
 
 use std::io::{self, Write};
 
-use crate::types::{
-    constants,
-    hierarchy::primitives::{
-        identifier::Identifier, rectangle::Position, string::PdfString, unit::Unit,
+use crate::{
+    types::{
+        constants,
+        hierarchy::primitives::{
+            identifier::Identifier, rectangle::Position, string::PdfString, unit::Unit,
+        },
     },
+    write_fmt,
 };
 
 use super::color::Color;
@@ -93,18 +96,18 @@ impl Text {
 
         // /FName Size Tf
         font_name.write(&mut writer)?;
-        writer.write_all(format! {"{} ", self.transform.size}.as_bytes())?;
+        write_fmt!(&mut writer, "{} ", self.transform.size)?;
         writer.write_all(Self::TF_OPERATOR)?;
         writer.write_all(constants::NL_MARKER)?;
 
         // posx posy Td
-        writer.write_all(
-            format!(
-                "{} {} ",
-                self.transform.position.x, self.transform.position.y
-            )
-            .as_bytes(),
+        write_fmt!(
+            &mut writer,
+            "{} {} ",
+            self.transform.position.x,
+            self.transform.position.y
         )?;
+
         writer.write_all(Self::TD_OPERATOR)?;
         writer.write_all(constants::NL_MARKER)?;
 
