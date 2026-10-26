@@ -183,7 +183,7 @@ mod tests {
 
         let output = String::from_utf8(writer).unwrap();
 
-        insta::assert_snapshot!(output, @r"
+        insta::assert_snapshot!(output, @"
         %PDF-2.0
         1 0 obj
         << /Type /Catalog 

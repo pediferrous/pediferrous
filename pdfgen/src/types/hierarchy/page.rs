@@ -166,7 +166,7 @@ mod tests {
 
         insta::assert_snapshot!(
             output,
-            @r"
+            @"
         1 0 obj
         << /Type /Page 
         /Parent 3 0 R

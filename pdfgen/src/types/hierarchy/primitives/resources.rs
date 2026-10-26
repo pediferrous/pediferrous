@@ -120,12 +120,12 @@ impl Resources {
 
         if fonts.peek().is_some() {
             written += Identifier::FONT.write(writer)?;
-            written += writer.write(b"<< ")?;
+            written += writer.write(b"<<")?;
 
             for (name, id) in &mut fonts {
+                written += writer.write(b" ")?;
                 written += name.write(writer)?;
                 written += id.write_ref(writer)?;
-                written += writer.write(b" ")?;
             }
 
             written += writer.write(b">>")?;
