@@ -37,7 +37,11 @@ pub fn const_identifiers(token_stream: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// use pdfgen_macros::write_chain;
+/// use std::io::Write;
+///
+/// # fn main() -> std::io::Result<()> {
 /// let mut writer = Vec::new();
 /// let optional = Some(1);
 /// let iterable = vec![1, 2, 3];
@@ -47,15 +51,17 @@ pub fn const_identifiers(token_stream: TokenStream) -> TokenStream {
 ///     writer.write(b", World!"),
 ///
 ///     if let Some(value) = optional {
-///         writer.write(format!(value).as_bytes()),
+///         writer.write(format!("{value}").as_bytes()),
 ///     },
 ///
 ///     for value in iterable {
-///         writer.write(format!(value).as_bytes()),
+///         writer.write(format!("{value}").as_bytes()),
 ///     },
 /// };
 ///
 /// assert_eq!(written, 17);
+/// # Ok(())
+/// # }
 /// ```
 #[proc_macro]
 pub fn write_chain(token_stream: TokenStream) -> TokenStream {
