@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/pediferrous/pediferrous/compare/pdfgen_macros-v0.1.1...pdfgen_macros-v0.1.2) (2026-10-31)
+
+
+### Bug Fixes
+
+* **macros:** handle if/loop expression properly ([#84](https://github.com/pediferrous/pediferrous/issues/84)) ([6df6440](https://github.com/pediferrous/pediferrous/commit/6df6440502bea4f82e2f512a87ee8c1573bf65e8))
+
 ## [0.1.1](https://github.com/pediferrous/pediferrous/compare/pdfgen_macros-v0.1.0...pdfgen_macros-v0.1.1) (2025-09-24)
 
 
