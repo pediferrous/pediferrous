@@ -9,6 +9,7 @@ use pdfgen::{
             text::Text,
         },
         primitives::{
+            font::FontSubtype,
             rectangle::{Position, Rectangle},
             unit::Unit,
         },
@@ -116,7 +117,7 @@ fn page_image_moved_and_scaled() {
 fn page_text() {
     let mut document = Document::builder().with_page_size(Rectangle::A4).build();
 
-    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let font_id = document.create_font(FontSubtype::Type1, "Helvetica".into());
     let page = document.create_page();
 
     let txt = Text::builder()
@@ -138,7 +139,7 @@ fn page_text() {
 fn page_colored_text() {
     let mut document = Document::builder().with_page_size(Rectangle::A4).build();
 
-    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let font_id = document.create_font(FontSubtype::Type1, "Helvetica".into());
     let page = document.create_page();
 
     let pos = Position::from_units(
@@ -221,7 +222,7 @@ fn page_colored_text() {
 fn multi_color_space_text() {
     let mut document = Document::builder().with_page_size(Rectangle::A4).build();
 
-    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let font_id = document.create_font(FontSubtype::Type1, "Helvetica".into());
     let page = document.create_page();
 
     let pos = Position::from_units(
@@ -276,7 +277,7 @@ fn multi_color_space_text() {
 fn page_superscript_subscript_text() {
     let mut document = Document::builder().with_page_size(Rectangle::A4).build();
 
-    let font_id = document.create_font("Type1".into(), "Helvetica".into());
+    let font_id = document.create_font(FontSubtype::Type1, "Helvetica".into());
     let page = document.create_page();
 
     let first_text = Text::builder()
