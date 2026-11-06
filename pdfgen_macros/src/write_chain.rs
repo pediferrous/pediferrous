@@ -33,7 +33,10 @@ impl Parse for LoopWrite {
         let pattern = Pat::parse_multi_with_leading_vert(input)?;
 
         let _ = input.parse::<Token![in]>()?;
-        let loop_expr = input.parse()?;
+
+        // NOTE(nfejzic): expression in an if is followed by an `{`, so inform `syn` that the brace
+        //                is not part of the expression, but rather part of the if statement's body.
+        let loop_expr = input.call(Expr::parse_without_eager_brace)?;
 
         let body;
         syn::braced!(body in input);
@@ -113,7 +116,9 @@ impl Parse for IfWrite {
             let _ = input.parse::<Token![=]>()?;
         }
 
-        let if_expr = input.parse()?;
+        // NOTE(nfejzic): expression in an if is followed by an `{`, so inform `syn` that the brace
+        //                is not part of the expression, but rather part of the if statement's body.
+        let if_expr = input.call(Expr::parse_without_eager_brace)?;
 
         let body;
         syn::braced!(body in input);

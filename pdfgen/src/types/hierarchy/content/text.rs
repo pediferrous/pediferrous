@@ -93,7 +93,7 @@ impl Text {
 
         // /FName Size Tf
         font_name.write(&mut writer)?;
-        writer.write_all(format! {"{} ", self.transform.size}.as_bytes())?;
+        crate::write_fmt!(&mut writer, "{} ", self.transform.size)?;
         writer.write_all(Self::TF_OPERATOR)?;
         writer.write_all(constants::NL_MARKER)?;
 
